@@ -1,7 +1,7 @@
 // /api/chart 요청 본문 검증. 잘못된 입력은 계산하지 않고 거부한다(fail closed).
 import { TIME_BANDS, type BirthInput, type BirthTime } from "./birth.ts";
-import { koreaRegion } from "./places.ts";
-import { isValidLocalDate, isValidTimeZone } from "./time.ts";
+import { koreaRegion, type Place } from "./places.ts";
+import { isValidLocalDate } from "./time.ts";
 
 export const MIN_YEAR = 1900;
 
@@ -9,7 +9,14 @@ export type ValidationResult = { ok: true; input: BirthInput } | { ok: false; er
 
 const isInt = (v: unknown): v is number => typeof v === "number" && Number.isInteger(v);
 
-export function parseBirthRequest(body: unknown, now: Date = new Date()): ValidationResult {
+export interface ParseOptions {
+  now?: Date;
+  /** 해외 도시 id → 좌표·시간대. 서버가 자기 도시 목록에서 찾는다(브라우저가 보낸 좌표는 믿지 않음). */
+  findCity?: (id: number) => Place | null;
+}
+
+export function parseBirthRequest(body: unknown, opts: ParseOptions = {}): ValidationResult {
+  const now = opts.now ?? new Date();
   if (!body || typeof body !== "object") return { ok: false, error: "요청 형식이 올바르지 않아요." };
   const b = body as Record<string, unknown>;
   const { year, month, day } = b;
@@ -33,15 +40,12 @@ export function parseBirthRequest(body: unknown, now: Date = new Date()): Valida
   }
 
   const p = b.place as Record<string, unknown> | undefined;
-  let place = null;
+  let place: Place | null = null;
   if (typeof p?.region === "string") {
     place = koreaRegion(p.region);
-  } else if (
-    typeof p?.label === "string" && typeof p.lat === "number" && typeof p.lng === "number" &&
-    typeof p.timeZone === "string" && Math.abs(p.lat) <= 90 && Math.abs(p.lng) <= 180 && isValidTimeZone(p.timeZone)
-  ) {
-    // 해외 도시: 도시 검색(GeoNames 자체 DB, 미구현)이 돌려준 값. 상세 주소는 받지 않는다.
-    place = { label: p.label.slice(0, 80), lat: p.lat, lng: p.lng, timeZone: p.timeZone };
+  } else if (isInt(p?.cityId) && opts.findCity) {
+    // 해외 도시: 검색 결과의 id만 받고 좌표·시간대는 서버 목록에서 가져온다. 상세 주소는 받지 않는다.
+    place = opts.findCity(p.cityId);
   }
   if (!place) return { ok: false, error: "태어난 곳을 다시 확인해 주세요." };
 

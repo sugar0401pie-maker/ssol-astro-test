@@ -109,15 +109,21 @@ test("computeBirth: 시간대(B)에서 고른 후보 시각이 구간 밖이면 
 test("parseBirthRequest: 잘못된 날짜·시간·출생지·미래 날짜를 거부하고, 정상 입력은 통과시킨다", async () => {
   const { parseBirthRequest } = await import("./validate.ts");
   const now = new Date("2026-10-07T00:00:00Z");
+  const LA = { label: "로스앤젤레스, 미국", lat: 34.0522, lng: -118.2437, timeZone: "America/Los_Angeles" };
+  const opts = { now, findCity: (id: number) => (id === 5368361 ? LA : null) };
   const ok = { year: 1996, month: 4, day: 1, time: { kind: "exact", hour: 10, minute: 17 }, place: { region: "경기" } };
-  assert.equal(parseBirthRequest(ok, now).ok, true);
-  assert.equal(parseBirthRequest({ ...ok, month: 2, day: 30 }, now).ok, false);
-  assert.equal(parseBirthRequest({ ...ok, year: 2027 }, now).ok, false);
-  assert.equal(parseBirthRequest({ ...ok, year: 1899 }, now).ok, false);
-  assert.equal(parseBirthRequest({ ...ok, time: { kind: "exact", hour: 24, minute: 0 } }, now).ok, false);
-  assert.equal(parseBirthRequest({ ...ok, time: { kind: "band", band: "noon" } }, now).ok, false);
-  assert.equal(parseBirthRequest({ ...ok, place: { region: "평양" } }, now).ok, false);
-  assert.equal(parseBirthRequest({ ...ok, place: { label: "LA", lat: 34, lng: -118, timeZone: "Mars/Base" } }, now).ok, false);
-  assert.equal(parseBirthRequest({ ...ok, place: { label: "Los Angeles, 미국", lat: 34.05, lng: -118.24, timeZone: "America/Los_Angeles" } }, now).ok, true);
-  assert.equal(parseBirthRequest(null, now).ok, false);
+  assert.equal(parseBirthRequest(ok, opts).ok, true);
+  assert.equal(parseBirthRequest({ ...ok, month: 2, day: 30 }, opts).ok, false);
+  assert.equal(parseBirthRequest({ ...ok, year: 2027 }, opts).ok, false);
+  assert.equal(parseBirthRequest({ ...ok, year: 1899 }, opts).ok, false);
+  assert.equal(parseBirthRequest({ ...ok, time: { kind: "exact", hour: 24, minute: 0 } }, opts).ok, false);
+  assert.equal(parseBirthRequest({ ...ok, time: { kind: "band", band: "noon" } }, opts).ok, false);
+  assert.equal(parseBirthRequest({ ...ok, place: { region: "평양" } }, opts).ok, false);
+  // 해외는 도시 id로만 — 브라우저가 보낸 좌표·시간대는 받지 않는다.
+  assert.equal(parseBirthRequest({ ...ok, place: { label: "LA", lat: 34, lng: -118, timeZone: "America/Los_Angeles" } }, opts).ok, false);
+  assert.equal(parseBirthRequest({ ...ok, place: { cityId: 1 } }, opts).ok, false);
+  const la = parseBirthRequest({ ...ok, place: { cityId: 5368361 } }, opts);
+  assert.ok(la.ok && la.input.place.timeZone === "America/Los_Angeles");
+  assert.equal(parseBirthRequest({ ...ok, place: { cityId: 5368361 } }, { now }).ok, false);
+  assert.equal(parseBirthRequest(null, opts).ok, false);
 });

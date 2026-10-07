@@ -3,6 +3,7 @@ import { isAnswers } from "@/lib/astro/answers";
 import { computeBirth } from "@/lib/astro/birth";
 import type { CalibrationTable } from "@/lib/astro/character";
 import { parseBirthRequest } from "@/lib/astro/validate";
+import { placeFromCityId } from "@/lib/astro/cityData";
 import { buildFreeResult } from "@/lib/report/freeResult";
 import calibration from "@/data/astro/calibration.json";
 
@@ -21,7 +22,7 @@ export async function POST(req: NextRequest) {
   } catch {
     return NextResponse.json({ error: "요청 형식이 올바르지 않아요." }, { status: 400 });
   }
-  const parsed = parseBirthRequest(body?.birth);
+  const parsed = parseBirthRequest(body?.birth, { findCity: placeFromCityId });
   if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
   if (!isAnswers(body?.answers)) return NextResponse.json({ error: "질문 답을 다시 확인해 주세요." }, { status: 400 });
 

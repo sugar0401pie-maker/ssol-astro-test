@@ -2,12 +2,13 @@
 
 // 화면 2~7(마스터스펙 6-1): 환영·닉네임 → 경험 확인(→ 처음 안내) → 생년월일·시간·출생지 → 질문 3개 →
 // (후보가 갈리면) 캐릭터 후보 선택 → 무료 결과. 화면 문구는 스펙 확정본 그대로 — 바꾸지 않는다.
-// 아직 없는 것: 인트로(디저트 테스트와 동일 화면), 로그인 분기(비로그인 처리 방식 미정), 해외 도시 검색,
+// 아직 없는 것: 인트로(디저트 테스트와 동일 화면), 로그인 분기(비로그인 처리 방식 미정),
 // 해석 DB 문장, 역량 동점 확인 화면, 결제. 아무것도 저장하지 않는다.
 import { useMemo, useState } from "react";
 import { Q1_OPTIONS, Q2_OPTIONS, Q3_OPTIONS, Q_LABELS, type Answers } from "@/lib/astro/answers";
 import { KOREA_REGIONS } from "@/lib/astro/places";
 import type { FreeResult } from "@/lib/report/freeResult";
+import CitySearch, { type PickedCity } from "./CitySearch";
 import FreeResultView from "./FreeResultView";
 
 type Step = "welcome" | "experience" | "firstTime" | "birth" | "q1" | "q2" | "q3" | "loading" | "candidates" | "result";
@@ -57,6 +58,7 @@ export default function TestFlow() {
   const [band, setBand] = useState<BandId>("morning");
   const [region, setRegion] = useState<string>("서울");
   const [overseas, setOverseas] = useState(false);
+  const [city, setCity] = useState<PickedCity | null>(null);
   const [answers, setAnswers] = useState<Partial<Answers>>({});
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [result, setResult] = useState<FreeResult | null>(null);
@@ -80,7 +82,7 @@ export default function TestFlow() {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          birth: { year, month, day: safeDay, time: pick ? { ...birthTime, pick } : birthTime, place: { region } },
+          birth: { year, month, day: safeDay, time: pick ? { ...birthTime, pick } : birthTime, place: overseas && city ? { cityId: city.id } : { region } },
           answers: a,
         }),
       });
@@ -232,14 +234,10 @@ export default function TestFlow() {
               <input type="checkbox" checked={overseas} onChange={(e) => setOverseas(e.target.checked)} />
               한국이 아니에요
             </label>
-            {overseas && (
-              <p className="rounded-xl border border-cream/30 px-3 py-2 text-sm text-cream/80">
-                해외 도시 검색은 준비 중이에요. 조금만 기다려 주세요.
-              </p>
-            )}
+            {overseas && <CitySearch value={city} onChange={setCity} />}
           </fieldset>
 
-          <button className={btnPrimary} disabled={overseas} onClick={() => setStep("q1")}>
+          <button className={btnPrimary} disabled={overseas && !city} onClick={() => setStep("q1")}>
             다음
           </button>
         </div>

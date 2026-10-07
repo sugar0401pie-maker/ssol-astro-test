@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { computeBirth } from "@/lib/astro/birth";
 import type { CalibrationTable } from "@/lib/astro/character";
 import { parseBirthRequest } from "@/lib/astro/validate";
+import { placeFromCityId } from "@/lib/astro/cityData";
 import calibration from "@/data/astro/calibration.json";
 
 // 출생정보 → 출생차트·캐릭터·기간 이벤트. 모든 천문 계산은 서버에서만 한다(마스터스펙 3장).
@@ -19,7 +20,7 @@ export async function POST(req: NextRequest) {
   } catch {
     return NextResponse.json({ error: "요청 형식이 올바르지 않아요." }, { status: 400 });
   }
-  const parsed = parseBirthRequest(body);
+  const parsed = parseBirthRequest(body, { findCity: placeFromCityId });
   if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
 
   try {

@@ -25,6 +25,8 @@ export interface WishYear {
   level: WishLevel;
   /** 순풍이면 돕는 근거 상위, 역풍이면 막는 근거 상위(최대 3개) */
   reasons: WishFactor[];
+  /** 그해 점수에 들어간 모든 요인(접힌 근거·검수용) */
+  factors: WishFactor[];
 }
 
 export interface WishResult {
@@ -138,7 +140,7 @@ export function computeWish(
         : level === "역풍"
           ? scored.filter((s) => s.value < 0).sort((a, b) => a.value - b.value).slice(0, 3)
           : [];
-    years.push({ year: y, support, level, reasons });
+    years.push({ year: y, support, level, reasons, factors: scored });
   }
 
   const first = years.find((y) => y.level === "순풍") ?? null;
