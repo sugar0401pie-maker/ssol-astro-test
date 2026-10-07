@@ -6,7 +6,7 @@ import { DOMAIN_MAP, type Q1Domain } from "./answers.ts";
 import { houseOf, longitude, sep, type Accuracy, type Longitudes } from "./natal.ts";
 import {
   ASPECT_WEIGHT, DOMAIN_BOOST, ECLIPSE_BASE, ECLIPSE_NATAL_ORB, EOY_MODE, FAST_TRANSIT_ORB, FAST_TRANSIT_PLANETS,
-  MERGE_GAP_DAYS, PLANET_WEIGHT, STATION_BASE, STATION_PLANET_WEIGHT, TARGET_WEIGHT, TOP_EVENTS, durationFactor,
+  MERGE_GAP_DAYS, MILESTONE_SCORE, PLANET_WEIGHT, STATION_BASE, STATION_PLANET_WEIGHT, TARGET_WEIGHT, TOP_EVENTS, durationFactor,
 } from "./scoringConfig.ts";
 import { computeStationsAndIngress, computeTransits, dailyPositions, dailyRange, sampleTime, scanRuns, type Run } from "./transits.ts";
 
@@ -37,7 +37,7 @@ export type TimelineEvent = BaseEvent &
         milestone: MilestoneKind | null;
       }
     | { kind: "retrograde"; planet: "mercury" | "venus" | "mars"; sign: (typeof SIGNS)[number]; house: number | null }
-    | { kind: "ingress"; planet: "jupiter" | "saturn" | "uranus"; sign: (typeof SIGNS)[number]; house: number | null }
+    | { kind: "ingress"; planet: "jupiter" | "saturn" | "uranus" | "neptune" | "pluto"; sign: (typeof SIGNS)[number]; house: number | null }
     | {
         kind: "eclipse";
         eclipse: "solar" | "lunar";
@@ -186,6 +186,16 @@ export function buildTimeline(L: Longitudes, range: Window, fastWindow?: Window)
     if (g.date === range.start) continue; // 기간 첫날 표시는 '이동'이 아니라 현재 위치
     events.push({ id: `i:${g.planet}:${g.date}`, kind: "ingress", planet: g.planet, sign: g.sign, house: g.house, intervals: [{ from: g.date, to: g.date, exact: g.date }] });
   }
+  // 해왕성·명왕성 별자리 이동(2026 전환점 A18 '해왕성 양자리 진입' 등). 프로토타입 출력(목성·토성·천왕성)은 그대로 두고 따로 더한다.
+  for (const planet of ["neptune", "pluto"] as const) {
+    const pos = dailyPositions(planet, days);
+    for (let i = 1; i < days.length; i++) {
+      const s = signIndex(pos[i]);
+      if (s !== signIndex(pos[i - 1])) {
+        events.push({ id: `i:${planet}:${days[i]}`, kind: "ingress", planet, sign: SIGNS[s], house: houseAt(L, pos[i]), intervals: [{ from: days[i], to: days[i], exact: days[i] }] });
+      }
+    }
+  }
 
   // 5) 일식·월식
   for (const e of eclipses(range)) {
@@ -240,6 +250,7 @@ export function baseScore(e: TimelineEvent, inWindow: Interval[]): number {
   const n = daysIn(inWindow);
   switch (e.kind) {
     case "transit":
+      if (e.milestone) return MILESTONE_SCORE[e.milestone];
       return (PLANET_WEIGHT[e.transit] ?? 1) * (TARGET_WEIGHT[e.target] ?? 1) * ASPECT_WEIGHT[e.aspect] * durationFactor(n);
     case "retrograde":
       return STATION_BASE * STATION_PLANET_WEIGHT[e.planet] * durationFactor(n);
@@ -312,9 +323,29 @@ export function selectPeriods(events: TimelineEvent[], domain: Q1Domain, now: Da
   const out = {} as Record<PeriodKey, PeriodResult>;
   for (const key of Object.keys(windows) as PeriodKey[]) {
     const all = scoreInWindow(events.filter((e) => periodFilter(key, e)), windows[key], domain);
-    out[key] = { window: windows[key], top: all.slice(0, TOP_EVENTS[key]), all, domainQuiet: !all.some((s) => s.domainRelevant) };
+    const top = key === "fiveYears" ? pickFiveYearTop(events, windows[key], domain) : all.slice(0, TOP_EVENTS[key]);
+    out[key] = { window: windows[key], top, all, domainQuiet: !all.some((s) => s.domainRelevant) };
   }
   return out;
+}
+
+/**
+ * 5년 파트는 '연도별 최고점 1개 + 나이 마일스톤'(C2 W_031). 연도마다 그해 안에서 다시 점수를 매겨
+ * 가장 높은 이벤트를 고르고, 마일스톤은 점수와 상관없이 넣는다. 같은 이벤트는 한 번만, 시간순.
+ */
+export function pickFiveYearTop(events: TimelineEvent[], w: Window, domain: Q1Domain): ScoredEvent[] {
+  const pool = events.filter((e) => periodFilter("fiveYears", e));
+  const picked = new Set<string>();
+  const startY = Number(w.start.slice(0, 4));
+  const endY = Number(w.end.slice(0, 4));
+  for (let y = startY; y <= endY; y++) {
+    const best = scoreInWindow(pool, { start: `${y}-01-01`, end: `${y}-12-31` }, domain)[0];
+    if (best) picked.add(best.event.id);
+  }
+  for (const e of pool) if (e.kind === "transit" && e.milestone && clipIntervals(e.intervals, w).length) picked.add(e.id);
+  return scoreInWindow(pool.filter((e) => picked.has(e.id)), w, domain).sort((a, b) =>
+    a.intervalsInWindow[0].from < b.intervalsInWindow[0].from ? -1 : 1,
+  );
 }
 
 /** 2026 회고의 '올해의 전환점': 특정 날짜 이벤트(토성 리턴 등 마일스톤, 외행성·목성·토성 별자리 이동). */

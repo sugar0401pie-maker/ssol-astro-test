@@ -4,7 +4,7 @@
 // (후보가 갈리면) 캐릭터 후보 선택 → 무료 결과. 화면 문구는 스펙 확정본 그대로 — 바꾸지 않는다.
 // 아직 없는 것: 인트로(디저트 테스트와 동일 화면), 로그인 분기(비로그인 처리 방식 미정),
 // 해석 DB 문장, 역량 동점 확인 화면, 결제. 아무것도 저장하지 않는다.
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Q1_OPTIONS, Q2_OPTIONS, Q3_OPTIONS, Q_LABELS, type Answers } from "@/lib/astro/answers";
 import { KOREA_REGIONS } from "@/lib/astro/places";
 import type { FreeResult } from "@/lib/report/freeResult";
@@ -24,6 +24,8 @@ const BANDS = [
 type BandId = (typeof BANDS)[number]["id"];
 
 interface Candidate {
+  /** B6 후보 선택 카드 문장(해석 DB) */
+  card?: string;
   name: string;
   competency: string;
   style: string;
@@ -61,6 +63,15 @@ export default function TestFlow() {
   const [city, setCity] = useState<PickedCity | null>(null);
   const [answers, setAnswers] = useState<Partial<Answers>>({});
   const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [candidateIntro, setCandidateIntro] = useState("");
+  // 결과 전 화면의 고정 문구(해석 DB A15). 못 받아 와도 화면은 그대로 진행한다.
+  const [copy, setCopy] = useState<{ FIX_LOADING?: string; FIX_PRIVACY_NOTE?: string }>({});
+  useEffect(() => {
+    fetch("/api/copy")
+      .then((r) => (r.ok ? r.json() : {}))
+      .then(setCopy)
+      .catch(() => {});
+  }, []);
   const [result, setResult] = useState<FreeResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -84,12 +95,14 @@ export default function TestFlow() {
         body: JSON.stringify({
           birth: { year, month, day: safeDay, time: pick ? { ...birthTime, pick } : birthTime, place: overseas && city ? { cityId: city.id } : { region } },
           answers: a,
+          nickname: name,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "계산 중 문제가 생겼어요.");
       if (data.candidates) {
         setCandidates(data.candidates);
+        setCandidateIntro(data.candidateIntro ?? "");
         setStep("candidates");
       } else {
         setResult(data.result);
@@ -237,6 +250,7 @@ export default function TestFlow() {
             {overseas && <CitySearch value={city} onChange={setCity} />}
           </fieldset>
 
+          {copy.FIX_PRIVACY_NOTE && <p className="text-xs leading-relaxed text-cream/60">{copy.FIX_PRIVACY_NOTE}</p>}
           <button className={btnPrimary} disabled={overseas && !city} onClick={() => setStep("q1")}>
             다음
           </button>
@@ -271,19 +285,22 @@ export default function TestFlow() {
 
       {step === "loading" && (
         <div className="flex flex-1 flex-col items-center justify-center gap-3 text-cream">
-          <p>{name}님이 태어난 순간의 하늘을 그리고 있어요…</p>
+          <p className="text-center leading-relaxed">{copy.FIX_LOADING || "태어난 순간의 하늘을 그리고 있어요."}</p>
         </div>
       )}
 
       {step === "candidates" && (
         <div className="flex flex-col gap-5">
           <Big>더 나 같은 캐릭터는?</Big>
-          <p className="text-sm text-cream/80">
-            고른 시간대 안에서 캐릭터가 갈렸어요. {name}님에게 더 가까운 쪽을 골라주세요.
-          </p>
+          {candidateIntro && <p className="text-sm leading-relaxed text-cream/80">{candidateIntro}</p>}
           {candidates.map((c) => (
-            <button key={c.name} className={btnSecondary} onClick={() => fetchResult(answers as Answers, c.pick)}>
-              {c.name} ({c.competency} × {c.style})
+            <button
+              key={c.name}
+              className="flex flex-col gap-1 rounded-2xl border border-cream/40 px-4 py-3 text-left text-cream hover:border-gold"
+              onClick={() => fetchResult(answers as Answers, c.pick)}
+            >
+              <span className="font-bold">{c.name} ({c.competency} × {c.style})</span>
+              {c.card && <span className="text-sm leading-relaxed text-cream/80">{c.card}</span>}
             </button>
           ))}
         </div>

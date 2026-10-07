@@ -1,15 +1,14 @@
 // Q3 바람이 언제 열리는가(마스터스펙 5-2, 5-3). 연도별 지원도 = 돕는 트랜짓 − 가로막는 트랜짓.
-//   돕는 것: 목성의 합(통과), 느린 행성의 삼분·육분, 목성이 바람 하우스를 지나는 기간
-//   막는 것: 토성·명왕성의 합·사각·충, 토성·명왕성이 바람 하우스를 지나는 기간
+// 점수는 해석 DB C2(W_035~W_042) 그대로:
+//   목성이 바람 하우스 통과 +3 × 그해 통과 일수 비율 / 바람 행성·축에 목성 삼분·육분 +2 / 토성 삼분·육분 +1.5
+//   토성 합·사각·충 −3 / 명왕성 합·사각·충 −2.5 / 판정 ±2
+// 요인 하나가 그해에 조금이라도 걸치면 그 점수를 한 번 더한다(하우스 통과만 일수 비율).
 // 판정과 '열리는 해'·근거는 서버가 정하고 AI는 바꾸지 않는다. 없는 순풍 해를 만들지 않는다.
 // C등급(출생시간 모름)은 하우스·상승궁·천정을 빼고 행성만으로 판정한다(그 사실은 문장에서 밝힘).
 import { ASPECTS, TRANSIT_ORB, type AspectName, type PlanetKey } from "./constants.ts";
 import { WISH_MAP, type Q3Wish, type WishPoint } from "./answers.ts";
 import { houseOf, type Longitudes } from "./natal.ts";
-import {
-  ASPECT_WEIGHT, MERGE_GAP_DAYS, PLANET_WEIGHT, STABILITY_INCLUDES_MOON, WISH_HOUSE_BLOCK,
-  WISH_HOUSE_SUPPORT, WISH_THRESHOLD, durationFactor,
-} from "./scoringConfig.ts";
+import { MERGE_GAP_DAYS, STABILITY_INCLUDES_MOON, WISH_SCORE, WISH_THRESHOLD } from "./scoringConfig.ts";
 import { clipIntervals, daysIn, mergeRuns, type Interval } from "./timeline.ts";
 import { dailyPositions, dailyRange, scanRuns } from "./transits.ts";
 
@@ -43,10 +42,18 @@ export interface WishResult {
 
 type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
 
-const HELP_ASPECTS: AspectName[] = ["삼분", "육분"];
-const BLOCK_ASPECTS: AspectName[] = ["합", "사각", "충"];
-const SLOW: PlanetKey[] = ["jupiter", "saturn", "uranus", "neptune", "pluto"];
-const BLOCKERS: PlanetKey[] = ["saturn", "pluto"];
+const HARMONY: AspectName[] = ["삼분", "육분"];
+const HARD: AspectName[] = ["합", "사각", "충"];
+const SLOW: PlanetKey[] = ["jupiter", "saturn", "pluto"];
+
+/** (행성, 각도) → C2 점수. 목록에 없으면 바람 지원도에 넣지 않는다. */
+export function aspectWishScore(transit: PlanetKey, aspect: AspectName): number | null {
+  if (transit === "jupiter" && HARMONY.includes(aspect)) return WISH_SCORE.jupiterHarmony;
+  if (transit === "saturn" && HARMONY.includes(aspect)) return WISH_SCORE.saturnHarmony;
+  if (transit === "saturn" && HARD.includes(aspect)) return WISH_SCORE.saturnHard;
+  if (transit === "pluto" && HARD.includes(aspect)) return WISH_SCORE.plutoHard;
+  return null;
+}
 
 export function wishPoints(wish: Q3Wish, stabilityIncludesMoon = STABILITY_INCLUDES_MOON): WishPoint[] {
   const pts = [...WISH_MAP[wish].points];
@@ -74,37 +81,35 @@ export function computeWish(
   const pos = Object.fromEntries(SLOW.map((k) => [k, dailyPositions(k, days)])) as Record<PlanetKey, number[]>;
 
   // 전 기간의 요인(이벤트)을 먼저 뽑고, 연도별로 잘라 점수를 매긴다.
-  const factors: Array<DistributiveOmit<WishFactor, "value"> & { sign: 1 | -1 }> = [];
+  const factors: Array<DistributiveOmit<WishFactor, "value"> & { base: number }> = [];
   for (const p of points) {
     if (p.startsWith("H")) {
+      // 하우스: 목성 통과만 점수가 있다(C2 W_035).
       const house = Number(p.slice(1));
-      for (const k of ["jupiter", ...BLOCKERS] as PlanetKey[]) {
-        const runs: Interval[] = [];
-        let cur: Interval | null = null;
-        days.forEach((d, i) => {
-          if (houseOf(pos[k][i], L.asc as number) === house) {
-            if (!cur) cur = { from: d, to: d };
-            cur.to = d;
-          } else if (cur) {
-            runs.push(cur);
-            cur = null;
-          }
-        });
-        if (cur) runs.push(cur);
-        if (runs.length) factors.push({ kind: "house", transit: k, house, intervals: runs, sign: k === "jupiter" ? 1 : -1 });
-      }
+      const runs: Interval[] = [];
+      let cur: Interval | null = null;
+      days.forEach((d, i) => {
+        if (houseOf(pos.jupiter[i], L.asc as number) === house) {
+          if (!cur) cur = { from: d, to: d };
+          cur.to = d;
+        } else if (cur) {
+          runs.push(cur);
+          cur = null;
+        }
+      });
+      if (cur) runs.push(cur);
+      if (runs.length) factors.push({ kind: "house", transit: "jupiter", house, intervals: runs, base: WISH_SCORE.jupiterHousePass });
       continue;
     }
     const target = L[p as keyof Longitudes];
     if (target === undefined) continue;
     for (const k of SLOW) {
       for (const [ang, name] of ASPECTS) {
-        const helps = (k === "jupiter" && name === "합") || HELP_ASPECTS.includes(name);
-        const blocks = BLOCKERS.includes(k) && BLOCK_ASPECTS.includes(name);
-        if (!helps && !blocks) continue;
+        const base = aspectWishScore(k, name);
+        if (base === null) continue;
         const runs = scanRuns(days, pos[k], target, ang, TRANSIT_ORB[k as keyof typeof TRANSIT_ORB]);
         for (const g of mergeRuns(runs, MERGE_GAP_DAYS.slow)) {
-          factors.push({ kind: "aspect", transit: k, target: p, aspect: name, intervals: g, sign: helps ? 1 : -1 });
+          factors.push({ kind: "aspect", transit: k, target: p, aspect: name, intervals: g, base });
         }
       }
     }
@@ -119,18 +124,12 @@ export function computeWish(
     for (const f of factors) {
       const iv = clipIntervals(f.intervals, w);
       if (!iv.length) continue;
-      const n = daysIn(iv);
-      let value: number;
-      if (f.kind === "house") {
-        value = f.sign * (f.sign > 0 ? WISH_HOUSE_SUPPORT : WISH_HOUSE_BLOCK) * (n / yearDays);
-      } else {
-        value = f.sign * (PLANET_WEIGHT[f.transit] ?? 1) * ASPECT_WEIGHT[f.aspect] * durationFactor(n);
-      }
-      value = Math.round(value * 100) / 100;
-      support += value;
-      const { sign: _s, ...rest } = f;
-      void _s;
-      scored.push({ ...rest, intervals: iv, value } as WishFactor);
+      const value = f.kind === "house" ? f.base * (daysIn(iv) / yearDays) : f.base;
+      const rounded = Math.round(value * 100) / 100;
+      support += rounded;
+      const { base: _b, ...rest } = f;
+      void _b;
+      scored.push({ ...rest, intervals: iv, value: rounded } as WishFactor);
     }
     support = Math.round(support * 100) / 100;
     const level = levelOf(support);

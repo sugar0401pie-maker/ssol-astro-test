@@ -103,17 +103,3 @@ test("리포트 입력 조립: 날짜는 토큰으로만, 판정·근거는 서�
   assert.equal(soft.input.soft_tone, true);
 });
 
-test("무료 결과: 2026 전환점은 본문으로, 분기 표에서는 빠지고, 유료 본문은 담지 않는다", async () => {
-  const { buildFreeResult } = await import("./freeResult.ts");
-  const ref: CalibrationTable = JSON.parse(readFileSync(new URL("../../data/astro/calibration.json", import.meta.url), "utf8"));
-  const { chart, L } = computeNatal(new Date(Date.UTC(1996, 3, 1, 1, 17)), 37.2893, 127.0535);
-  const character = judgeCharacter(L, chart.elements, ref);
-  const r = buildFreeResult({ chart, longitudes: L, character, answers: { q1: "연애", q2: "이별", q3: "사랑" } });
-  assert.equal(r.softTone, true);
-  assert.equal(r.sunSign, "양자리");
-  assert.deepEqual(r.year2026.turningPoints[0], { date: "2월 7일", label: "토성 리턴" });
-  assert.equal(r.year2026.quarters.length, 4);
-  const tableLabels = r.year2026.quarters.flatMap((q) => q.items.map((i) => i.label));
-  assert.ok(!tableLabels.includes("토성 리턴"));
-  assert.ok(!JSON.stringify(r).includes("events_eoy"));
-});

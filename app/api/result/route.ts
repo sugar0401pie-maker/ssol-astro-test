@@ -4,7 +4,8 @@ import { computeBirth } from "@/lib/astro/birth";
 import type { CalibrationTable } from "@/lib/astro/character";
 import { parseBirthRequest } from "@/lib/astro/validate";
 import { placeFromCityId } from "@/lib/astro/cityData";
-import { buildFreeResult } from "@/lib/report/freeResult";
+import { buildFreeResult, candidateCards } from "@/lib/report/freeResult";
+import { ASTRO_DB } from "@/lib/report/dbData";
 import calibration from "@/data/astro/calibration.json";
 
 // 출생정보 + 질문 3개 답 → 무료 결과(1~3번 섹션) 데이터. AI 호출 없음, 저장 없음.
@@ -25,13 +26,21 @@ export async function POST(req: NextRequest) {
   const parsed = parseBirthRequest(body?.birth, { findCity: placeFromCityId });
   if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
   if (!isAnswers(body?.answers)) return NextResponse.json({ error: "질문 답을 다시 확인해 주세요." }, { status: 400 });
+  // 닉네임은 DB 문장의 {닉네임}을 채우는 데만 쓰고 저장하지 않는다. 괄호는 토큰과 헷갈리지 않게 지운다.
+  const nickname = typeof body?.nickname === "string" ? body.nickname.replace(/[{}]/g, "").trim().slice(0, 12) : "";
+  if (!nickname) return NextResponse.json({ error: "닉네임을 다시 확인해 주세요." }, { status: 400 });
 
   try {
     // 무료 결과에는 2026년만 필요하다.
     const birth = computeBirth(parsed.input, ref, { start: "2026-01-01", end: "2026-01-01" });
-    if (!birth.resolved) return NextResponse.json({ candidates: birth.candidates, accuracy: birth.accuracy });
+    if (!birth.resolved) {
+      const { intro, cards } = candidateCards(ASTRO_DB, birth.candidates.map((c) => c.name));
+      return NextResponse.json({ candidates: birth.candidates.map((c) => ({ ...c, card: cards[c.name] })), candidateIntro: intro, accuracy: birth.accuracy });
+    }
     const { chart, longitudes, character } = birth.resolved;
-    return NextResponse.json({ result: buildFreeResult({ chart, longitudes, character, answers: body.answers }) });
+    return NextResponse.json({
+      result: buildFreeResult({ db: ASTRO_DB, chart, longitudes, character, answers: body.answers, nickname, birthYear: parsed.input.year }),
+    });
   } catch (e) {
     if (e instanceof RangeError) return NextResponse.json({ error: "고른 시간을 다시 확인해 주세요." }, { status: 400 });
     console.error("무료 결과 계산 실패:", e instanceof Error ? e.name : "unknown");

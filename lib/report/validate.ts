@@ -15,8 +15,56 @@ export interface ValidationIssue {
     | "missing_section"
     | "headwind_sugarcoat"
     | "ending_run"
-    | "ending_ratio";
+    | "ending_ratio"
+    | "c1";
   detail: string;
+  /** C1 사전의 심각도. '경고'는 재생성 사유가 아니라 기록용. 나머지 검사는 모두 '실패'. */
+  severity?: "실패" | "경고";
+}
+
+// ---- C1 금지어·대체어 사전(해석 DB, owner 작성) ----
+
+export interface C1Row {
+  id: string;
+  category: string;
+  pattern: string;
+  replacement: string;
+  scope: string; // "DB+AI" | "AI만"
+  severity: string; // "실패" | "경고"
+}
+
+export interface C1Rule {
+  row: C1Row;
+  re: RegExp;
+}
+
+/**
+ * C1 행을 정규식으로. 're:'로 시작하면 파이썬 정규식(validate_text.py와 같은 의미),
+ * 아니면 글자 그대로. 파이썬 전용 표기 \UXXXXXXXX는 JS의 \u{...}로 바꾼다.
+ */
+export function compileC1(rows: C1Row[]): C1Rule[] {
+  return rows.map((row) => {
+    const src = row.pattern.startsWith("re:")
+      ? row.pattern.slice(3).replace(/\\U([0-9A-Fa-f]{8})/g, (_, h: string) => `\\u{${h.replace(/^0+/, "")}}`)
+      : row.pattern.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return { row, re: new RegExp(src, "gmu") };
+  });
+}
+
+/**
+ * C1 사전으로 검사. scope "DB": DB+AI 규칙만, "AI": 전부.
+ * 숫자 규칙(BAN_075, '\\d')은 여기서 보지 않는다 — 숫자는 validateReport가 토큰·하우스 번호 예외를 두고 따로 본다.
+ */
+export function c1Hits(text: string, rules: C1Rule[], scope: "DB" | "AI"): ValidationIssue[] {
+  const out: ValidationIssue[] = [];
+  for (const { row, re } of rules) {
+    if (scope === "DB" && row.scope !== "DB+AI") continue;
+    if (row.pattern === "re:\\d" || row.pattern === "re:[0-9]") continue;
+    re.lastIndex = 0;
+    const m = re.exec(text);
+    if (m) out.push({ code: "c1", detail: `${row.id} ${row.category} '${m[0]}'`, severity: row.severity === "경고" ? "경고" : "실패" });
+  }
+  return out;
 }
 
 const TOKEN_RE = /\{\{([^{}]+)\}\}/g;
@@ -59,6 +107,8 @@ export interface ValidateOptions {
   allowedHouses?: number[];
   /** 2027 판정이 역풍이면 true */
   headwind2027?: boolean;
+  /** C1 사전(있으면 AI 범위로 함께 검사) */
+  c1Rules?: C1Rule[];
 }
 
 // 숫자가 아닌데 숫자 자리에 쓰이는 '한 달·두 달' 등에서 '달'(moon)을 오탐하지 않게 앞말을 본다.
@@ -147,6 +197,7 @@ export function validateReport(text: string, opts: ValidateOptions): ValidationI
     const formal = classes.filter((c) => c === "formal").length / classes.length;
     if (formal > 0.65 || formal < 0.35) issues.push({ code: "ending_ratio", detail: `입니다체 ${Math.round(formal * 100)}%` });
   }
+  if (opts.c1Rules) issues.push(...c1Hits(text, opts.c1Rules, "AI"));
   return issues;
 }
 
