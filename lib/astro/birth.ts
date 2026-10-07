@@ -4,7 +4,7 @@
 //      갈리면 후보 2~3개를 사용자가 고른다(무작위 선택 금지)
 //   C  모름 → 12:00 기준, 상승궁·하우스 미사용, 하루 전체 30분 간격에서 가장 오래 나오는 후보 2~3개
 import { judgeCharacter, type CalibrationTable, type CharacterResult } from "./character.ts";
-import { computeNatal, type Accuracy, type NatalChart } from "./natal.ts";
+import { computeNatal, type Accuracy, type Longitudes, type NatalChart } from "./natal.ts";
 import { localToUtc, type LocalDateTime } from "./time.ts";
 import { computeStationsAndIngress, computeTransits, type Ingress, type Station, type TransitEvent } from "./transits.ts";
 import type { Place } from "./places.ts";
@@ -51,6 +51,8 @@ export interface BirthResult {
   /** 후보가 갈리면 null — 사용자가 candidates 중 하나를 골라 pick으로 다시 요청한다 */
   resolved: null | {
     chart: NatalChart;
+    /** 전체 정밀도 경도(리포트 조립·바람 판정이 다시 쓴다). 화면 표시는 chart.planets를 쓴다. */
+    longitudes: Longitudes;
     character: CharacterResult;
     transits: TransitEvent[];
     stations: Station[];
@@ -186,6 +188,7 @@ function resolve(
     accuracy,
     resolved: {
       chart,
+      longitudes: L,
       character,
       transits: computeTransits(L, period.start, period.end),
       ...computeStationsAndIngress(L, period.start, period.end),

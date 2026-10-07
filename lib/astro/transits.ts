@@ -4,7 +4,7 @@
 import {
   ASPECTS, DAILY_SAMPLE_UTC_HOUR, INGRESS_PLANETS, SIGNS, STATION_PLANETS, TRANSIT_ORB,
   TRANSIT_PLANETS, TRANSIT_TARGETS, signIndex,
-  type AspectName, type PointKey, type TransitPlanet,
+  type AspectName, type PlanetKey, type PointKey, type TransitPlanet,
 } from "./constants.ts";
 import { houseOf, longitude, sep, timeOf, type Longitudes } from "./natal.ts";
 
@@ -45,16 +45,50 @@ export function dailyRange(start: string, end: string): string[] {
   return out;
 }
 
-function sampleTime(day: string) {
+export function sampleTime(day: string) {
   const d = new Date(`${day}T00:00:00Z`);
   d.setUTCHours(DAILY_SAMPLE_UTC_HOUR);
   return timeOf(d);
 }
 
+export interface Run {
+  from: string;
+  to: string;
+  exact: string;
+  orb: number;
+}
+
+/** 하루 표본 위치 목록에서 '대상 경도와 ang도 ± orb 안' 구간들을 뽑는다. */
+export function scanRuns(days: string[], positions: number[], targetLon: number, ang: number, orb: number): Run[] {
+  const runs: Run[] = [];
+  let run: Run | null = null;
+  for (let i = 0; i < days.length; i++) {
+    const d = days[i];
+    const o = Math.abs(sep(positions[i], targetLon) - ang);
+    if (o <= orb) {
+      if (!run) run = { from: d, to: d, exact: d, orb: o };
+      run.to = d;
+      if (o < run.orb) {
+        run.orb = o;
+        run.exact = d;
+      }
+    } else if (run) {
+      runs.push(run);
+      run = null;
+    }
+  }
+  if (run) runs.push(run);
+  return runs;
+}
+
+export function dailyPositions(planet: PlanetKey, days: string[]): number[] {
+  return days.map((d) => longitude(planet, sampleTime(d)));
+}
+
 export function computeTransits(L: Longitudes, start: string, end: string): TransitEvent[] {
   const days = dailyRange(start, end);
   const pos = {} as Record<TransitPlanet, number[]>;
-  for (const k of TRANSIT_PLANETS) pos[k] = days.map((d) => longitude(k, sampleTime(d)));
+  for (const k of TRANSIT_PLANETS) pos[k] = dailyPositions(k, days);
 
   const events: TransitEvent[] = [];
   for (const k of TRANSIT_PLANETS) {
@@ -63,26 +97,9 @@ export function computeTransits(L: Longitudes, start: string, end: string): Tran
       if (target === undefined) continue; // C등급이면 ASC·MC 없음
       for (const [ang, name] of ASPECTS) {
         if (g === "saturn" && !(k === "saturn" && ang === 0)) continue; // 출생 토성은 토성 리턴(합)만
-        let run: { from: string; to: string; exact: string; orb: number } | null = null;
-        const push = () => {
-          if (!run) return;
-          events.push({ transit: k, target: g, aspect: name, from: run.from, to: run.to, exact: run.exact, saturn_return: g === "saturn" });
-          run = null;
-        };
-        days.forEach((d, i) => {
-          const o = Math.abs(sep(pos[k][i], target) - ang);
-          if (o <= TRANSIT_ORB[k]) {
-            if (!run) run = { from: d, to: d, exact: d, orb: o };
-            run.to = d;
-            if (o < run.orb) {
-              run.orb = o;
-              run.exact = d;
-            }
-          } else {
-            push();
-          }
-        });
-        push();
+        for (const r of scanRuns(days, pos[k], target, ang, TRANSIT_ORB[k])) {
+          events.push({ transit: k, target: g, aspect: name, from: r.from, to: r.to, exact: r.exact, saturn_return: g === "saturn" });
+        }
       }
     }
   }
