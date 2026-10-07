@@ -1,0 +1,26 @@
+@import "tailwindcss";
+
+/* 디자인 토큰 — docs/spec/02_디자인가이드.md 1장. 값만 바꾸면 전체 화면에 퍼진다. */
+:root {
+  --astro-midnight: #0b1e3f; /* 화면 배경 위쪽 */
+  --astro-navy: #013566; /* 화면 배경 아래쪽, 쏠 로고 남색, 크림 위 본문 글자 */
+  --astro-cream: #fdf6e9; /* 리포트 본문 상자, 어두운 배경 위 제목 */
+  --astro-gold: #cbb27a; /* 선·주 버튼·강조 */
+  --astro-lavender: #8e9cc9; /* 보조 그래픽에만 */
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-midnight: var(--astro-midnight);
+  --color-navy: var(--astro-navy);
+  --color-cream: var(--astro-cream);
+  --color-gold: var(--astro-gold);
+  --color-lavender: var(--astro-lavender);
+  --font-sans: var(--font-noto-sans-kr), system-ui, sans-serif;
+}
+
+body {
+  background: linear-gradient(to bottom, var(--astro-midnight), var(--astro-navy)) fixed;
+  color: var(--astro-cream);
+  font-family: var(--font-noto-sans-kr), system-ui, sans-serif;
+}
