@@ -5,6 +5,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { REPORT_PRICE } from "@/lib/billing/pricing";
+import { apiHeaders } from "@/lib/guest/client";
 import { getRealSession } from "@/lib/supabase/browser";
 import BirthChartWheel from "@/components/chart/BirthChartWheel";
 import ElementBars from "@/components/chart/ElementBars";
@@ -119,8 +120,7 @@ export default function FreeResultView({
     if (!unpaid) return;
     let alive = true;
     void getRealSession().then(async (session) => {
-      if (!session) return;
-      const res = await fetch(`/api/results/${resultId}/preview`, { headers: { authorization: `Bearer ${session.access_token}` } });
+      const res = await fetch(`/api/results/${resultId}/preview`, { headers: apiHeaders(session) });
       if (!res.ok || !alive) return;
       const data = (await res.json()) as { sections: Array<{ no: number; first: string }> };
       setPreview(Object.fromEntries(data.sections.map((x) => [x.no, x.first])));

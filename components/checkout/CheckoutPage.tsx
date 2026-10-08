@@ -5,7 +5,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import AuthStep from "@/components/auth/AuthStep";
+import { apiHeaders } from "@/lib/guest/client";
 import { useRealSession } from "@/components/results/useSession";
 
 const TOSS_CLIENT_KEY = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY;
@@ -28,10 +28,11 @@ export default function CheckoutPage({ resultId }: { resultId: string }) {
   const widgetRef = useRef<Widget | null>(null);
 
   useEffect(() => {
-    if (!session) return;
+    if (session === undefined) return;
+    // 로그인하지 않아도 결제할 수 있다(비회원 열쇠로 내 결과임을 확인). 결제 뒤 가입을 권한다.
     void fetch("/api/checkout", {
       method: "POST",
-      headers: { "content-type": "application/json", authorization: `Bearer ${session.access_token}` },
+      headers: apiHeaders(session, { "content-type": "application/json" }),
       body: JSON.stringify({ resultId }),
     })
       .then(async (res) => {
@@ -75,7 +76,6 @@ export default function CheckoutPage({ resultId }: { resultId: string }) {
   }
 
   if (session === undefined) return <p className="text-center text-cream/70">확인하는 중…</p>;
-  if (session === null) return <AuthStep title="결제하려면 로그인해 주세요." onSignedIn={() => {}} />;
 
   return (
     <div className="flex flex-col gap-5">

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 // 화면 2~7(마스터스펙 6-1): 환영·닉네임 → 경험 확인(→ 처음 안내) → 생년월일·시간·출생지 → 질문 3개 →
-// (후보가 갈리면) 캐릭터 후보 선택 → 로그인(이미 로그인했으면 건너뜀) → 저장 동의 → 저장 후 무료 결과.
+// (후보가 갈리면) 유형 후보 선택 → 저장 동의 → 저장(로그인했으면 계정, 아니면 비회원 익명) → 무료 결과 + 비회원이면 저장 권유.
 // '로그인·가입 후 결과'는 스펙의 초안(비로그인 처리 방식은 owner 결정 대기) — 바뀌면 afterReady만 고치면 된다.
 // 화면 문구는 스펙 확정본 그대로. 아직 없는 것: 인트로(디저트 테스트와 동일 화면), 역량 동점 확인 화면, 결제.
 import { useEffect, useMemo, useState } from "react";
@@ -10,15 +10,16 @@ import { Q1_OPTIONS, Q2_OPTIONS, Q3_OPTIONS, Q_LABELS, type Answers } from "@/li
 import { KOREA_REGIONS } from "@/lib/astro/places";
 import type { FreeResult } from "@/lib/report/freeResult";
 import { getRealSession } from "@/lib/supabase/browser";
-import AuthStep from "@/components/auth/AuthStep";
+import SaveSuggestion from "@/components/results/SaveSuggestion";
+import { apiHeaders } from "@/lib/guest/client";
 import CitySearch, { type PickedCity } from "./CitySearch";
 import ConsentStep from "./ConsentStep";
 import FreeResultView from "./FreeResultView";
 
-type Step = "welcome" | "experience" | "firstTime" | "birth" | "q1" | "q2" | "q3" | "loading" | "candidates" | "tie" | "auth" | "consent" | "result";
+type Step = "welcome" | "experience" | "firstTime" | "birth" | "q1" | "q2" | "q3" | "loading" | "candidates" | "tie" | "consent" | "result";
 
-// 카카오·네이버 로그인은 다른 화면에 갔다가 돌아오므로, 그 직전에 진행 상태를 이 탭에만(sessionStorage)
-// 잠깐 담아 두고 돌아오면 이어간다. 탭을 닫으면 사라지고, 저장이 끝나면 바로 지운다.
+// (예전 흐름) 결과 전에 카카오·네이버 로그인을 다녀올 때 진행 상태를 이 탭에만(sessionStorage) 담아 뒀다.
+// 지금은 결과를 먼저 보여 주고 로그인은 결과 화면에서 권하므로 새로 담지 않고, 남아 있던 값만 이어 받아 저장 후 지운다.
 const FLOW_KEY = "astro_flow_v1";
 interface SavedFlow {
   nickname: string;
@@ -90,7 +91,7 @@ function Big({ children }: { children: React.ReactNode }) {
 export default function TestFlow() {
   // 이 컴포넌트는 브라우저에서만 그린다(app/test/TestClient.tsx) — 그래서 첫 상태를 sessionStorage에서 바로 읽어도 된다.
   const [restored] = useState(loadFlow);
-  const [step, setStep] = useState<Step>(restored ? "auth" : "welcome");
+  const [step, setStep] = useState<Step>(restored ? "consent" : "welcome");
   const [nickname, setNickname] = useState(restored?.nickname ?? "");
   // 경험 응답: '처음'이면 결과에서 태양·달·상승궁 용어에 한 줄 설명을 붙인다(6-1 기타).
   const [firstTime, setFirstTime] = useState<boolean | null>(restored?.firstTime ?? null);
@@ -110,6 +111,8 @@ export default function TestFlow() {
   const [saving, setSaving] = useState(false);
   const [saveNote, setSaveNote] = useState<string | null>(null);
   const [savedId, setSavedId] = useState<string | null>(null);
+  // 저장 시점에 로그인돼 있었는지 — 아니면 결과 위에 저장(가입·로그인) 권유 카드
+  const [loggedIn, setLoggedIn] = useState(false);
   // 역량 동점 확인에서 고른 역량(저장 요청에도 그대로 보낸다)
   const [competencyPick, setCompetencyPick] = useState<string | null>(restored?.competencyPick ?? null);
   const [tie, setTie] = useState<{ intro: string; options: Array<{ competency: string; style: string; label: string; card: string }> } | null>(null);
@@ -149,39 +152,24 @@ export default function TestFlow() {
     nickname: name,
   });
 
-  function saveFlow() {
-    const f: SavedFlow = { nickname, firstTime, year, month, day: safeDay, hour, minute, unknownTime, band, region, overseas, city, answers, pick, competencyPick };
-    try {
-      sessionStorage.setItem(FLOW_KEY, JSON.stringify(f));
-    } catch {
-      /* 저장소를 못 쓰는 환경 — 돌아오면 처음부터 */
-    }
-  }
-
-  // 결과가 정해진 뒤: 로그인돼 있으면 동의로, 아니면 로그인 화면으로.
+  // 결과가 정해진 뒤: 바로 저장 동의로(owner 결정 2026-10-08 — 로그인 없이 먼저 보고, 저장은 결과 화면에서 권한다).
   async function afterReady() {
-    setStep((await getRealSession()) ? "consent" : "auth");
+    setStep("consent");
   }
 
   async function saveAndShow() {
     setSaving(true);
     setError(null);
     try {
+      // 로그인했으면 계정에, 아니면 이 브라우저의 비회원 열쇠로 익명 저장한다.
       const session = await getRealSession();
-      if (!session) {
-        setStep("auth");
-        return;
-      }
+      setLoggedIn(!!session);
       const res = await fetch("/api/results", {
         method: "POST",
-        headers: { "content-type": "application/json", authorization: `Bearer ${session.access_token}` },
+        headers: apiHeaders(session, { "content-type": "application/json" }),
         body: JSON.stringify({ ...requestBody(answers as Answers, pick), consent: true, firstTime: firstTime === true }),
       });
       const data = await res.json();
-      if (res.status === 401) {
-        setStep("auth");
-        return;
-      }
       if (!res.ok || !data.result) throw new Error(data.error ?? "저장하지 못했어요.");
       clearFlow();
       setResult(data.result);
@@ -435,19 +423,18 @@ export default function TestFlow() {
         </div>
       )}
 
-      {step === "auth" && (
-        <AuthStep
-          onSignedIn={() => setStep((s) => (s === "auth" ? "consent" : s))}
-          beforeRedirect={saveFlow}
-          prefill={{ birthDate: `${year}-${String(month).padStart(2, "0")}-${String(safeDay).padStart(2, "0")}`, nickname: name }}
-        />
-      )}
-
       {step === "consent" && <ConsentStep onAgree={saveAndShow} busy={saving} error={error} />}
 
       {step === "result" && result && (
         <>
           {saveNote && <p className="rounded-xl bg-cream px-3 py-2 text-sm text-navy">{saveNote}</p>}
+          {!loggedIn && savedId && (
+            <SaveSuggestion
+              resultId={savedId}
+              prefill={{ birthDate: `${year}-${String(month).padStart(2, "0")}-${String(safeDay).padStart(2, "0")}`, nickname: name }}
+              onSaved={() => setLoggedIn(true)}
+            />
+          )}
           <FreeResultView
             result={result}
             nickname={name}

@@ -4,6 +4,8 @@ import Link from "next/link";
 // 저장한 결과 다시 보기. 서버가 저장된 입력으로 다시 계산해 보내 준다(해석 DB가 고쳐지면 새 문장으로 보인다).
 import { useEffect, useState } from "react";
 import AuthStep from "@/components/auth/AuthStep";
+import { apiHeaders } from "@/lib/guest/client";
+import SaveSuggestion from "./SaveSuggestion";
 import { useRouter } from "next/navigation";
 import FreeResultView from "@/components/test/FreeResultView";
 import type { FreeResult } from "@/lib/report/freeResult";
@@ -14,16 +16,19 @@ import type { PaidReport } from "@/lib/report/aiReport";
 export default function ResultView({ id }: { id: string }) {
   const session = useRealSession();
   const router = useRouter();
-  const [data, setData] = useState<{ nickname: string; firstTime: boolean; paid: boolean; result: FreeResult } | null>(null);
+  const [data, setData] = useState<{ nickname: string; firstTime: boolean; paid: boolean; guest?: boolean; result: FreeResult } | null>(null);
+  const [notFound, setNotFound] = useState(false);
   const [report, setReport] = useState<PaidReport | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!session) return;
-    void fetch(`/api/results/${id}`, { headers: { authorization: `Bearer ${session.access_token}` }, cache: "no-store" })
+    if (session === undefined) return;
+    // 로그인했으면 계정으로, 아니면 이 브라우저의 비회원 열쇠로 연다.
+    void fetch(`/api/results/${id}`, { headers: apiHeaders(session), cache: "no-store" })
       .then(async (res) => {
         const d = await res.json();
-        if (!res.ok) setError(d.error ?? "결과를 불러오지 못했어요.");
+        if (res.status === 404 || res.status === 401) setNotFound(true);
+        else if (!res.ok) setError(d.error ?? "결과를 불러오지 못했어요.");
         else setData(d);
       })
       .catch(() => setError("결과를 불러오지 못했어요."));
@@ -33,12 +38,12 @@ export default function ResultView({ id }: { id: string }) {
   const paid = data?.paid === true;
   const [waitedTooLong, setWaitedTooLong] = useState(false);
   useEffect(() => {
-    if (!session || !paid) return;
+    if (session === undefined || !paid) return;
     let stop = false;
     const started = Date.now();
     const tick = async () => {
       try {
-        const res = await fetch(`/api/results/${id}/report`, { headers: { authorization: `Bearer ${session.access_token}` }, cache: "no-store" });
+        const res = await fetch(`/api/results/${id}/report`, { headers: apiHeaders(session), cache: "no-store" });
         const d = await res.json();
         if (stop) return;
         if (d.status === "ready") return setReport(d.report);
@@ -56,12 +61,15 @@ export default function ResultView({ id }: { id: string }) {
   }, [session, paid, id]);
 
   if (session === undefined) return <p className="text-center text-cream/70">확인하는 중…</p>;
-  if (session === null) return <AuthStep title="결과를 보려면 로그인해 주세요." onSignedIn={() => {}} />;
+  // 이 기기의 비회원 결과도 계정 결과도 아니면: 다른 기기·계정에서 저장한 결과일 수 있다.
+  if (notFound && !session) return <AuthStep title="이 결과를 보려면 저장한 계정으로 로그인해 주세요." onSignedIn={() => location.reload()} />;
+  if (notFound) return <p className="rounded-xl bg-cream px-3 py-2 text-sm text-navy">결과를 찾을 수 없어요. 다른 계정으로 저장한 결과일 수 있어요.</p>;
   if (error) return <p className="rounded-xl bg-cream px-3 py-2 text-sm text-navy">{error}</p>;
   if (!data) return <p className="text-center text-cream/70">불러오는 중…</p>;
   return (
     <div className="flex flex-col gap-6">
       <Link href="/results" className="text-sm text-cream/80 underline">← 내 결과</Link>
+      {data.guest && !session && <SaveSuggestion resultId={id} paid={data.paid} onSaved={() => location.reload()} />}
       <FreeResultView
         result={data.result}
         nickname={data.nickname}

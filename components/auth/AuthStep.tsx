@@ -41,14 +41,20 @@ export default function AuthStep({
   beforeRedirect,
   title,
   prefill,
+  initialMode = "signin",
+  oauthRedirect,
 }: {
   onSignedIn: () => void;
+  /** 처음 보여 줄 화면(결제 후 가입 권유는 'signup') */
+  initialMode?: "signin" | "signup";
+  /** 카카오·네이버 로그인 뒤 돌아올 주소(없으면 지금 주소) */
+  oauthRedirect?: string;
   beforeRedirect?: () => void;
   title?: string;
   /** 테스트에서 이미 받은 값(가입 화면에 미리 채움) */
   prefill?: { birthDate?: string; nickname?: string };
 }) {
-  const [mode, setMode] = useState<Mode>("signin");
+  const [mode, setMode] = useState<Mode>(initialMode);
   const [error, setError] = useState<string | null>(null);
   const configured = !!getBrowserClient();
   // 가입·비밀번호 재설정은 인증번호 확인 순간 로그인 상태가 되지만, 비밀번호·정보 저장이 끝날 때까지 다음 화면으로 넘어가지 않는다.
@@ -75,7 +81,7 @@ export default function AuthStep({
   async function oauth(provider: "kakao" | "naver") {
     setError(null);
     beforeRedirect?.(); // 카카오·네이버 화면으로 갔다 돌아와도 진행 중인 테스트를 이어가게
-    const r = await signInWithOAuth(provider);
+    const r = await signInWithOAuth(provider, oauthRedirect);
     if (!r.ok) setError(r.error ?? "로그인하지 못했어요.");
   }
 
