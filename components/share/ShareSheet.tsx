@@ -18,8 +18,8 @@ export default function ShareSheet(props: { chart: NatalChart; sunSign: string; 
   useEffect(() => {
     if (!open) return;
     let alive = true;
-    const svg = buildShareSvg(props);
-    void svgToPng(svg).then((b) => {
+    const { svg, texts } = buildShareSvg(props);
+    void svgToPng(svg, texts).then((b) => {
       if (!alive) return;
       setPng(b);
       setPreview(b ? URL.createObjectURL(b) : `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`);
