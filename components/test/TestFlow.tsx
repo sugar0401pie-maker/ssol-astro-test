@@ -401,7 +401,13 @@ export default function TestFlow() {
         </div>
       )}
 
-      {step === "auth" && <AuthStep onSignedIn={() => setStep((s) => (s === "auth" ? "consent" : s))} beforeRedirect={saveFlow} />}
+      {step === "auth" && (
+        <AuthStep
+          onSignedIn={() => setStep((s) => (s === "auth" ? "consent" : s))}
+          beforeRedirect={saveFlow}
+          prefill={{ birthDate: `${year}-${String(month).padStart(2, "0")}-${String(safeDay).padStart(2, "0")}`, nickname: name }}
+        />
+      )}
 
       {step === "consent" && <ConsentStep onAgree={saveAndShow} busy={saving} error={error} />}
 
