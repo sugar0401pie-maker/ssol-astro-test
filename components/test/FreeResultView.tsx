@@ -183,6 +183,8 @@ export default function FreeResultView({
         <Card>
           {character.intro && <p>{character.intro}</p>}
           <p>{character.why}</p>
+          {character.competencyLine && <p>• {character.competency} — {character.competencyLine}</p>}
+          {character.styleLine && <p>• {character.style} — {character.styleLine}</p>}
           {character.sunMoonLine && <p>{character.sunMoonLine}</p>}
           {character.strength && <p>• {character.strength}</p>}
           {character.energyMoment && <p>• {character.energyMoment}</p>}

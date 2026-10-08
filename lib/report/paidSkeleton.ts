@@ -8,7 +8,7 @@ import type { Longitudes, NatalChart } from "../astro/natal.ts";
 import { clipIntervals, groupRows, type PeriodKey, type PeriodResult, type ScoredEvent, type TimelineEvent, type Unit } from "../astro/timeline.ts";
 import { WISH_LEVEL_DISPLAY, type MovementLabel, type WishFactor, type WishLevel, type WishResult } from "../astro/wish.ts";
 import { ELEMENT_ID, aspectGroup, findRow, pad2, row, tryFill, type AstroDb } from "./db.ts";
-import { a8Id } from "./freeResult.ts";
+import { a6Line, a8Id } from "./freeResult.ts";
 import { formatDate, formatRanges, josa, QUARTER_LABELS } from "./format.ts";
 import { POINT_KO, eventLabel } from "./labels.ts";
 import { edgeLines, flowSteps, movementLine } from "./movement.ts";
@@ -41,6 +41,8 @@ export interface PaidSection {
   flow?: string[];
   /** 6번: 5년 타임라인 별 */
   stars?: TimelineStar[];
+  /** 6번: 모두에게 부는 하늘의 흐름(A11, 타임라인 배경 공통 문구) — AI를 거치지 않는다 */
+  commonSky?: Array<{ period: string; event: string; line: string; meaning: string }>;
 }
 
 export interface PaidSkeleton {
@@ -120,6 +122,16 @@ function jupiterHouseIn(events: TimelineEvent[], year: number, natalAsc: number 
   let house: number | null = null;
   for (const e of ing) if (e.intervals[0].from <= mid) house = e.house;
   return house;
+}
+
+/**
+ * A11 하늘의 공통 흐름 중 5년 파트(2027~2031)에 걸치는 것 — 기간 글자의 연도로 고른다.
+ * 기간 표기는 DB 그대로(2026-10-08 엔진 계산과 대조해 모두 맞음을 확인: 목성 사자·처녀, 토성 양·황소·쌍둥이, 천왕성 쌍둥이 진입, 2027 일·월식).
+ */
+export function commonSky(db: AstroDb): Array<{ period: string; event: string; line: string; meaning: string }> {
+  return db.dbs.A11.rows
+    .filter((r) => Math.max(...(r.period_label.match(/20\d{2}/g) ?? ["0"]).map(Number)) >= 2027)
+    .map((r) => ({ period: r.period_label, event: r.event, line: r.common_line, meaning: r.meaning_line }));
 }
 
 export function buildPaidSkeleton(args: {
@@ -242,7 +254,7 @@ export function buildPaidSkeleton(args: {
   const sections: PaidSection[] = [
     { no: 4, title: "연말까지 조심하면 좋을 것", paragraphs: p4, table: { columns: ["시기", "무엇을 조심할까"], rows: tableRows(db, eoy, "month", "careful") } },
     { no: 5, title: "2027년을 맞는 마음가짐", paragraphs: p5, table: { columns: ["시기", "마음가짐"], rows: tableRows(db, periods.year2027, "quarter", "future") }, flow: flowSteps(events, eoy) },
-    { no: 6, title: `앞으로 5년, ${nickname}님의 삶은 이렇게 흘러갈 거예요`, paragraphs: p6, table: { columns: ["연도", "바람", "한 해의 테마"], rows: fiveRows }, stars },
+    { no: 6, title: `앞으로 5년, ${nickname}님의 삶은 이렇게 흘러갈 거예요`, paragraphs: p6, table: { columns: ["연도", "바람", "한 해의 테마"], rows: fiveRows }, stars, commonSky: commonSky(db) },
     { no: 7, title: "별이 주는 질문과 웰니스 제안", paragraphs: p7, table: null },
   ];
   return {
@@ -252,7 +264,8 @@ export function buildPaidSkeleton(args: {
     closing,
     dbSentences: {
       4: p4,
-      5: p5,
+      // 유형을 풀어 쓸 때의 바탕(A6 역량·방식 쉬운 정의, 06 프롬프트 v3 '캐릭터 표기')
+      5: [...p5, ...[a6Line(db, "역량", character.competency), a6Line(db, "방식", character.style)].filter((x): x is string => !!x)],
       6: p6,
       7: [...p7, ...practices.map((p) => `${p.title}: ${p.how} ${p.why}`)],
     },

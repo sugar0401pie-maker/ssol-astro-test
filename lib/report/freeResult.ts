@@ -10,7 +10,7 @@ import type { Accuracy, Longitudes, NatalChart } from "../astro/natal.ts";
 import {
   buildTimeline, clipIntervals, groupRows, periodFilter, scoreInWindow, turningPoints, type ScoredEvent, type TimelineEvent,
 } from "../astro/timeline.ts";
-import { POINT_ID, SIGN_ID, ELEMENT_ID, aspectGroup, firstSentence, pad2, row, tryFill, type AstroDb } from "./db.ts";
+import { POINT_ID, SIGN_ID, ELEMENT_ID, aspectGroup, firstSentence, findRow, pad2, row, tryFill, type AstroDb } from "./db.ts";
 import { formatDate, formatRanges, QUARTER_LABELS } from "./format.ts";
 import { POINT_KO, eventLabel } from "./labels.ts";
 
@@ -58,6 +58,9 @@ export interface FreeResult {
     energyMoment: string | null;
     careTip: string | null;
     sunMoonLine: string | null;
+    /** A6 역량·방식 쉬운 정의(유형 설명 바탕 — 마스터스펙 6장, 06 프롬프트 v3) */
+    competencyLine: string | null;
+    styleLine: string | null;
   };
   big3: Array<{ key: "sun" | "moon" | "asc"; label: string; sign: string; house: number | null; line: string }>;
   sunSign: string;
@@ -115,6 +118,11 @@ function planetSheet(db: AstroDb, key: PointKey, chart: NatalChart): WheelSheet 
   const signRow = row(db, "B1a", `PL_${POINT_ID[key]}_${sid}`) ?? row(db, "B1b", `PL_${POINT_ID[key]}_${sid}`);
   const lines = [signRow?.short_line ? firstSentence(signRow.short_line) : text(db, "A16", `TERM_${POINT_ID[key]}`, "meaning_line")];
   return { title, lines: lines.filter(Boolean), partial: true };
+}
+
+/** A6 '쉬운 정의' 한 줄(역량·방식). */
+export function a6Line(db: AstroDb, kind: "역량" | "방식", name: string): string | null {
+  return findRow(db, "A6", (r) => r.kind === kind && r.name === name)?.plain || null;
 }
 
 /** 각도 선 시트 키 — 브라우저(BirthChartWheel)와 같은 규칙. */
@@ -348,6 +356,8 @@ export function buildFreeResult(args: {
       energyMoment: SHOW_CHARACTER ? charRow.energy_moment : null,
       careTip: SHOW_CHARACTER ? charRow.care_tip : null,
       sunMoonLine: tryFill(temp?.sun_moon_line, { 태양별자리: sunSign, 달별자리: moonSign }),
+      competencyLine: a6Line(db, "역량", character.competency),
+      styleLine: a6Line(db, "방식", character.style),
     },
     big3: (["sun", "moon", "asc"] as const)
       .filter((k) => chart.planets[k])

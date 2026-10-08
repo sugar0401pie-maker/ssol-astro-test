@@ -6,6 +6,7 @@ import type { PaidReport } from "@/lib/report/aiReport";
 import FiveYearStars from "./FiveYearStars";
 
 const FLOW_HEAD = "• 2027년 흐름 한눈에";
+const SOWELLA_CHAT_URL = "https://app.ssolwellnesshouse.com/chat";
 
 /** '흐름 한눈에': 넓은 화면은 화살표 한 줄, 모바일은 세로 단계 칩(디자인가이드 3장 5번). */
 function FlowSteps({ steps }: { steps: string[] }) {
@@ -47,6 +48,20 @@ export default function PaidReportView({ report }: { report: PaidReport }) {
           )}
           {s.flow && s.flow.length > 0 && <FlowSteps steps={s.flow} />}
           {s.stars && s.stars.length > 0 && <FiveYearStars stars={s.stars} />}
+          {s.commonSky && s.commonSky.length > 0 && (
+            <details className="rounded-2xl border border-cream/20 px-4 py-3 text-sm text-cream">
+              <summary className="cursor-pointer">모두에게 부는 하늘의 흐름</summary>
+              <ul className="mt-2 flex flex-col gap-3">
+                {s.commonSky.map((c) => (
+                  <li key={c.period + c.event}>
+                    <p className="font-bold">{c.period} · {c.event}</p>
+                    <p className="mt-0.5 text-cream/90">{c.line}</p>
+                    {c.meaning && <p className="mt-0.5 text-xs text-cream/70">{c.meaning}</p>}
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
           {s.no === 7 && (
             <>
               {report.questions.items.length > 0 && (
@@ -73,7 +88,13 @@ export default function PaidReportView({ report }: { report: PaidReport }) {
                   </ol>
                 </Card>
               )}
-              <Card><p>{report.closing}</p></Card>
+              <Card>
+                <p>{report.closing}</p>
+                {/* 7번 섹션 끝 '쏘웰라 대화 시작'(마스터스펙 6-2). 같은 계정이라 로그인이 이어진다. */}
+                <a href={SOWELLA_CHAT_URL} className="mt-2 block w-full rounded-full bg-navy px-6 py-3 text-center font-bold text-cream">
+                  쏘웰라와 대화 시작하기
+                </a>
+              </Card>
             </>
           )}
           {s.table && (

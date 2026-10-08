@@ -131,6 +131,17 @@ test("결제 전 미리보기: 섹션마다 첫 문장 하나만(본문은 보�
   }
 });
 
+test("A11 하늘의 공통 흐름: 5년 파트(2027~)에 걸치는 것만, A6 역량·방식은 5번 AI 바탕 문장에", () => {
+  const { skeleton } = setup();
+  const sky = skeleton.sections.find((x) => x.no === 6)!.commonSky!;
+  assert.ok(sky.length >= 5);
+  assert.ok(!sky.some((c) => c.period === "2026년 10~11월")); // 연말(2026)만 걸치는 것은 빠짐
+  assert.ok(sky.some((c) => c.event.includes("목성 처녀자리")));
+  const a6 = db.dbs.A6.rows.find((r) => r.kind === "역량" && r.name === "기대기")!.plain;
+  assert.ok(skeleton.dbSentences[5].includes(a6));
+  assert.ok(!skeleton.sections.find((x) => x.no === 5)!.paragraphs.includes(a6)); // 뼈대 본문에는 넣지 않음
+});
+
 test("섹션 나누기: 6·7을 한 출력에서 나눈다", () => {
   const s = splitSections("### 6. 앞으로 5년의 흐름\n가.\n\n나.\n### 7. 별이 주는 질문과 웰니스 제안\n다.");
   assert.deepEqual(s[6], ["가.", "나."]);

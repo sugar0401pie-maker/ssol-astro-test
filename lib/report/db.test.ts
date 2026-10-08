@@ -121,6 +121,8 @@ test("샘플: 캐릭터·태양달 대비·원소가 샘플 리포트와 같은 
   assert.equal(r.character.intro, null);
   assert.ok(!JSON.stringify(r).includes("수달"));
   assert.equal(r.character.why, row(db, "A5", "CHAR_01_OTTER")!.why_text);
+  assert.equal(r.character.competencyLine, row(db, "A6", "COMP_LEAN")!.plain);
+  assert.equal(r.character.styleLine, row(db, "A6", "STYLE_APPROACH")!.plain);
   // 샘플: "겉은 빠르고 당당한 양자리 태양이지만, 속은 차근차근 정리해야 편한 처녀자리 달이에요."
   assert.ok(r.character.sunMoonLine?.startsWith("겉은 빠르고 당당한 양자리 태양이지만, 속은 차근차근 정리해야 편한 처녀자리 달이에요."));
   assert.equal(r.elements.strong?.element, "불");
