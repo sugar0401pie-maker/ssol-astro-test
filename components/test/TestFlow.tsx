@@ -1,17 +1,56 @@
 "use client";
 
+import Link from "next/link";
 // 화면 2~7(마스터스펙 6-1): 환영·닉네임 → 경험 확인(→ 처음 안내) → 생년월일·시간·출생지 → 질문 3개 →
-// (후보가 갈리면) 캐릭터 후보 선택 → 무료 결과. 화면 문구는 스펙 확정본 그대로 — 바꾸지 않는다.
-// 아직 없는 것: 인트로(디저트 테스트와 동일 화면), 로그인 분기(비로그인 처리 방식 미정),
-// 해석 DB 문장, 역량 동점 확인 화면, 결제. 아무것도 저장하지 않는다.
+// (후보가 갈리면) 캐릭터 후보 선택 → 로그인(이미 로그인했으면 건너뜀) → 저장 동의 → 저장 후 무료 결과.
+// '로그인·가입 후 결과'는 스펙의 초안(비로그인 처리 방식은 owner 결정 대기) — 바뀌면 afterReady만 고치면 된다.
+// 화면 문구는 스펙 확정본 그대로. 아직 없는 것: 인트로(디저트 테스트와 동일 화면), 역량 동점 확인 화면, 결제.
 import { useEffect, useMemo, useState } from "react";
 import { Q1_OPTIONS, Q2_OPTIONS, Q3_OPTIONS, Q_LABELS, type Answers } from "@/lib/astro/answers";
 import { KOREA_REGIONS } from "@/lib/astro/places";
 import type { FreeResult } from "@/lib/report/freeResult";
+import { getRealSession } from "@/lib/supabase/browser";
+import AuthStep from "@/components/auth/AuthStep";
 import CitySearch, { type PickedCity } from "./CitySearch";
+import ConsentStep from "./ConsentStep";
 import FreeResultView from "./FreeResultView";
 
-type Step = "welcome" | "experience" | "firstTime" | "birth" | "q1" | "q2" | "q3" | "loading" | "candidates" | "result";
+type Step = "welcome" | "experience" | "firstTime" | "birth" | "q1" | "q2" | "q3" | "loading" | "candidates" | "auth" | "consent" | "result";
+
+// 카카오·네이버 로그인은 다른 화면에 갔다가 돌아오므로, 그 직전에 진행 상태를 이 탭에만(sessionStorage)
+// 잠깐 담아 두고 돌아오면 이어간다. 탭을 닫으면 사라지고, 저장이 끝나면 바로 지운다.
+const FLOW_KEY = "astro_flow_v1";
+interface SavedFlow {
+  nickname: string;
+  firstTime: boolean | null;
+  year: number;
+  month: number;
+  day: number;
+  hour: number;
+  minute: number;
+  unknownTime: boolean;
+  band: string;
+  region: string;
+  overseas: boolean;
+  city: PickedCity | null;
+  answers: Partial<Answers>;
+  pick: string | null;
+}
+function loadFlow(): SavedFlow | null {
+  try {
+    const raw = sessionStorage.getItem(FLOW_KEY);
+    return raw ? (JSON.parse(raw) as SavedFlow) : null;
+  } catch {
+    return null;
+  }
+}
+function clearFlow() {
+  try {
+    sessionStorage.removeItem(FLOW_KEY);
+  } catch {
+    /* 저장소를 못 쓰는 환경 — 무시 */
+  }
+}
 
 // 클라이언트 번들에 계산 엔진이 딸려 오지 않도록 시간대 표는 여기 따로 둔다(lib/astro/birth.ts의 TIME_BANDS와 같은 키).
 const BANDS = [
@@ -47,21 +86,27 @@ function Big({ children }: { children: React.ReactNode }) {
 }
 
 export default function TestFlow() {
-  const [step, setStep] = useState<Step>("welcome");
-  const [nickname, setNickname] = useState("");
+  // 이 컴포넌트는 브라우저에서만 그린다(app/test/TestClient.tsx) — 그래서 첫 상태를 sessionStorage에서 바로 읽어도 된다.
+  const [restored] = useState(loadFlow);
+  const [step, setStep] = useState<Step>(restored ? "auth" : "welcome");
+  const [nickname, setNickname] = useState(restored?.nickname ?? "");
   // 경험 응답: '처음'이면 결과에서 태양·달·상승궁 용어에 한 줄 설명을 붙인다(6-1 기타).
-  const [firstTime, setFirstTime] = useState<boolean | null>(null);
-  const [year, setYear] = useState(1995);
-  const [month, setMonth] = useState(1);
-  const [day, setDay] = useState(1);
-  const [hour, setHour] = useState(12);
-  const [minute, setMinute] = useState(0);
-  const [unknownTime, setUnknownTime] = useState(false);
-  const [band, setBand] = useState<BandId>("morning");
-  const [region, setRegion] = useState<string>("서울");
-  const [overseas, setOverseas] = useState(false);
-  const [city, setCity] = useState<PickedCity | null>(null);
-  const [answers, setAnswers] = useState<Partial<Answers>>({});
+  const [firstTime, setFirstTime] = useState<boolean | null>(restored?.firstTime ?? null);
+  const [year, setYear] = useState(restored?.year ?? 1995);
+  const [month, setMonth] = useState(restored?.month ?? 1);
+  const [day, setDay] = useState(restored?.day ?? 1);
+  const [hour, setHour] = useState(restored?.hour ?? 12);
+  const [minute, setMinute] = useState(restored?.minute ?? 0);
+  const [unknownTime, setUnknownTime] = useState(restored?.unknownTime ?? false);
+  const [band, setBand] = useState<BandId>((restored?.band as BandId) ?? "morning");
+  const [region, setRegion] = useState<string>(restored?.region ?? "서울");
+  const [overseas, setOverseas] = useState(restored?.overseas ?? false);
+  const [city, setCity] = useState<PickedCity | null>(restored?.city ?? null);
+  const [answers, setAnswers] = useState<Partial<Answers>>(restored?.answers ?? {});
+  // 캐릭터 후보를 고른 경우 그 대표 시각 — 저장 요청에도 그대로 보낸다.
+  const [pick, setPick] = useState<string | null>(restored?.pick ?? null);
+  const [saving, setSaving] = useState(false);
+  const [saveNote, setSaveNote] = useState<string | null>(null);
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [candidateIntro, setCandidateIntro] = useState("");
   // 결과 전 화면의 고정 문구(해석 DB A15). 못 받아 와도 화면은 그대로 진행한다.
@@ -85,18 +130,65 @@ export default function TestFlow() {
     return { kind: "band", band } as const;
   }, [unknownTime, band, hour, minute]);
 
-  async function fetchResult(a: Answers, pick?: string) {
+  const requestBody = (a: Answers, p: string | null) => ({
+    birth: { year, month, day: safeDay, time: p ? { ...birthTime, pick: p } : birthTime, place: overseas && city ? { cityId: city.id } : { region } },
+    answers: a,
+    nickname: name,
+  });
+
+  function saveFlow() {
+    const f: SavedFlow = { nickname, firstTime, year, month, day: safeDay, hour, minute, unknownTime, band, region, overseas, city, answers, pick };
+    try {
+      sessionStorage.setItem(FLOW_KEY, JSON.stringify(f));
+    } catch {
+      /* 저장소를 못 쓰는 환경 — 돌아오면 처음부터 */
+    }
+  }
+
+  // 결과가 정해진 뒤: 로그인돼 있으면 동의로, 아니면 로그인 화면으로.
+  async function afterReady() {
+    setStep((await getRealSession()) ? "consent" : "auth");
+  }
+
+  async function saveAndShow() {
+    setSaving(true);
+    setError(null);
+    try {
+      const session = await getRealSession();
+      if (!session) {
+        setStep("auth");
+        return;
+      }
+      const res = await fetch("/api/results", {
+        method: "POST",
+        headers: { "content-type": "application/json", authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ ...requestBody(answers as Answers, pick), consent: true, firstTime: firstTime === true }),
+      });
+      const data = await res.json();
+      if (res.status === 401) {
+        setStep("auth");
+        return;
+      }
+      if (!res.ok || !data.result) throw new Error(data.error ?? "저장하지 못했어요.");
+      clearFlow();
+      setResult(data.result);
+      setSaveNote(data.saveError ? "결과를 저장하지 못했어요. 이 화면을 닫으면 다시 볼 수 없어요." : null);
+      setStep("result");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "저장하지 못했어요.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function fetchResult(a: Answers, chosen?: string) {
     setStep("loading");
     setError(null);
     try {
       const res = await fetch("/api/result", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          birth: { year, month, day: safeDay, time: pick ? { ...birthTime, pick } : birthTime, place: overseas && city ? { cityId: city.id } : { region } },
-          answers: a,
-          nickname: name,
-        }),
+        body: JSON.stringify(requestBody(a, chosen ?? null)),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "계산 중 문제가 생겼어요.");
@@ -105,8 +197,8 @@ export default function TestFlow() {
         setCandidateIntro(data.candidateIntro ?? "");
         setStep("candidates");
       } else {
-        setResult(data.result);
-        setStep("result");
+        setPick(chosen ?? null);
+        await afterReady();
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "계산 중 문제가 생겼어요.");
@@ -306,7 +398,17 @@ export default function TestFlow() {
         </div>
       )}
 
-      {step === "result" && result && <FreeResultView result={result} nickname={name} firstTime={firstTime === true} />}
+      {step === "auth" && <AuthStep onSignedIn={() => setStep((s) => (s === "auth" ? "consent" : s))} beforeRedirect={saveFlow} />}
+
+      {step === "consent" && <ConsentStep onAgree={saveAndShow} busy={saving} error={error} />}
+
+      {step === "result" && result && (
+        <>
+          {saveNote && <p className="rounded-xl bg-cream px-3 py-2 text-sm text-navy">{saveNote}</p>}
+          <FreeResultView result={result} nickname={name} firstTime={firstTime === true} />
+          <Link href="/results" className="text-center text-sm text-cream underline">내 결과 모아 보기</Link>
+        </>
+      )}
     </main>
   );
 }
