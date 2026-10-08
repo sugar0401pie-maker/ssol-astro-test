@@ -1,5 +1,5 @@
+import { resolveOwner } from "@/lib/results/owner";
 import { NextRequest, NextResponse } from "next/server";
-import { getUserIdFromAuthHeader } from "@/lib/supabase/auth";
 import { computeFree } from "@/lib/results/compute";
 import { deleteResult, getResult, isUuid } from "@/lib/results/store";
 
@@ -7,12 +7,12 @@ import { deleteResult, getResult, isUuid } from "@/lib/results/store";
 export const runtime = "nodejs";
 
 export async function GET(req: NextRequest, ctx: RouteContext<"/api/results/[id]">) {
-  const userId = await getUserIdFromAuthHeader(req.headers.get("authorization"));
-  if (!userId) return NextResponse.json({ error: "로그인이 필요해요." }, { status: 401 });
+  const owner = await resolveOwner(req.headers);
+  if (!owner) return NextResponse.json({ error: "결과를 찾을 수 없어요. 처음부터 다시 시도해 주세요." }, { status: 401 });
   const { id } = await ctx.params;
   if (!isUuid(id)) return NextResponse.json({ error: "결과를 찾을 수 없어요." }, { status: 404 });
   try {
-    const row = await getResult(userId, id);
+    const row = await getResult(owner, id);
     if (!row) return NextResponse.json({ error: "결과를 찾을 수 없어요." }, { status: 404 });
     const c = computeFree(row.birth_input, row.answers, row.nickname);
     if (c.kind !== "result") return NextResponse.json({ error: "결과를 다시 계산하지 못했어요." }, { status: 500 });
@@ -24,12 +24,12 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/results/[id]
 }
 
 export async function DELETE(req: NextRequest, ctx: RouteContext<"/api/results/[id]">) {
-  const userId = await getUserIdFromAuthHeader(req.headers.get("authorization"));
-  if (!userId) return NextResponse.json({ error: "로그인이 필요해요." }, { status: 401 });
+  const owner = await resolveOwner(req.headers);
+  if (!owner) return NextResponse.json({ error: "결과를 찾을 수 없어요. 처음부터 다시 시도해 주세요." }, { status: 401 });
   const { id } = await ctx.params;
   if (!isUuid(id)) return NextResponse.json({ error: "결과를 찾을 수 없어요." }, { status: 404 });
   try {
-    const ok = await deleteResult(userId, id);
+    const ok = await deleteResult(owner, id);
     return ok ? NextResponse.json({ ok: true }) : NextResponse.json({ error: "결과를 찾을 수 없어요." }, { status: 404 });
   } catch (e) {
     console.error(e instanceof Error ? e.message : "결과 삭제 실패");

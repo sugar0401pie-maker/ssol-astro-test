@@ -1,17 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getUserIdFromAuthHeader } from "@/lib/supabase/auth";
 import { computeFree, parseResultRequest } from "@/lib/results/compute";
 import { listResults, saveResult } from "@/lib/results/store";
+import { resolveOwner } from "@/lib/results/owner";
 import { characterLabel } from "@/lib/report/characterDisplay";
 import { ASTRO_DB } from "@/lib/report/dbData";
 
-// POST: 로그인 + 저장 동의 → 서버가 다시 계산해 저장하고 무료 결과를 돌려준다(브라우저가 보낸 계산값은 쓰지 않음).
-// GET: 내 결과 목록. 출생 정보·답은 로그에 남기지 않는다.
+// POST: 저장 동의 → 서버가 다시 계산해 저장하고 무료 결과를 돌려준다(브라우저가 보낸 계산값은 쓰지 않음).
+// 로그인했으면 계정에, 아니면 이 브라우저의 비회원 열쇠로 익명 저장(owner 결정 2026-10-08: 먼저 보고 저장 권유).
+// GET: 내 결과 목록(계정 또는 이 브라우저의 비회원 결과). 출생 정보·답은 로그에 남기지 않는다.
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
-  const userId = await getUserIdFromAuthHeader(req.headers.get("authorization"));
-  if (!userId) return NextResponse.json({ error: "로그인이 필요해요." }, { status: 401 });
+  const owner = await resolveOwner(req.headers);
+  if (!owner) return NextResponse.json({ error: "결과를 찾을 수 없어요. 처음부터 다시 시도해 주세요." }, { status: 401 });
   let body: Record<string, unknown>;
   try {
     body = await req.json();
@@ -35,7 +36,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const id = await saveResult({
-      userId,
+      owner,
       nickname: parsed.nickname,
       firstTime: body.firstTime === true,
       input: parsed.input,
@@ -51,11 +52,11 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-  const userId = await getUserIdFromAuthHeader(req.headers.get("authorization"));
-  if (!userId) return NextResponse.json({ error: "로그인이 필요해요." }, { status: 401 });
+  const owner = await resolveOwner(req.headers);
+  if (!owner) return NextResponse.json({ error: "결과를 찾을 수 없어요. 처음부터 다시 시도해 주세요." }, { status: 401 });
   try {
     // 저장값의 character는 내부 판정 이름 — 화면에는 표시 이름(SHOW_CHARACTER=false면 유형 한 줄)으로 바꿔 보낸다.
-    const results = (await listResults(userId)).map((r) => ({ ...r, character: characterLabel(ASTRO_DB, r.character) }));
+    const results = (await listResults(owner)).map((r) => ({ ...r, character: characterLabel(ASTRO_DB, r.character) }));
     return NextResponse.json({ results });
   } catch (e) {
     console.error(e instanceof Error ? e.message : "결과 목록 실패");

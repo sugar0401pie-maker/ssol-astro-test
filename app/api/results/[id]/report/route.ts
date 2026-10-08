@@ -1,5 +1,5 @@
+import { resolveOwner } from "@/lib/results/owner";
 import { NextRequest, NextResponse, after } from "next/server";
-import { getUserIdFromAuthHeader } from "@/lib/supabase/auth";
 import { runReportGeneration } from "@/lib/results/report";
 import { getPayState, isUuid } from "@/lib/results/store";
 
@@ -9,12 +9,12 @@ export const runtime = "nodejs";
 export const maxDuration = 300;
 
 export async function GET(req: NextRequest, ctx: RouteContext<"/api/results/[id]/report">) {
-  const userId = await getUserIdFromAuthHeader(req.headers.get("authorization"));
-  if (!userId) return NextResponse.json({ error: "로그인이 필요해요." }, { status: 401 });
+  const owner = await resolveOwner(req.headers);
+  if (!owner) return NextResponse.json({ error: "결과를 찾을 수 없어요. 처음부터 다시 시도해 주세요." }, { status: 401 });
   const { id } = await ctx.params;
   if (!isUuid(id)) return NextResponse.json({ error: "결과를 찾을 수 없어요." }, { status: 404 });
   try {
-    const s = await getPayState(userId, id);
+    const s = await getPayState(owner, id);
     if (!s) return NextResponse.json({ error: "결과를 찾을 수 없어요." }, { status: 404 });
     if (!s.paid) return NextResponse.json({ error: "결제 후 볼 수 있어요." }, { status: 402 });
     if (s.reportStatus === "ready" && s.report) return NextResponse.json({ status: "ready", report: s.report });

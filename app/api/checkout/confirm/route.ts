@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse, after } from "next/server";
-import { getUserIdFromAuthHeader } from "@/lib/supabase/auth";
+import { resolveOwner } from "@/lib/results/owner";
 import { confirmTossPayment } from "@/lib/billing/toss";
 import { runReportGeneration } from "@/lib/results/report";
-import { getOrder, markResultPaid, settleOrder } from "@/lib/results/store";
+import { getOrder, markResultPaid, ownsOrder, settleOrder } from "@/lib/results/store";
 
 // 토스 결제창에서 돌아온 값(paymentKey·orderId·amount)을 그대로 믿지 않는다:
 // ① 내 주문·처리 전·금액 일치 확인 → ② 시크릿 키로 토스에 승인 요청 → ③ 승인됐을 때만 결제 완료 처리.
@@ -11,8 +11,8 @@ export const runtime = "nodejs";
 export const maxDuration = 300;
 
 export async function POST(req: NextRequest) {
-  const userId = await getUserIdFromAuthHeader(req.headers.get("authorization"));
-  if (!userId) return NextResponse.json({ error: "로그인이 필요해요." }, { status: 401 });
+  const owner = await resolveOwner(req.headers);
+  if (!owner) return NextResponse.json({ error: "결과를 찾을 수 없어요. 처음부터 다시 시도해 주세요." }, { status: 401 });
   let body: { paymentKey?: unknown; orderId?: unknown; amount?: unknown };
   try {
     body = await req.json();
@@ -26,8 +26,8 @@ export async function POST(req: NextRequest) {
 
   try {
     const order = await getOrder(orderId);
-    if (!order || order.user_id !== userId) return NextResponse.json({ error: "주문 정보를 찾을 수 없어요." }, { status: 404 });
-    if (order.status === "paid") return NextResponse.json({ ok: true, resultId: order.result_id }); // 새로고침 등으로 다시 온 경우
+    if (!order || !ownsOrder(owner, order)) return NextResponse.json({ error: "주문 정보를 찾을 수 없어요." }, { status: 404 });
+    if (order.status === "paid") return NextResponse.json({ ok: true, resultId: order.result_id, guest: owner.kind === "guest" }); // 새로고침 등으로 다시 온 경우
     if (order.status !== "pending") return NextResponse.json({ error: "이미 처리된 주문이에요." }, { status: 409 });
     if (order.amount !== amount) return NextResponse.json({ error: "결제 금액이 일치하지 않아요." }, { status: 400 });
 
@@ -37,9 +37,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: r.error }, { status: 502 });
     }
     await settleOrder(orderId, "paid", { paymentKey, method: r.method });
-    await markResultPaid(order.result_id);
-    after(() => runReportGeneration(order.result_id));
-    return NextResponse.json({ ok: true, resultId: order.result_id });
+    if (order.result_id) {
+      const resultId = order.result_id;
+      await markResultPaid(resultId);
+      after(() => runReportGeneration(resultId));
+    }
+    // guest: 결제 후 가입을 권한다(가입하면 이 결과·주문이 계정으로 옮겨진다).
+    return NextResponse.json({ ok: true, resultId: order.result_id, guest: owner.kind === "guest" });
   } catch (e) {
     console.error(e instanceof Error ? e.message : "결제 승인 처리 실패");
     return NextResponse.json({ error: "결제 확인 중 문제가 생겼어요. 고객센터로 문의해 주세요." }, { status: 500 });
