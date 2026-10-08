@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { computeFree, parseResultRequest } from "@/lib/results/compute";
 import { listResults, saveResult } from "@/lib/results/store";
 import { resolveOwner } from "@/lib/results/owner";
+import { chatSummaryFor } from "@/lib/results/chatSummary";
 import { characterLabel } from "@/lib/report/characterDisplay";
 import { ASTRO_DB } from "@/lib/report/dbData";
 
@@ -42,6 +43,7 @@ export async function POST(req: NextRequest) {
       input: parsed.input,
       answers: parsed.answers,
       birth: computed.birth,
+      chatSummary: chatSummaryFor(computed, parsed.answers),
     });
     return NextResponse.json({ id, result: computed.result });
   } catch (e) {

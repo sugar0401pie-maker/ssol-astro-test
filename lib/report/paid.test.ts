@@ -11,6 +11,8 @@ import { row, type AstroDb } from "./db.ts";
 import { buildPaidSkeleton, evidencePhrase } from "./paidSkeleton.ts";
 import { buildReportInput } from "./reportInput.ts";
 import { previewLines } from "./prepare.ts";
+import { buildChatSummary, CHAT_SUMMARY_MAX } from "./chatSummary.ts";
+import { buildFreeResult } from "./freeResult.ts";
 import { fillSystemPrompt, partUserMessage, processPartOutput, splitSections } from "./aiPrompt.ts";
 import { SYSTEM_PROMPT_TEMPLATE } from "./systemPrompt.ts";
 import { compileC1, type C1Row } from "./validate.ts";
@@ -140,6 +142,30 @@ test("A11 하늘의 공통 흐름: 5년 파트(2027~)에 걸치는 것만, A6 �
   const a6 = db.dbs.A6.rows.find((r) => r.kind === "역량" && r.name === "기대기")!.plain;
   assert.ok(skeleton.dbSentences[5].includes(a6));
   assert.ok(!skeleton.sections.find((x) => x.no === 5)!.paragraphs.includes(a6)); // 뼈대 본문에는 넣지 않음
+});
+
+test("쏘웰라 채팅 요약: 유형·바라는 것·5년·2026 회고(+결제 시 본문·제안), 별자리·출생 정보·동물 이름 없음", () => {
+  const { skeleton, wish } = setup();
+  const free = buildFreeResult({
+    db, chart: computeNatal(new Date(Date.UTC(1996, 3, 1, 1, 17)), 37.2893, 127.0535).chart,
+    longitudes: computeNatal(new Date(Date.UTC(1996, 3, 1, 1, 17)), 37.2893, 127.0535).L,
+    character: judgeCharacter(computeNatal(new Date(Date.UTC(1996, 3, 1, 1, 17)), 37.2893, 127.0535).L, computeNatal(new Date(Date.UTC(1996, 3, 1, 1, 17)), 37.2893, 127.0535).chart.elements, ref),
+    answers: { q1: "직업·커리어", q2: "변화", q3: "안정" }, nickname: "지우", birthYear: 1996, now: NOW,
+  });
+  const answers = { q1: "직업·커리어", q2: "변화", q3: "안정" } as const;
+  const freeOnly = buildChatSummary({ db, free, answers, wish });
+  assert.ok(freeOnly.startsWith("[1. 별이 본 나의 유형] 누군가에게 기대는 일에"));
+  assert.ok(freeOnly.includes("[2. 2027년에 바라는 것과 앞으로 5년의 흐름] 2027년에 바라는 것: 안정."));
+  assert.ok(freeOnly.includes("2028년: 활짝 열리는 해(순풍)"));
+  assert.ok(freeOnly.includes("[3. 2026년 회고] 2026년을 한 단어로: 변화."));
+  assert.ok(!freeOnly.includes("[8."));
+  for (const banned of ["양자리", "처녀자리", "쌍둥이자리", "1996", "경기", "수달"]) assert.ok(!freeOnly.includes(banned), banned);
+  assert.equal(freeOnly.split("\n").length, 3);
+  const withPaid = buildChatSummary({ db, free, answers, wish, paid: skeleton });
+  assert.ok(withPaid.includes("[8. 별이 주는 질문과 웰니스 제안]"));
+  assert.ok(withPaid.includes("[4. 연말까지 조심하면 좋을 것]"));
+  assert.ok(withPaid.length <= CHAT_SUMMARY_MAX);
+  assert.ok(withPaid.split("\n").every((l) => /^\[\d\. [^\]]+\] \S/.test(l))); // 쏘웰라 reportSelect 형식
 });
 
 test("섹션 나누기: 6·7을 한 출력에서 나눈다", () => {

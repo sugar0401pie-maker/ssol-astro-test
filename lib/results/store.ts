@@ -38,12 +38,12 @@ export async function saveResult(args: {
   input: BirthInput;
   answers: Answers;
   birth: BirthResult & { resolved: NonNullable<BirthResult["resolved"]> };
+  /** 쏘웰라 채팅용 요약(lib/report/chatSummary.ts). 없으면 저장하지 않는다. */
+  chatSummary?: string | null;
 }): Promise<string> {
-  const { owner, nickname, firstTime, input, answers, birth } = args;
+  const { owner, nickname, firstTime, input, answers, birth, chatSummary } = args;
   const { chart, character } = birth.resolved;
-  const { data, error } = await createAdminClient()
-    .from(TABLE)
-    .insert({
+  const row = {
       ...(owner.kind === "user"
         ? { user_id: owner.userId }
         : { user_id: null, guest_token_hash: owner.tokenHash, expires_at: guestExpiry(new Date(), false) }),
@@ -64,9 +64,11 @@ export async function saveResult(args: {
       db_version: ASTRO_DB.version,
       consent_version: CONSENT_VERSION,
       consented_at: new Date().toISOString(),
-    })
-    .select("id")
-    .single();
+  };
+  const insert = (r: object) => createAdminClient().from(TABLE).insert(r).select("id").single();
+  let { data, error } = await insert(chatSummary ? { ...row, chat_summary: chatSummary, chat_summary_at: new Date().toISOString() } : row);
+  // 비회원·요약 마이그레이션(20261008000200) 전이면 chat_summary 칸이 없다(42703) — 요약 없이 다시 저장(로그인 사용자는 계속 저장되게).
+  if (error?.code === "42703" && chatSummary) ({ data, error } = await insert(row));
   if (error || !data) throw new Error(`결과 저장 실패: ${error?.code ?? "no data"}`);
   return data.id as string;
 }
@@ -222,6 +224,13 @@ export async function saveReport(resultId: string, report: unknown | null): Prom
     .update(report ? { report, report_status: "ready" } : { report_status: "failed" })
     .eq("id", resultId);
   if (error) throw new Error(`리포트 저장 실패: ${error.code}`);
+}
+
+/** 쏘웰라 채팅용 요약 갱신(리포트가 생기면 본문·제안까지). 실패해도 던지지 않는다 — 부가 기능. */
+export async function saveChatSummary(resultId: string, summary: string | null): Promise<void> {
+  if (!summary) return;
+  const { error } = await createAdminClient().from(TABLE).update({ chat_summary: summary, chat_summary_at: new Date().toISOString() }).eq("id", resultId);
+  if (error) console.warn(`채팅 요약 저장 실패: ${error.code}`);
 }
 
 export async function getResultForReport(resultId: string) {
