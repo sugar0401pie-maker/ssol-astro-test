@@ -3,7 +3,9 @@
 // 결과 화면(02_디자인가이드 3장 순서, 샘플 리포트 10번 파일의 배치). 1~3번은 무료(AI 0회, 문장은 서버가 해석 DB에서 골라 보냄),
 // 4~7번은 제목만 보이고 본문은 결제 후 서버가 채운다.
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { REPORT_PRICE } from "@/lib/billing/pricing";
+import { getRealSession } from "@/lib/supabase/browser";
 import BirthChartWheel from "@/components/chart/BirthChartWheel";
 import ElementBars from "@/components/chart/ElementBars";
 import type { WheelSelection } from "@/components/chart/labels";
@@ -64,11 +66,38 @@ export default function FreeResultView({
   paidContent?: React.ReactNode;
 }) {
   const [selected, setSelected] = useState<WheelSelection | null>(null);
+  // 결제 전: 유료 섹션의 두괄식 첫 문장(서버가 DB 뼈대에서 한 문장씩만 보냄). 못 받아 오면 제목만.
+  const [preview, setPreview] = useState<Record<number, string>>({});
+  // 결제 상자가 화면에 보이면 하단 고정 바를 숨긴다(같은 버튼이 두 번 보이지 않게).
+  const paywallRef = useRef<HTMLDivElement>(null);
+  const [paywallVisible, setPaywallVisible] = useState(false);
+  const unpaid = !paidContent && !!resultId;
+  useEffect(() => {
+    if (!unpaid) return;
+    let alive = true;
+    void getRealSession().then(async (session) => {
+      if (!session) return;
+      const res = await fetch(`/api/results/${resultId}/preview`, { headers: { authorization: `Bearer ${session.access_token}` } });
+      if (!res.ok || !alive) return;
+      const data = (await res.json()) as { sections: Array<{ no: number; first: string }> };
+      setPreview(Object.fromEntries(data.sections.map((x) => [x.no, x.first])));
+    }).catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [unpaid, resultId]);
+  useEffect(() => {
+    const el = paywallRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(([e]) => setPaywallVisible(e.isIntersecting));
+    io.observe(el);
+    return () => io.disconnect();
+  }, [unpaid]);
   const { chart, character, year2026 } = result;
   const sheet = selected ? (selected.kind === "planet" ? result.wheelSheets.planets[selected.key] : result.wheelSheets.signs[selected.key]) : null;
 
   return (
-    <div className="flex flex-col gap-10">
+    <div className={`flex flex-col gap-10 ${unpaid ? "pb-20" : ""}`}>
       <Section no={1} title={`${nickname}님이 태어난 순간의 하늘`} free>
         <p className="text-xs text-cream/70">정확도 {result.accuracy} · {result.gradeNote}</p>
         {result.addTimeNote && <p className="rounded-xl border border-cream/30 px-3 py-2 text-xs text-cream/80">{result.addTimeNote}</p>}
@@ -187,12 +216,13 @@ export default function FreeResultView({
         <>
           {result.paidSections.map((s) => (
             <Section key={s.no} no={s.no} title={s.title.replace("{닉네임}", nickname)} free={false}>
-              {/* 본문은 결제 후 서버가 만든다 — 여기에는 실제 내용을 넣지 않는다. */}
+              {/* 제목과 두괄식 첫 문장만 선명하게, 본문 자리는 블러(디자인가이드 2장). 본문은 결제 후 서버가 만든다. */}
+              {preview[s.no] && <p className="rounded-2xl bg-cream px-4 pt-4 text-[15px] font-bold leading-relaxed text-navy">{preview[s.no]}</p>}
               <div aria-hidden className="h-24 rounded-2xl bg-cream/80 blur-sm" />
             </Section>
           ))}
 
-          <div className="rounded-2xl border border-gold px-4 py-4 text-center text-cream">
+          <div ref={paywallRef} className="rounded-2xl border border-gold px-4 py-4 text-center text-cream">
             <p className="text-sm leading-relaxed text-cream/90">{result.paywallBox}</p>
             {resultId ? (
               <Link href={`/checkout/${resultId}`} className="mt-3 block w-full rounded-full bg-gold px-6 py-3 font-bold text-navy">
@@ -218,6 +248,14 @@ export default function FreeResultView({
       )}
 
       <p className="text-xs leading-relaxed text-cream/70">{result.disclaimer}</p>
+      {unpaid && !paywallVisible && (
+        // 하단 고정 바(디자인가이드 2장 페이월). 가짜 카운트다운·'지금만 할인' 같은 말은 쓰지 않는다.
+        <div className="fixed inset-x-0 bottom-0 z-20 border-t border-gold/40 bg-midnight/95 px-4 py-3 backdrop-blur">
+          <Link href={`/checkout/${resultId}`} className="mx-auto block w-full max-w-md rounded-full bg-gold px-6 py-3 text-center font-bold text-navy">
+            전체 리포트 보기 · {REPORT_PRICE.toLocaleString("ko-KR")}원
+          </Link>
+        </div>
+      )}
       {result.dbDraft && <p className="text-[10px] text-cream/40">해석 {result.dbVersion} · 상담사 검수 전 초안</p>}
     </div>
   );

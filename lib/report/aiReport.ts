@@ -6,12 +6,11 @@ import "server-only";
 import OpenAI from "openai";
 import { CHARACTER_GRID } from "@/lib/astro/constants";
 import type { Answers } from "@/lib/astro/answers";
-import type { BirthResult } from "@/lib/astro/birth";
-import { buildTimeline, periodWindows, selectPeriods } from "@/lib/astro/timeline";
-import { computeWish, type WishContext } from "@/lib/astro/wish";
+import type { WishContext } from "@/lib/astro/wish";
 import { PARTS, fillSystemPrompt, partUserMessage, processPartOutput, type PartId } from "./aiPrompt";
 import { findRow, type AstroDb } from "./db";
-import { buildPaidSkeleton, type PaidSection } from "./paidSkeleton";
+import type { PaidSection } from "./paidSkeleton";
+import { prepareSkeleton, type Resolved } from "./prepare";
 import { buildReportInput } from "./reportInput";
 import { compileC1, type C1Row } from "./validate";
 
@@ -29,7 +28,6 @@ export interface PaidReport {
   generatedAt: string;
 }
 
-type Resolved = NonNullable<BirthResult["resolved"]>;
 
 async function callModel(system: string, user: string): Promise<string> {
   const client = new OpenAI({ timeout: 90_000, maxRetries: 0 });
@@ -49,12 +47,8 @@ async function callModel(system: string, user: string): Promise<string> {
 export async function generatePaidReport(args: { db: AstroDb; resolved: Resolved; wishContext: WishContext; answers: Answers; nickname: string; now?: Date }): Promise<PaidReport> {
   const { db, resolved, answers, nickname } = args;
   const now = args.now ?? new Date();
-  const { chart, longitudes: L, character } = resolved;
-  const windows = periodWindows(now);
-  const events = buildTimeline(L, { start: "2026-01-01", end: "2031-12-31" }, windows.eoy);
-  const periods = selectPeriods(events, answers.q1, now);
-  const wish = computeWish(L, answers.q3, args.wishContext);
-  const skeleton = buildPaidSkeleton({ db, chart, longitudes: L, character, answers, events, periods, wish, nickname });
+  const { chart, character } = resolved;
+  const { periods, wish, skeleton } = prepareSkeleton({ ...args, now });
   const typeLine = findRow(db, "A5", (r) => r.character === character.name)?.type_line ?? "";
   const flow = skeleton.sections.find((s) => s.no === 5)?.flow ?? [];
   const built = buildReportInput({ nickname, chart, character, answers, periods, wish, typeLine, flow });

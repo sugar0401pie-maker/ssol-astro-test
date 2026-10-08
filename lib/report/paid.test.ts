@@ -10,6 +10,7 @@ import type { Answers } from "../astro/answers.ts";
 import { row, type AstroDb } from "./db.ts";
 import { buildPaidSkeleton, evidencePhrase } from "./paidSkeleton.ts";
 import { buildReportInput } from "./reportInput.ts";
+import { previewLines } from "./prepare.ts";
 import { fillSystemPrompt, partUserMessage, processPartOutput, splitSections } from "./aiPrompt.ts";
 import { SYSTEM_PROMPT_TEMPLATE } from "./systemPrompt.ts";
 import { compileC1, type C1Row } from "./validate.ts";
@@ -115,6 +116,19 @@ test("바람 v3: 리포트 입력에 판정 이름 두 말·움직임·기질·�
   assert.ok(s6.table!.rows.every((r) => /\((순풍|보통|역풍)\)/.test(r.cells[0])));
   const sys = fillSystemPrompt(built, []);
   assert.ok(!/(?<!\{)\{(movement|temperament|wish_support)\}(?!\})/.test(sys));
+});
+
+test("결제 전 미리보기: 섹션마다 첫 문장 하나만(본문은 보내지 않음)", () => {
+  const { skeleton } = setup();
+  const lines = previewLines(skeleton);
+  assert.deepEqual(lines.map((l) => l.no), [4, 5, 6, 7]);
+  for (const l of lines) {
+    const full = skeleton.sections.find((x) => x.no === l.no)!.paragraphs.join(" ");
+    if (!full) continue;
+    assert.ok(full.startsWith(l.first), `${l.no}`);
+    assert.ok(l.first.length < full.length, `${l.no}: 본문 전체를 보내면 안 됨`);
+    assert.equal(l.first.match(/[.!?](\s|$)/g)?.length ?? 1, 1, `${l.no}: 한 문장만`);
+  }
 });
 
 test("섹션 나누기: 6·7을 한 출력에서 나눈다", () => {
