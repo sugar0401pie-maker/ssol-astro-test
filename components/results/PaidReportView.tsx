@@ -3,6 +3,26 @@
 // 유료 섹션(4~7) 표시. 본문 문단(AI 또는 DB 뼈대) → 표(모바일 2열) → 섹션 맨 끝 '왜 그럴까' 행마다 접힌 근거
 // (디자인가이드 6장). 질문·실천은 DB 문장 그대로. ** 같은 강조 표기는 쓰지 않는다.
 import type { PaidReport } from "@/lib/report/aiReport";
+import FiveYearStars from "./FiveYearStars";
+
+const FLOW_HEAD = "• 2027년 흐름 한눈에";
+
+/** '흐름 한눈에': 넓은 화면은 화살표 한 줄, 모바일은 세로 단계 칩(디자인가이드 3장 5번). */
+function FlowSteps({ steps }: { steps: string[] }) {
+  return (
+    <div className="rounded-2xl border border-gold/40 px-4 py-3 text-cream">
+      <p className="text-sm font-bold">2027년 흐름 한눈에</p>
+      <ol className="mt-2 flex flex-col gap-1.5 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2">
+        {steps.map((t, i) => (
+          <li key={t} className="flex items-center gap-2 text-sm">
+            <span className="rounded-full bg-cream/10 px-3 py-1">{t}</span>
+            {i < steps.length - 1 && <span aria-hidden className="hidden text-gold sm:inline">→</span>}
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
 
 function Card({ children }: { children: React.ReactNode }) {
   return <div className="flex flex-col gap-2 rounded-2xl bg-cream px-4 py-4 text-[15px] leading-relaxed text-navy">{children}</div>;
@@ -19,11 +39,14 @@ export default function PaidReportView({ report }: { report: PaidReport }) {
           </h2>
           {s.paragraphs.length > 0 && (
             <Card>
-              {s.paragraphs.map((p, i) => (
+              {/* AI가 쓴 '흐름 한눈에' 줄은 아래 단계 칩으로 대신 보여 준다(같은 내용이 두 번 나오지 않게). */}
+              {s.paragraphs.filter((p) => !p.startsWith(FLOW_HEAD)).map((p, i) => (
                 <p key={i} className={i === 0 ? "font-bold" : ""}>{p}</p>
               ))}
             </Card>
           )}
+          {s.flow && s.flow.length > 0 && <FlowSteps steps={s.flow} />}
+          {s.stars && s.stars.length > 0 && <FiveYearStars stars={s.stars} />}
           {s.no === 7 && (
             <>
               {report.questions.items.length > 0 && (

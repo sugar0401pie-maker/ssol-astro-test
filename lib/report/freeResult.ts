@@ -4,6 +4,7 @@
 // DB 문장의 토큰을 못 채우면 그 문장은 빼고 보여준다(fail safe) — 빈칸·괄호가 화면에 나가지 않게.
 import { isSoftTone, type Answers, type Q2Word } from "../astro/answers.ts";
 import type { CharacterResult } from "../astro/character.ts";
+import { SHOW_CHARACTER, characterLabel } from "./characterDisplay.ts";
 import { ELEMENTS, SIGNS, STYLE_BY_ELEMENT, elementOf, type Element, type PointKey } from "../astro/constants.ts";
 import type { Accuracy, Longitudes, NatalChart } from "../astro/natal.ts";
 import {
@@ -41,18 +42,24 @@ export interface FreeResult {
   elements: { strong: { element: Element; text: string; styleLink: string } | null; weak: Array<{ element: Element; text: string }> };
   wheelSheets: { planets: Partial<Record<PointKey, WheelSheet>>; signs: Record<string, WheelSheet> };
   character: {
-    name: string;
+    /** 동물 이름 — SHOW_CHARACTER가 false면 null(브라우저에 보내지 않는다) */
+    name: string | null;
+    /** 유형 한 줄(A5 type_line) */
+    typeLine: string;
     competency: string;
     style: string;
-    intro: string;
     why: string;
-    strength: string;
-    energyMoment: string;
-    careTip: string;
+    /** SHOW_CHARACTER일 때만(이야기형 소개·강점 등) */
+    intro: string | null;
+    strength: string | null;
+    energyMoment: string | null;
+    careTip: string | null;
     sunMoonLine: string | null;
   };
   big3: Array<{ key: "sun" | "moon" | "asc"; label: string; sign: string; house: number | null; line: string }>;
   sunSign: string;
+  /** 휠 가운데 별자리 기호용(0=양자리) */
+  sunSignIndex: number;
   softTone: boolean;
   year2026: {
     intro: string;
@@ -295,14 +302,15 @@ export function buildFreeResult(args: {
     elements: elementTexts(db, chart.elements, dominant),
     wheelSheets: { planets, signs: signSheets(db) },
     character: {
-      name: character.name,
+      name: SHOW_CHARACTER ? character.name : null,
+      typeLine: charRow.type_line,
       competency: character.competency,
       style: character.style,
-      intro: charRow.intro,
       why: charRow.why_text,
-      strength: charRow.strength,
-      energyMoment: charRow.energy_moment,
-      careTip: charRow.care_tip,
+      intro: SHOW_CHARACTER ? charRow.intro : null,
+      strength: SHOW_CHARACTER ? charRow.strength : null,
+      energyMoment: SHOW_CHARACTER ? charRow.energy_moment : null,
+      careTip: SHOW_CHARACTER ? charRow.care_tip : null,
       sunMoonLine: tryFill(temp?.sun_moon_line, { 태양별자리: sunSign, 달별자리: moonSign }),
     },
     big3: (["sun", "moon", "asc"] as const)
@@ -315,6 +323,7 @@ export function buildFreeResult(args: {
         line: text(db, k === "sun" ? "A2" : k === "moon" ? "A3" : "A4", `${POINT_ID[k]}_${SIGN_ID[chart.planets[k]!.sign]}`, "table_line"),
       })),
     sunSign,
+    sunSignIndex: SIGNS.indexOf(sunSign as (typeof SIGNS)[number]),
     softTone: soft,
     year2026: {
       intro: tryFill(q2?.[match ? "intro_match" : "intro_differ"], nick) ?? "",
@@ -332,8 +341,12 @@ export function buildFreeResult(args: {
 }
 
 /** 후보 선택 화면(B6 카드 + A15 안내). */
-export function candidateCards(db: AstroDb, names: string[]): { intro: string; cards: Record<string, string> } {
+export function candidateCards(db: AstroDb, names: string[]): { intro: string; cards: Record<string, string>; labels: Record<string, string> } {
   const cards: Record<string, string> = {};
-  for (const n of names) cards[n] = db.dbs.B6.rows.find((r) => r.character === n)?.choice_line ?? "";
-  return { intro: text(db, "A15", "FIX_CANDIDATE_CHOICE", "text"), cards };
+  const labels: Record<string, string> = {};
+  for (const n of names) {
+    cards[n] = db.dbs.B6.rows.find((r) => r.character === n)?.choice_line ?? "";
+    labels[n] = characterLabel(db, n);
+  }
+  return { intro: text(db, "A15", "FIX_CANDIDATE_CHOICE", "text"), cards, labels };
 }

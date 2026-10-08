@@ -26,7 +26,8 @@ function setup(answers: Answers = { q1: "직업·커리어", q2: "변화", q3: "
   const periods = selectPeriods(events, answers.q1, NOW);
   const wish = computeWish(L, answers.q3, { birthDate: "1996-04-01", dayChart: true });
   const skeleton = buildPaidSkeleton({ db, chart, longitudes: L, character, answers, events, periods, wish, nickname: "지우" });
-  const built = buildReportInput({ nickname: "지우", chart, character, answers, periods, wish, typeLine: "누군가에게 기대는 일에 에너지가 많이 들고, 그럴 때 먼저 다가가는 유형" });
+  const flow = skeleton.sections.find((s) => s.no === 5)?.flow ?? [];
+  const built = buildReportInput({ nickname: "지우", chart, character, answers, periods, wish, typeLine: "누군가에게 기대는 일에 에너지가 많이 들고, 그럴 때 먼저 다가가는 유형", flow });
   return { skeleton, built, wish };
 }
 
@@ -105,7 +106,9 @@ test("바람 v3: 리포트 입력에 판정 이름 두 말·움직임·기질·�
   assert.ok(Object.values(i.wish_support).every((v) => /^(활짝 열리는 해\(순풍\)|내 손에 달린 해\(보통\)|기반을 다지는 해\(역풍\))$/.test(v)));
   assert.equal(i.temperament, "활동"); // 샘플 기질(원본 샘플 판정 JSON)
   assert.equal(i.movement[Object.keys(i.movement)[0]], "움직이는 해"); // 2027 = 움직이는 해
-  assert.ok(i.flow_2027.every((t) => built.tokens[t.slice(2, -2)]));
+  assert.ok(i.flow_2027.length >= 2 && i.flow_2027.every((t) => built.tokens[t.slice(2, -2)]));
+  // 스펙 샘플의 흐름: 연말 다시 보기 → 1~4월 준비 → 4·6월 제안과 계기 → 7월 말부터 자리 잡기 → 9월 정리
+  assert.deepEqual(skeleton.sections.find((x) => x.no === 5)!.flow, ["2026년 연말 다시 보기", "1~4월 정하지 말고 준비", "4·6월 제안과 계기", "7월부터 정하고 자리 잡기", "9월 정리"]);
   const s6 = skeleton.sections.find((x) => x.no === 6)!;
   assert.equal(s6.stars?.length, 5);
   assert.equal(s6.stars?.find((x) => x.firstOpen)?.year, 2028);

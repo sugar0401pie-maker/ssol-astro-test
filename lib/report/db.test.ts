@@ -113,7 +113,11 @@ function sample(answers: Answers = { q1: "직업·커리어", q2: "변화", q3: 
 
 test("샘플: 캐릭터·태양달 대비·원소가 샘플 리포트와 같은 DB 문장", () => {
   const r = sample();
-  assert.equal(r.character.name, "수달");
+  // 당분간 동물 이름은 브라우저에 보내지 않고 유형 한 줄로(show_character=false, 마스터스펙 6장)
+  assert.equal(r.character.name, null);
+  assert.equal(r.character.typeLine, row(db, "A5", "CHAR_01_OTTER")!.type_line);
+  assert.equal(r.character.intro, null);
+  assert.ok(!JSON.stringify(r).includes("수달"));
   assert.equal(r.character.why, row(db, "A5", "CHAR_01_OTTER")!.why_text);
   // 샘플: "겉은 빠르고 당당한 양자리 태양이지만, 속은 차근차근 정리해야 편한 처녀자리 달이에요."
   assert.ok(r.character.sunMoonLine?.startsWith("겉은 빠르고 당당한 양자리 태양이지만, 속은 차근차근 정리해야 편한 처녀자리 달이에요."));

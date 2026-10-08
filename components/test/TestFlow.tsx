@@ -65,7 +65,8 @@ type BandId = (typeof BANDS)[number]["id"];
 interface Candidate {
   /** B6 후보 선택 카드 문장(해석 DB) */
   card?: string;
-  name: string;
+  /** 화면 이름 — 당분간 동물 이름 대신 유형 한 줄(SHOW_CHARACTER=false) */
+  label: string;
   competency: string;
   style: string;
   share: number;
@@ -385,15 +386,15 @@ export default function TestFlow() {
 
       {step === "candidates" && (
         <div className="flex flex-col gap-5">
-          <Big>더 나 같은 캐릭터는?</Big>
+          <Big>요즘의 나와 더 가까운 건?</Big>
           {candidateIntro && <p className="text-sm leading-relaxed text-cream/80">{candidateIntro}</p>}
           {candidates.map((c) => (
             <button
-              key={c.name}
+              key={c.pick}
               className="flex flex-col gap-1 rounded-2xl border border-cream/40 px-4 py-3 text-left text-cream hover:border-gold"
               onClick={() => fetchResult(answers as Answers, c.pick)}
             >
-              <span className="font-bold">{c.name} ({c.competency} × {c.style})</span>
+              <span className="font-bold">{c.label} ({c.competency} × {c.style})</span>
               {c.card && <span className="text-sm leading-relaxed text-cream/80">{c.card}</span>}
             </button>
           ))}

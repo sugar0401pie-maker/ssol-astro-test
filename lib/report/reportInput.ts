@@ -7,7 +7,6 @@ import type { CharacterResult } from "../astro/character.ts";
 import type { Accuracy, NatalChart } from "../astro/natal.ts";
 import type { PeriodKey, PeriodResult, ScoredEvent } from "../astro/timeline.ts";
 import { EDGE_LABEL, WISH_LEVEL_DISPLAY, type WishResult } from "../astro/wish.ts";
-import { flowSteps } from "./movement.ts";
 import { formatMonths, formatRanges, formatYear, josa } from "./format.ts";
 import { POINT_KO, eventLabel, eventNames } from "./labels.ts";
 
@@ -79,6 +78,8 @@ export function buildReportInput(args: {
   wish: WishResult;
   /** A5 type_line — 캐릭터 이름 대신 쓰는 유형 한 줄 */
   typeLine: string;
+  /** 2027 '흐름 한눈에' 단계(flowSteps, 뼈대와 같은 값) */
+  flow?: string[];
 }): BuiltReportInput {
   const { nickname, chart, character, answers, periods, wish } = args;
   const tokens: Record<string, TokenInfo> = {};
@@ -157,7 +158,7 @@ export function buildReportInput(args: {
     wish_edge,
     movement,
     temperament: wish.temperament,
-    flow_2027: flowSteps(periods.eoy, periods.year2027).map((text, i) => {
+    flow_2027: (args.flow ?? []).map((text, i) => {
       const name = `흐름${i + 1}`;
       tokens[name] = { value: text, meaning: "2027년 흐름의 한 단계(시기 + 단계 이름)" };
       return `{{${name}}}`;

@@ -56,7 +56,8 @@ export async function generatePaidReport(args: { db: AstroDb; resolved: Resolved
   const wish = computeWish(L, answers.q3, args.wishContext);
   const skeleton = buildPaidSkeleton({ db, chart, longitudes: L, character, answers, events, periods, wish, nickname });
   const typeLine = findRow(db, "A5", (r) => r.character === character.name)?.type_line ?? "";
-  const built = buildReportInput({ nickname, chart, character, answers, periods, wish, typeLine });
+  const flow = skeleton.sections.find((s) => s.no === 5)?.flow ?? [];
+  const built = buildReportInput({ nickname, chart, character, answers, periods, wish, typeLine, flow });
   const c1 = compileC1(db.dbs.C1.rows as unknown as C1Row[]);
 
   const runPart = async (part: PartId) => {

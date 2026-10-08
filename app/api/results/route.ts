@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUserIdFromAuthHeader } from "@/lib/supabase/auth";
 import { computeFree, parseResultRequest } from "@/lib/results/compute";
 import { listResults, saveResult } from "@/lib/results/store";
+import { characterLabel } from "@/lib/report/characterDisplay";
+import { ASTRO_DB } from "@/lib/report/dbData";
 
 // POST: 로그인 + 저장 동의 → 서버가 다시 계산해 저장하고 무료 결과를 돌려준다(브라우저가 보낸 계산값은 쓰지 않음).
 // GET: 내 결과 목록. 출생 정보·답은 로그에 남기지 않는다.
@@ -29,7 +31,7 @@ export async function POST(req: NextRequest) {
     console.error("결과 계산 실패:", e instanceof Error ? e.name : "unknown");
     return NextResponse.json({ error: "계산 중 문제가 생겼어요. 잠시 후 다시 시도해 주세요." }, { status: 500 });
   }
-  if (computed.kind === "candidates") return NextResponse.json({ error: "캐릭터 후보를 먼저 골라 주세요.", ...computed.payload }, { status: 409 });
+  if (computed.kind === "candidates") return NextResponse.json({ error: "요즘의 나와 더 가까운 쪽을 먼저 골라 주세요.", ...computed.payload }, { status: 409 });
 
   try {
     const id = await saveResult({
@@ -52,7 +54,9 @@ export async function GET(req: NextRequest) {
   const userId = await getUserIdFromAuthHeader(req.headers.get("authorization"));
   if (!userId) return NextResponse.json({ error: "로그인이 필요해요." }, { status: 401 });
   try {
-    return NextResponse.json({ results: await listResults(userId) });
+    // 저장값의 character는 내부 판정 이름 — 화면에는 표시 이름(SHOW_CHARACTER=false면 유형 한 줄)으로 바꿔 보낸다.
+    const results = (await listResults(userId)).map((r) => ({ ...r, character: characterLabel(ASTRO_DB, r.character) }));
+    return NextResponse.json({ results });
   } catch (e) {
     console.error(e instanceof Error ? e.message : "결과 목록 실패");
     return NextResponse.json({ error: "결과를 불러오지 못했어요." }, { status: 500 });

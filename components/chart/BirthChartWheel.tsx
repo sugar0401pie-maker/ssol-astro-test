@@ -19,6 +19,8 @@ export interface BirthChartWheelProps {
   characterFace?: string;
   /** 캐릭터 이름(얼굴 이미지의 대체 글자). */
   characterName?: string;
+  /** 가운데 태양 별자리(캐릭터 비노출 중 — 디자인가이드 4장 ⑥). characterFace가 있으면 얼굴이 우선. */
+  centerSign?: { index: number; name: string };
   /** 행성·별자리 칸을 누르면 호출. 해석 시트는 부모가 띄운다. */
   onSelect?: (sel: WheelSelection) => void;
   /** 지금 선택된 항목(테두리로 표시). */
@@ -39,6 +41,7 @@ const R_PLANET = 92; // ④ 행성 기본 줄
 const R_PLANET_OUTER = R_PLANET + 22; // 겹칠 때 바깥으로 민 줄
 const R_INNER = 70; // ⑤ 각도 선이 닿는 안쪽 원
 const FACE_R = 22; // ⑥ 가운데 44px
+
 const TICK_LEN = 5;
 // 26px 원이 R_PLANET에서 차지하는 각도를 기준으로 정했다: 번갈아 놓인 이웃(9° + 22px)과
 // 같은 줄 이웃(17°)이 모두 26px 이상 떨어진다. rowSep ≤ 2 × minSep이어야 번갈아 놓기가 성립한다.
@@ -77,7 +80,7 @@ const isSame = (a: WheelSelection | null | undefined, b: WheelSelection) =>
   a != null && a.kind === b.kind && a.key === b.key;
 
 export default function BirthChartWheel({
-  chart, characterFace, characterName, onSelect, selected, onAddTime, className,
+  chart, characterFace, characterName, centerSign, onSelect, selected, onAddTime, className,
 }: BirthChartWheelProps) {
   const [showAllLines, setShowAllLines] = useState(false);
   const clipId = useId();
@@ -352,6 +355,13 @@ export default function BirthChartWheel({
               {characterName && <title>{characterName}</title>}
             </image>
             <circle cx={C} cy={C} r={FACE_R} fill="none" stroke={NAVY} strokeWidth={2.5} />
+          </g>
+        ) : centerSign ? (
+          <g role="img" aria-label={`태양 별자리 ${centerSign.name}`}>
+            <circle cx={C} cy={C} r={FACE_R} fill={CREAM} stroke={NAVY} strokeWidth={2.5} />
+            <text x={C} y={C} textAnchor="middle" dominantBaseline="central" fontSize={22} fill={NAVY} aria-hidden="true">
+              {SIGN_GLYPHS[centerSign.index]}
+            </text>
           </g>
         ) : (
           <circle cx={C} cy={C} r={10} fill={NAVY} stroke={GOLD} strokeOpacity={0.6} strokeWidth={0.75} aria-hidden="true" />

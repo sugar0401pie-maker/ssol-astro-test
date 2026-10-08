@@ -28,7 +28,7 @@ export function parseResultRequest(body: Record<string, unknown> | null): Parsed
 }
 
 export type Computed =
-  | { kind: "candidates"; payload: { candidates: Array<BirthResult["candidates"][number] & { card: string }>; candidateIntro: string; accuracy: string } }
+  | { kind: "candidates"; payload: { candidates: Array<Omit<BirthResult["candidates"][number], "name"> & { label: string; card: string }>; candidateIntro: string; accuracy: string } }
   | { kind: "result"; birth: BirthResult & { resolved: NonNullable<BirthResult["resolved"]> }; result: FreeResult };
 
 /** RangeError(고른 후보 시각이 구간 밖 등)는 호출한 쪽에서 400으로 돌려준다. */
@@ -36,10 +36,15 @@ export function computeFree(input: BirthInput, answers: Answers, nickname: strin
   // 무료 결과에는 2026년만 필요하다(트랜짓 기간을 짧게).
   const birth = computeBirth(input, ref, { start: "2026-01-01", end: "2026-01-01" });
   if (!birth.resolved) {
-    const { intro, cards } = candidateCards(ASTRO_DB, birth.candidates.map((c) => c.name));
+    const { intro, cards, labels } = candidateCards(ASTRO_DB, birth.candidates.map((c) => c.name));
     return {
       kind: "candidates",
-      payload: { candidates: birth.candidates.map((c) => ({ ...c, card: cards[c.name] })), candidateIntro: intro, accuracy: birth.accuracy },
+      // 동물 이름은 보내지 않는다(SHOW_CHARACTER=false) — 화면에는 label(유형 한 줄)
+      payload: {
+        candidates: birth.candidates.map(({ name, ...c }) => ({ ...c, label: labels[name], card: cards[name] })),
+        candidateIntro: intro,
+        accuracy: birth.accuracy,
+      },
     };
   }
   const { chart, longitudes, character } = birth.resolved;

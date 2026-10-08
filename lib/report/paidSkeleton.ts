@@ -241,7 +241,7 @@ export function buildPaidSkeleton(args: {
 
   const sections: PaidSection[] = [
     { no: 4, title: "연말까지 조심하면 좋을 것", paragraphs: p4, table: { columns: ["시기", "무엇을 조심할까"], rows: tableRows(db, eoy, "month", "careful") } },
-    { no: 5, title: "2027년을 맞는 마음가짐", paragraphs: p5, table: { columns: ["시기", "마음가짐"], rows: tableRows(db, periods.year2027, "quarter", "future") }, flow: flowSteps(eoy, periods.year2027) },
+    { no: 5, title: "2027년을 맞는 마음가짐", paragraphs: p5, table: { columns: ["시기", "마음가짐"], rows: tableRows(db, periods.year2027, "quarter", "future") }, flow: flowSteps(events, eoy) },
     { no: 6, title: `앞으로 5년, ${nickname}님의 삶은 이렇게 흘러갈 거예요`, paragraphs: p6, table: { columns: ["연도", "바람", "한 해의 테마"], rows: fiveRows }, stars },
     { no: 7, title: "별이 주는 질문과 웰니스 제안", paragraphs: p7, table: null },
   ];

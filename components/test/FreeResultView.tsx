@@ -72,7 +72,13 @@ export default function FreeResultView({
       <Section no={1} title={`${nickname}님이 태어난 순간의 하늘`} free>
         <p className="text-xs text-cream/70">정확도 {result.accuracy} · {result.gradeNote}</p>
         {result.addTimeNote && <p className="rounded-xl border border-cream/30 px-3 py-2 text-xs text-cream/80">{result.addTimeNote}</p>}
-        <BirthChartWheel chart={chart} characterName={character.name} onSelect={setSelected} selected={selected} className="mx-auto" />
+        <BirthChartWheel
+          chart={chart}
+          centerSign={{ index: result.sunSignIndex, name: result.sunSign }}
+          onSelect={setSelected}
+          selected={selected}
+          className="mx-auto"
+        />
         {sheet && <Sheet sheet={sheet} />}
         <ElementBars elements={chart.elements} />
         {(result.elements.strong || result.elements.weak.length > 0) && (
@@ -90,17 +96,17 @@ export default function FreeResultView({
         )}
       </Section>
 
-      <Section no={2} title="별이 본 나의 캐릭터" free>
+      <Section no={2} title={character.name ? "별이 본 나의 캐릭터" : "별이 본 나의 유형"} free>
         <p className="text-base font-bold text-cream">
-          {result.sunSign} · 별이 본 {nickname}님은 {character.name}({character.competency} × {character.style})입니다.
+          {result.sunSign} · 별이 본 {nickname}님은 {character.name ?? character.typeLine}({character.competency} × {character.style})입니다.
         </p>
         <Card>
-          <p>{character.intro}</p>
+          {character.intro && <p>{character.intro}</p>}
           <p>{character.why}</p>
           {character.sunMoonLine && <p>{character.sunMoonLine}</p>}
-          <p>• {character.strength}</p>
-          <p>• {character.energyMoment}</p>
-          <p>• {character.careTip}</p>
+          {character.strength && <p>• {character.strength}</p>}
+          {character.energyMoment && <p>• {character.energyMoment}</p>}
+          {character.careTip && <p>• {character.careTip}</p>}
         </Card>
         <table className="w-full overflow-hidden rounded-2xl bg-cream text-left text-sm text-navy">
           <thead>

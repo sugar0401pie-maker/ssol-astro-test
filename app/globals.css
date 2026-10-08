@@ -24,3 +24,18 @@ body {
   color: var(--astro-cream);
   font-family: var(--font-noto-sans-kr), system-ui, sans-serif;
 }
+
+/* 5년 타임라인: 움직이는 해의 고리 반짝임(3.5초). '동작 줄이기'면 반짝이지 않고 점선 고리. */
+@keyframes astro-ring-pulse {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
+.astro-ring {
+  animation: astro-ring-pulse 3.5s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .astro-ring {
+    animation: none;
+    stroke-dasharray: 3 3;
+  }
+}
