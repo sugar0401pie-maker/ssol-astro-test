@@ -13,6 +13,7 @@ export const CONSENT_LINES = [
 
 export const CONSENT_CHECK_LABEL = "위 내용을 확인했고, 결과 저장에 동의합니다. (필수)";
 
-export const PRIVACY_URL = "https://app.ssolwellnesshouse.com/legal#privacy";
-export const SENSITIVE_URL = "https://app.ssolwellnesshouse.com/legal#sensitive";
-export const TERMS_URL = "https://app.ssolwellnesshouse.com/legal#terms";
+// 이 사이트의 자체 법적 고지 페이지(app/legal/page.tsx, 2026-10-08 owner 요청으로 쏘웰라 페이지에서 분리).
+export const PRIVACY_URL = "/legal#privacy";
+export const SENSITIVE_URL = "/legal#sensitive";
+export const TERMS_URL = "/legal#terms";
