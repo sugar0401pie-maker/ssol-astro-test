@@ -5,7 +5,7 @@
 import { isSoftTone, type Answers, type Q2Word } from "../astro/answers.ts";
 import type { CharacterResult } from "../astro/character.ts";
 import { SHOW_CHARACTER, characterLabel } from "./characterDisplay.ts";
-import { ELEMENTS, SIGNS, STYLE_BY_ELEMENT, elementOf, type Element, type PointKey } from "../astro/constants.ts";
+import { CHARACTER_GRID, ELEMENTS, SIGNS, STYLES, STYLE_BY_ELEMENT, elementOf, type Element, type PointKey } from "../astro/constants.ts";
 import type { Accuracy, Longitudes, NatalChart } from "../astro/natal.ts";
 import {
   buildTimeline, clipIntervals, groupRows, periodFilter, scoreInWindow, turningPoints, type ScoredEvent, type TimelineEvent,
@@ -349,4 +349,18 @@ export function candidateCards(db: AstroDb, names: string[]): { intro: string; c
     labels[n] = characterLabel(db, n);
   }
   return { intro: text(db, "A15", "FIX_CANDIDATE_CHOICE", "text"), cards, labels };
+}
+
+/** 역량 동점 확인 화면(A15 FIX_TIE_CHOICE + 두 유형의 B6 카드). 동물 이름은 보내지 않는다(SHOW_CHARACTER). */
+export function tieOptions(db: AstroDb, c: CharacterResult): { intro: string; options: Array<{ competency: string; style: string; label: string; card: string }> } {
+  const opts = [c.competency, c.runner_up].map((comp) => {
+    const name = CHARACTER_GRID[comp][STYLES.indexOf(c.style)];
+    return {
+      competency: comp,
+      style: c.style,
+      label: characterLabel(db, name),
+      card: db.dbs.B6.rows.find((r) => r.character === name)?.choice_line ?? "",
+    };
+  });
+  return { intro: text(db, "A15", "FIX_TIE_CHOICE", "text"), options: opts };
 }

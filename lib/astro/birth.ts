@@ -3,7 +3,8 @@
 //   B  시간대(새벽/오전/오후/저녁) → 구간 안 30분 간격으로 캐릭터 계산, 하나로 모이면 그대로,
 //      갈리면 후보 2~3개를 사용자가 고른다(무작위 선택 금지)
 //   C  모름 → 12:00 기준, 상승궁·하우스 미사용, 하루 전체 30분 간격에서 가장 오래 나오는 후보 2~3개
-import { judgeCharacter, type CalibrationTable, type CharacterResult } from "./character.ts";
+import { judgeCharacter, withCompetencyPick, type CalibrationTable, type CharacterResult } from "./character.ts";
+import type { Competency } from "./constants.ts";
 import { computeNatal, type Accuracy, type Longitudes, type NatalChart } from "./natal.ts";
 import { localToUtc, type LocalDateTime } from "./time.ts";
 import { computeStationsAndIngress, computeTransits, type Ingress, type Station, type TransitEvent } from "./transits.ts";
@@ -31,6 +32,8 @@ export interface BirthInput {
   day: number;
   time: BirthTime;
   place: Place;
+  /** 역량 동점 확인 화면에서 고른 역량(1·2위 중 하나). 다시 보기에서도 같은 결과가 나오게 저장값에 함께 둔다. */
+  competencyPick?: Competency;
 }
 
 export interface CharacterCandidate {
@@ -182,6 +185,7 @@ function resolve(
     const c = computeNatal(cu, input.place.lat, input.place.lng, false);
     character = judgeCharacter(c.L, c.chart.elements, ref);
   }
+  character = withCompetencyPick(character, input.competencyPick);
   return {
     engineVersion: ENGINE_VERSION,
     stored: s,

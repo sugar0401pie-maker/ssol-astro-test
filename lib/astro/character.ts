@@ -95,3 +95,13 @@ export function judgeCharacter(
     runner_up: COMPETENCY_BY_PLANET[order[1]],
   };
 }
+
+/**
+ * 역량 동점 확인(마스터스펙 6-3: 1·2위 차이 3%p 미만이면 사용자가 고른다 — 무작위 금지).
+ * 고른 역량이 1·2위 중 하나일 때만 받아들이고, 그 외(동점이 아니거나 엉뚱한 값)는 판정을 그대로 둔다.
+ */
+export function withCompetencyPick(c: CharacterResult, pick: Competency | undefined): CharacterResult {
+  if (!pick || !c.needs_confirm || (pick !== c.competency && pick !== c.runner_up)) return c;
+  if (pick === c.competency) return { ...c, needs_confirm: false };
+  return { ...c, competency: pick, runner_up: c.competency, name: characterName(pick, c.style), needs_confirm: false };
+}

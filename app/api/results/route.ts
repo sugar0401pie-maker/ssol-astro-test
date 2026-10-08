@@ -25,13 +25,13 @@ export async function POST(req: NextRequest) {
 
   let computed;
   try {
-    computed = computeFree(parsed.input, parsed.answers, parsed.nickname);
+    computed = computeFree(parsed.input, parsed.answers, parsed.nickname, { askTie: true });
   } catch (e) {
     if (e instanceof RangeError) return NextResponse.json({ error: "고른 시간을 다시 확인해 주세요." }, { status: 400 });
     console.error("결과 계산 실패:", e instanceof Error ? e.name : "unknown");
     return NextResponse.json({ error: "계산 중 문제가 생겼어요. 잠시 후 다시 시도해 주세요." }, { status: 500 });
   }
-  if (computed.kind === "candidates") return NextResponse.json({ error: "요즘의 나와 더 가까운 쪽을 먼저 골라 주세요.", ...computed.payload }, { status: 409 });
+  if (computed.kind !== "result") return NextResponse.json({ error: "요즘의 나와 더 가까운 쪽을 먼저 골라 주세요.", ...computed.payload }, { status: 409 });
 
   try {
     const id = await saveResult({

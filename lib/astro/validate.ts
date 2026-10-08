@@ -1,5 +1,6 @@
 // /api/chart 요청 본문 검증. 잘못된 입력은 계산하지 않고 거부한다(fail closed).
 import { TIME_BANDS, type BirthInput, type BirthTime } from "./birth.ts";
+import { COMPETENCY_BY_PLANET, type Competency } from "./constants.ts";
 import { koreaRegion, type Place } from "./places.ts";
 import { isValidLocalDate } from "./time.ts";
 
@@ -49,5 +50,7 @@ export function parseBirthRequest(body: unknown, opts: ParseOptions = {}): Valid
   }
   if (!place) return { ok: false, error: "태어난 곳을 다시 확인해 주세요." };
 
-  return { ok: true, input: { year, month, day, time, place } };
+  // 역량 동점 확인에서 고른 역량(선택). 1·2위 중 하나인지는 엔진이 다시 확인한다(withCompetencyPick).
+  const pick = (Object.values(COMPETENCY_BY_PLANET) as string[]).includes(b.competencyPick as string) ? (b.competencyPick as Competency) : undefined;
+  return { ok: true, input: { year, month, day, time, place, ...(pick ? { competencyPick: pick } : {}) } };
 }

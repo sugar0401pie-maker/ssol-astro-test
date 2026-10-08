@@ -15,7 +15,7 @@ import CitySearch, { type PickedCity } from "./CitySearch";
 import ConsentStep from "./ConsentStep";
 import FreeResultView from "./FreeResultView";
 
-type Step = "welcome" | "experience" | "firstTime" | "birth" | "q1" | "q2" | "q3" | "loading" | "candidates" | "auth" | "consent" | "result";
+type Step = "welcome" | "experience" | "firstTime" | "birth" | "q1" | "q2" | "q3" | "loading" | "candidates" | "tie" | "auth" | "consent" | "result";
 
 // 카카오·네이버 로그인은 다른 화면에 갔다가 돌아오므로, 그 직전에 진행 상태를 이 탭에만(sessionStorage)
 // 잠깐 담아 두고 돌아오면 이어간다. 탭을 닫으면 사라지고, 저장이 끝나면 바로 지운다.
@@ -35,6 +35,7 @@ interface SavedFlow {
   city: PickedCity | null;
   answers: Partial<Answers>;
   pick: string | null;
+  competencyPick?: string | null;
 }
 function loadFlow(): SavedFlow | null {
   try {
@@ -109,6 +110,9 @@ export default function TestFlow() {
   const [saving, setSaving] = useState(false);
   const [saveNote, setSaveNote] = useState<string | null>(null);
   const [savedId, setSavedId] = useState<string | null>(null);
+  // 역량 동점 확인에서 고른 역량(저장 요청에도 그대로 보낸다)
+  const [competencyPick, setCompetencyPick] = useState<string | null>(restored?.competencyPick ?? null);
+  const [tie, setTie] = useState<{ intro: string; options: Array<{ competency: string; style: string; label: string; card: string }> } | null>(null);
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [candidateIntro, setCandidateIntro] = useState("");
   // 결과 전 화면의 고정 문구(해석 DB A15). 못 받아 와도 화면은 그대로 진행한다.
@@ -132,14 +136,21 @@ export default function TestFlow() {
     return { kind: "band", band } as const;
   }, [unknownTime, band, hour, minute]);
 
-  const requestBody = (a: Answers, p: string | null) => ({
-    birth: { year, month, day: safeDay, time: p ? { ...birthTime, pick: p } : birthTime, place: overseas && city ? { cityId: city.id } : { region } },
+  const requestBody = (a: Answers, p: string | null, cp: string | null = competencyPick) => ({
+    birth: {
+      year,
+      month,
+      day: safeDay,
+      time: p ? { ...birthTime, pick: p } : birthTime,
+      place: overseas && city ? { cityId: city.id } : { region },
+      ...(cp ? { competencyPick: cp } : {}),
+    },
     answers: a,
     nickname: name,
   });
 
   function saveFlow() {
-    const f: SavedFlow = { nickname, firstTime, year, month, day: safeDay, hour, minute, unknownTime, band, region, overseas, city, answers, pick };
+    const f: SavedFlow = { nickname, firstTime, year, month, day: safeDay, hour, minute, unknownTime, band, region, overseas, city, answers, pick, competencyPick };
     try {
       sessionStorage.setItem(FLOW_KEY, JSON.stringify(f));
     } catch {
@@ -184,14 +195,14 @@ export default function TestFlow() {
     }
   }
 
-  async function fetchResult(a: Answers, chosen?: string) {
+  async function fetchResult(a: Answers, chosen?: string, cp: string | null = competencyPick) {
     setStep("loading");
     setError(null);
     try {
       const res = await fetch("/api/result", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify(requestBody(a, chosen ?? null)),
+        body: JSON.stringify(requestBody(a, chosen ?? null, cp)),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "계산 중 문제가 생겼어요.");
@@ -199,8 +210,14 @@ export default function TestFlow() {
         setCandidates(data.candidates);
         setCandidateIntro(data.candidateIntro ?? "");
         setStep("candidates");
+      } else if (data.tie) {
+        // 역량 동점 — 후보 시각은 정해졌으니 기억해 두고, 어느 쪽이 더 가까운지 고르게 한다.
+        setPick(chosen ?? null);
+        setTie(data.tie);
+        setStep("tie");
       } else {
         setPick(chosen ?? null);
+        setCompetencyPick(cp);
         await afterReady();
       }
     } catch (e) {
@@ -396,6 +413,23 @@ export default function TestFlow() {
             >
               <span className="font-bold">{c.label} ({c.competency} × {c.style})</span>
               {c.card && <span className="text-sm leading-relaxed text-cream/80">{c.card}</span>}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {step === "tie" && tie && (
+        <div className="flex flex-col gap-5">
+          <Big>요즘의 나와 더 가까운 건?</Big>
+          {tie.intro && <p className="text-sm leading-relaxed text-cream/80">{tie.intro}</p>}
+          {tie.options.map((o) => (
+            <button
+              key={o.competency}
+              className="flex flex-col gap-1 rounded-2xl border border-cream/40 px-4 py-3 text-left text-cream hover:border-gold"
+              onClick={() => fetchResult(answers as Answers, pick ?? undefined, o.competency)}
+            >
+              <span className="font-bold">{o.label} ({o.competency} × {o.style})</span>
+              {o.card && <span className="text-sm leading-relaxed text-cream/80">{o.card}</span>}
             </button>
           ))}
         </div>

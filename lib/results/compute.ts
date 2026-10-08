@@ -6,7 +6,7 @@ import type { CalibrationTable } from "@/lib/astro/character";
 import { placeFromCityId } from "@/lib/astro/cityData";
 import { parseBirthRequest } from "@/lib/astro/validate";
 import { ASTRO_DB } from "@/lib/report/dbData";
-import { buildFreeResult, candidateCards, type FreeResult } from "@/lib/report/freeResult";
+import { buildFreeResult, candidateCards, tieOptions, type FreeResult } from "@/lib/report/freeResult";
 import calibration from "@/data/astro/calibration.json";
 
 const ref = calibration as CalibrationTable;
@@ -29,10 +29,15 @@ export function parseResultRequest(body: Record<string, unknown> | null): Parsed
 
 export type Computed =
   | { kind: "candidates"; payload: { candidates: Array<Omit<BirthResult["candidates"][number], "name"> & { label: string; card: string }>; candidateIntro: string; accuracy: string } }
+  | { kind: "tie"; payload: { tie: { intro: string; options: Array<{ competency: string; style: string; label: string; card: string }> }; accuracy: string } }
   | { kind: "result"; birth: BirthResult & { resolved: NonNullable<BirthResult["resolved"]> }; result: FreeResult };
 
 /** RangeError(고른 후보 시각이 구간 밖 등)는 호출한 쪽에서 400으로 돌려준다. */
-export function computeFree(input: BirthInput, answers: Answers, nickname: string): Computed {
+/**
+ * askTie: 새로 결과를 만들 때만 동점 확인을 묻는다. 저장된 결과를 다시 볼 때는(이 화면이 생기기 전에 저장된 것 포함)
+ * 묻지 않고 저장 당시 판정(고른 값이 있으면 그것, 없으면 1위)을 그대로 쓴다.
+ */
+export function computeFree(input: BirthInput, answers: Answers, nickname: string, opts: { askTie?: boolean } = {}): Computed {
   // 무료 결과에는 2026년만 필요하다(트랜짓 기간을 짧게).
   const birth = computeBirth(input, ref, { start: "2026-01-01", end: "2026-01-01" });
   if (!birth.resolved) {
@@ -48,6 +53,10 @@ export function computeFree(input: BirthInput, answers: Answers, nickname: strin
     };
   }
   const { chart, longitudes, character } = birth.resolved;
+  if (character.needs_confirm && opts.askTie) {
+    // 역량 동점(1·2위 3%p 안) — 사용자가 고른다(무작위 금지). 고른 값은 다음 요청의 birth.competencyPick으로 온다.
+    return { kind: "tie", payload: { tie: tieOptions(ASTRO_DB, character), accuracy: birth.accuracy } };
+  }
   return {
     kind: "result",
     birth: { ...birth, resolved: birth.resolved },
