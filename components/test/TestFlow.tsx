@@ -448,7 +448,19 @@ export default function TestFlow() {
       {step === "result" && result && (
         <>
           {saveNote && <p className="rounded-xl bg-cream px-3 py-2 text-sm text-navy">{saveNote}</p>}
-          <FreeResultView result={result} nickname={name} firstTime={firstTime === true} resultId={savedId} />
+          <FreeResultView
+            result={result}
+            nickname={name}
+            firstTime={firstTime === true}
+            resultId={savedId}
+            onAddTime={() => {
+              // C등급: 입력한 날짜·장소는 그대로 두고 시간만 다시 넣는 화면으로(새 결과로 저장된다)
+              setUnknownTime(false);
+              setPick(null);
+              setCompetencyPick(null);
+              setStep("birth");
+            }}
+          />
           <Link href="/results" className="text-center text-sm text-cream underline">내 결과 모아 보기</Link>
         </>
       )}

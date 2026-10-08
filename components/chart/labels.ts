@@ -41,4 +41,4 @@ export const PLANET_ORDER: readonly PointKey[] = [
 /** 양자리(♈ U+2648)부터 물고기자리(♓ U+2653)까지. 인덱스 = 별자리 순서. */
 export const SIGN_GLYPHS: readonly string[] = Array.from({ length: 12 }, (_, i) => String.fromCodePoint(0x2648 + i) + TEXT);
 
-export type WheelSelection = { kind: "planet"; key: PointKey } | { kind: "sign"; key: SignName };
+export type WheelSelection = { kind: "planet"; key: PointKey } | { kind: "sign"; key: SignName } | { kind: "line"; key: string };

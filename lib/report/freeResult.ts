@@ -40,7 +40,10 @@ export interface FreeResult {
   addTimeNote: string | null;
   chart: NatalChart;
   elements: { strong: { element: Element; text: string; styleLink: string } | null; weak: Array<{ element: Element; text: string }> };
-  wheelSheets: { planets: Partial<Record<PointKey, WheelSheet>>; signs: Record<string, WheelSheet> };
+  /** 휠 탭 시트. lines 키는 lineKey(a, b, aspect) — 각도 선(B3, 이 차트에 있는 선만) */
+  wheelSheets: { planets: Partial<Record<PointKey, WheelSheet>>; signs: Record<string, WheelSheet>; lines: Record<string, WheelSheet> };
+  /** 처음인 사용자의 휠 3단계 안내 말풍선(A15 FIX_WHEEL_TIP_1~3) */
+  wheelTips: string[];
   character: {
     /** 동물 이름 — SHOW_CHARACTER가 false면 null(브라우저에 보내지 않는다) */
     name: string | null;
@@ -112,6 +115,38 @@ function planetSheet(db: AstroDb, key: PointKey, chart: NatalChart): WheelSheet 
   const signRow = row(db, "B1a", `PL_${POINT_ID[key]}_${sid}`) ?? row(db, "B1b", `PL_${POINT_ID[key]}_${sid}`);
   const lines = [signRow?.short_line ? firstSentence(signRow.short_line) : text(db, "A16", `TERM_${POINT_ID[key]}`, "meaning_line")];
   return { title, lines: lines.filter(Boolean), partial: true };
+}
+
+/** 각도 선 시트 키 — 브라우저(BirthChartWheel)와 같은 규칙. */
+export function lineKey(a: string, b: string, aspect: string): string {
+  return `${a}|${b}|${aspect}`;
+}
+
+const ASPECT_TERM: Record<string, string> = { 합: "TERM_CONJ", 육분: "TERM_SEXTILE", 사각: "TERM_SQUARE", 삼분: "TERM_TRINE", 충: "TERM_OPPOSITION" };
+
+/**
+ * 각도 선 탭 시트(B3: 제목 + 선 탭 한 줄 + 해석 2문장). 행성 순서가 반대로 적힌 행도 찾는다.
+ * B3에는 개인 행성·목성·토성 쌍만 있어서, 천왕성·해왕성·명왕성이 낀 선은 A16 용어 문장(각도 뜻 + 두 행성 뜻)으로 보여 준다.
+ */
+function lineSheets(db: AstroDb, chart: NatalChart): Record<string, WheelSheet> {
+  const out: Record<string, WheelSheet> = {};
+  const group = (a: string) => (a === "합" ? "CONJ" : a === "삼분" || a === "육분" ? "HARM" : "TENSE");
+  for (const asp of chart.aspects) {
+    const g = group(asp.aspect);
+    const key = lineKey(asp.a, asp.b, asp.aspect);
+    const r = row(db, "B3", `ASP_${POINT_ID[asp.a]}_${POINT_ID[asp.b]}_${g}`) ?? row(db, "B3", `ASP_${POINT_ID[asp.b]}_${POINT_ID[asp.a]}_${g}`);
+    if (r) {
+      out[key] = { title: `${r.title}(${asp.aspect})`, lines: [r.line_meaning, r.text].filter(Boolean), partial: false };
+      continue;
+    }
+    const lines = [
+      text(db, "A16", ASPECT_TERM[asp.aspect], "meaning_line"),
+      `${POINT_KO[asp.a]}: ${text(db, "A16", `TERM_${POINT_ID[asp.a]}`, "meaning_line")}`,
+      `${POINT_KO[asp.b]}: ${text(db, "A16", `TERM_${POINT_ID[asp.b]}`, "meaning_line")}`,
+    ].filter((l) => !l.endsWith(": "));
+    if (lines[0]) out[key] = { title: `${POINT_KO[asp.a]}-${POINT_KO[asp.b]} ${asp.aspect}`, lines, partial: false };
+  }
+  return out;
 }
 
 function signSheets(db: AstroDb): Record<string, WheelSheet> {
@@ -300,7 +335,8 @@ export function buildFreeResult(args: {
     addTimeNote: chart.accuracy === "A" ? null : text(db, "A15", "FIX_ADD_TIME", "text").replace(/\s*→\s*\[.*\]\s*$/, ""),
     chart,
     elements: elementTexts(db, chart.elements, dominant),
-    wheelSheets: { planets, signs: signSheets(db) },
+    wheelSheets: { planets, signs: signSheets(db), lines: lineSheets(db, chart) },
+    wheelTips: [1, 2, 3].map((i) => text(db, "A15", `FIX_WHEEL_TIP_${i}`, "text")).filter(Boolean),
     character: {
       name: SHOW_CHARACTER ? character.name : null,
       typeLine: charRow.type_line,

@@ -208,20 +208,43 @@ export default function BirthChartWheel({
             const p1 = polar(C, C, R_INNER, angle(pa.lon));
             const p2 = polar(C, C, R_INNER, angle(pb.lon));
             const harmony = l.tone === "harmony";
+            const sel: WheelSelection = { kind: "line", key: `${l.a}|${l.b}|${l.aspect}` };
+            const label = `${POINT_NAMES[l.a]}–${POINT_NAMES[l.b]} ${l.aspect}`;
+            const on = isSame(selected, sel);
             return (
-              <line
+              <g
                 key={`${l.a}-${l.b}-${l.aspect}`}
-                x1={p1.x}
-                y1={p1.y}
-                x2={p2.x}
-                y2={p2.y}
-                stroke={harmony ? GOLD : CREAM}
-                strokeOpacity={harmony ? 0.9 : 0.75}
-                strokeWidth={harmony ? 1 : 0.9}
-                strokeDasharray={harmony ? undefined : "3 3"}
+                {...(interactive
+                  ? {
+                      role: "button",
+                      tabIndex: 0,
+                      "aria-label": label,
+                      onClick: () => select(sel),
+                      onKeyDown: (e: React.KeyboardEvent) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          select(sel);
+                        }
+                      },
+                      style: { cursor: "pointer" },
+                    }
+                  : {})}
               >
-                <title>{`${POINT_NAMES[l.a]}–${POINT_NAMES[l.b]} ${l.aspect}`}</title>
-              </line>
+                {/* 누르기 쉽게 보이지 않는 넓은 선을 겹친다 */}
+                {interactive && <line x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y} stroke="transparent" strokeWidth={10} />}
+                <line
+                  x1={p1.x}
+                  y1={p1.y}
+                  x2={p2.x}
+                  y2={p2.y}
+                  stroke={harmony ? GOLD : CREAM}
+                  strokeOpacity={on ? 1 : harmony ? 0.9 : 0.75}
+                  strokeWidth={on ? 2 : harmony ? 1 : 0.9}
+                  strokeDasharray={harmony ? undefined : "3 3"}
+                >
+                  <title>{label}</title>
+                </line>
+              </g>
             );
           })}
         </g>

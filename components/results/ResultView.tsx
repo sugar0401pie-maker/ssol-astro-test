@@ -4,6 +4,7 @@ import Link from "next/link";
 // 저장한 결과 다시 보기. 서버가 저장된 입력으로 다시 계산해 보내 준다(해석 DB가 고쳐지면 새 문장으로 보인다).
 import { useEffect, useState } from "react";
 import AuthStep from "@/components/auth/AuthStep";
+import { useRouter } from "next/navigation";
 import FreeResultView from "@/components/test/FreeResultView";
 import type { FreeResult } from "@/lib/report/freeResult";
 import { useRealSession } from "./useSession";
@@ -12,6 +13,7 @@ import type { PaidReport } from "@/lib/report/aiReport";
 
 export default function ResultView({ id }: { id: string }) {
   const session = useRealSession();
+  const router = useRouter();
   const [data, setData] = useState<{ nickname: string; firstTime: boolean; paid: boolean; result: FreeResult } | null>(null);
   const [report, setReport] = useState<PaidReport | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -65,6 +67,8 @@ export default function ResultView({ id }: { id: string }) {
         nickname={data.nickname}
         firstTime={data.firstTime}
         resultId={id}
+        // C등급: 시간을 알게 됐으면 테스트를 다시(새 결과로 저장된다)
+        onAddTime={() => router.push("/test")}
         paidContent={
           data.paid ? (
             report ? (

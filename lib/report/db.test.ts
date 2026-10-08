@@ -6,6 +6,8 @@ import { readFileSync } from "node:fs";
 import { CHARACTER_GRID, COMPETENCY_BY_PLANET, ELEMENTS, SIGNS, STYLES } from "../astro/constants.ts";
 import { Q1_OPTIONS, Q2_OPTIONS, Q3_ALL, type Answers } from "../astro/answers.ts";
 import { b9Id } from "./movement.ts";
+import { pickAspectLines } from "../astro/wheelLayout.ts";
+import { lineKey } from "./freeResult.ts";
 import { computeNatal } from "../astro/natal.ts";
 import { judgeCharacter, type CalibrationTable } from "../astro/character.ts";
 import { ELEMENT_ID, POINT_ID, SIGN_ID, fillTemplate, firstSentence, pad2, row, tryFill, type AstroDb } from "./db.ts";
@@ -127,6 +129,14 @@ test("샘플: 캐릭터·태양달 대비·원소가 샘플 리포트와 같은 
   assert.equal(r.gradeNote, row(db, "A15", "FIX_GRADE_A")!.text);
   assert.equal(r.addTimeNote, null);
   assert.equal(r.dbDraft, true);
+});
+
+test("샘플: 휠 각도 선마다 탭 시트(B3)와 처음 안내 말풍선 3개가 있다", () => {
+  const r = sample();
+  const lines = pickAspectLines(r.chart.aspects, true);
+  assert.ok(lines.length > 0);
+  for (const l of lines) assert.ok(r.wheelSheets.lines[lineKey(l.a, l.b, l.aspect)], `${l.a}-${l.b} ${l.aspect}`);
+  assert.equal(r.wheelTips.length, 3);
 });
 
 test("샘플: 2026 회고 — '변화'는 하늘과 맞는 도입문, 전환점은 토성 리턴·천왕성 상승궁 진입 두 개(샘플과 같음)", () => {

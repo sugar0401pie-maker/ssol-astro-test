@@ -50,12 +50,52 @@ function Sheet({ sheet }: { sheet: WheelSheet }) {
   );
 }
 
+const TIPS_SEEN_KEY = "astro_wheel_tips_seen";
+
+/** 처음인 사용자: 휠 첫 진입 때 3단계 안내(바깥 고리 = 별자리 → 동그라미 = 행성 → 선 = 관계). 한 번 닫으면 다시 안 띄운다. */
+function WheelTips({ tips }: { tips: string[] }) {
+  const [i, setI] = useState(() => {
+    try {
+      return localStorage.getItem(TIPS_SEEN_KEY) ? -1 : 0;
+    } catch {
+      return 0;
+    }
+  });
+  if (i < 0 || i >= tips.length) return null;
+  const close = () => {
+    setI(-1);
+    try {
+      localStorage.setItem(TIPS_SEEN_KEY, "1");
+    } catch {
+      /* 저장소를 못 쓰면 다음에 다시 보여도 괜찮다 */
+    }
+  };
+  return (
+    <div className="relative rounded-2xl bg-cream px-4 py-3 text-sm leading-relaxed text-navy" role="dialog" aria-label="출생차트 휠 안내">
+      <span aria-hidden className="absolute -top-2 left-1/2 h-4 w-4 -translate-x-1/2 rotate-45 bg-cream" />
+      <p>{tips[i]}</p>
+      <div className="mt-2 flex items-center justify-between text-xs">
+        <span className="text-navy/60">{i + 1} / {tips.length}</span>
+        <span className="flex gap-3">
+          <button type="button" className="underline" onClick={close}>닫기</button>
+          {i < tips.length - 1 ? (
+            <button type="button" className="font-bold" onClick={() => setI(i + 1)}>다음</button>
+          ) : (
+            <button type="button" className="font-bold" onClick={close}>알겠어요</button>
+          )}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 export default function FreeResultView({
   result,
   nickname,
   firstTime,
   resultId,
   paidContent,
+  onAddTime,
 }: {
   result: FreeResult;
   nickname: string;
@@ -64,6 +104,8 @@ export default function FreeResultView({
   resultId?: string | null;
   /** 결제 후 유료 섹션(있으면 블러 미리보기·결제 상자 대신 보여 준다) */
   paidContent?: React.ReactNode;
+  /** C등급: '태어난 시간 추가하기'를 누르면(주면 버튼이 생긴다) */
+  onAddTime?: () => void;
 }) {
   const [selected, setSelected] = useState<WheelSelection | null>(null);
   // 결제 전: 유료 섹션의 두괄식 첫 문장(서버가 DB 뼈대에서 한 문장씩만 보냄). 못 받아 오면 제목만.
@@ -94,7 +136,13 @@ export default function FreeResultView({
     return () => io.disconnect();
   }, [unpaid]);
   const { chart, character, year2026 } = result;
-  const sheet = selected ? (selected.kind === "planet" ? result.wheelSheets.planets[selected.key] : result.wheelSheets.signs[selected.key]) : null;
+  const sheet = !selected
+    ? null
+    : selected.kind === "planet"
+      ? result.wheelSheets.planets[selected.key]
+      : selected.kind === "line"
+        ? result.wheelSheets.lines?.[selected.key]
+        : result.wheelSheets.signs[selected.key];
 
   return (
     <div className={`flex flex-col gap-10 ${unpaid ? "pb-20" : ""}`}>
@@ -106,8 +154,10 @@ export default function FreeResultView({
           centerSign={{ index: result.sunSignIndex, name: result.sunSign }}
           onSelect={setSelected}
           selected={selected}
+          onAddTime={onAddTime}
           className="mx-auto"
         />
+        {firstTime && <WheelTips tips={result.wheelTips ?? []} />}
         {sheet && <Sheet sheet={sheet} />}
         <ElementBars elements={chart.elements} />
         {(result.elements.strong || result.elements.weak.length > 0) && (
