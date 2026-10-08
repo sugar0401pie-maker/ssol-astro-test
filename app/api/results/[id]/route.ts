@@ -16,7 +16,7 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/results/[id]
     if (!row) return NextResponse.json({ error: "결과를 찾을 수 없어요." }, { status: 404 });
     const c = computeFree(row.birth_input, row.answers, row.nickname);
     if (c.kind !== "result") return NextResponse.json({ error: "결과를 다시 계산하지 못했어요." }, { status: 500 });
-    return NextResponse.json({ id: row.id, createdAt: row.created_at, nickname: row.nickname, firstTime: row.first_time, result: c.result });
+    return NextResponse.json({ id: row.id, createdAt: row.created_at, nickname: row.nickname, firstTime: row.first_time, paid: !!row.paid_at, result: c.result });
   } catch (e) {
     console.error(e instanceof Error ? e.message : "결과 조회 실패");
     return NextResponse.json({ error: "결과를 불러오지 못했어요." }, { status: 500 });

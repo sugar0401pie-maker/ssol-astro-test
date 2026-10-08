@@ -12,8 +12,10 @@
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.116.0",
+    "@tosspayments/payment-widget-sdk": "^0.12.2",
     "astronomy-engine": "2.1.19",
     "next": "16.3.5",
+    "openai": "^7.30.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "server-only": "^0.0.1"

@@ -107,6 +107,7 @@ export default function TestFlow() {
   const [pick, setPick] = useState<string | null>(restored?.pick ?? null);
   const [saving, setSaving] = useState(false);
   const [saveNote, setSaveNote] = useState<string | null>(null);
+  const [savedId, setSavedId] = useState<string | null>(null);
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [candidateIntro, setCandidateIntro] = useState("");
   // 결과 전 화면의 고정 문구(해석 DB A15). 못 받아 와도 화면은 그대로 진행한다.
@@ -172,6 +173,7 @@ export default function TestFlow() {
       if (!res.ok || !data.result) throw new Error(data.error ?? "저장하지 못했어요.");
       clearFlow();
       setResult(data.result);
+      setSavedId(data.id ?? null);
       setSaveNote(data.saveError ? "결과를 저장하지 못했어요. 이 화면을 닫으면 다시 볼 수 없어요." : null);
       setStep("result");
     } catch (e) {
@@ -405,7 +407,7 @@ export default function TestFlow() {
       {step === "result" && result && (
         <>
           {saveNote && <p className="rounded-xl bg-cream px-3 py-2 text-sm text-navy">{saveNote}</p>}
-          <FreeResultView result={result} nickname={name} firstTime={firstTime === true} />
+          <FreeResultView result={result} nickname={name} firstTime={firstTime === true} resultId={savedId} />
           <Link href="/results" className="text-center text-sm text-cream underline">내 결과 모아 보기</Link>
         </>
       )}

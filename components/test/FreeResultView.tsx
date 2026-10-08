@@ -2,6 +2,7 @@
 
 // 결과 화면(02_디자인가이드 3장 순서, 샘플 리포트 10번 파일의 배치). 1~3번은 무료(AI 0회, 문장은 서버가 해석 DB에서 골라 보냄),
 // 4~7번은 제목만 보이고 본문은 결제 후 서버가 채운다.
+import Link from "next/link";
 import { useState } from "react";
 import BirthChartWheel from "@/components/chart/BirthChartWheel";
 import ElementBars from "@/components/chart/ElementBars";
@@ -47,7 +48,21 @@ function Sheet({ sheet }: { sheet: WheelSheet }) {
   );
 }
 
-export default function FreeResultView({ result, nickname, firstTime }: { result: FreeResult; nickname: string; firstTime: boolean }) {
+export default function FreeResultView({
+  result,
+  nickname,
+  firstTime,
+  resultId,
+  paidContent,
+}: {
+  result: FreeResult;
+  nickname: string;
+  firstTime: boolean;
+  /** 저장된 결과 id — 있으면 결제 버튼이 결제 화면으로 간다 */
+  resultId?: string | null;
+  /** 결제 후 유료 섹션(있으면 블러 미리보기·결제 상자 대신 보여 준다) */
+  paidContent?: React.ReactNode;
+}) {
   const [selected, setSelected] = useState<WheelSelection | null>(null);
   const { chart, character, year2026 } = result;
   const sheet = selected ? (selected.kind === "planet" ? result.wheelSheets.planets[selected.key] : result.wheelSheets.signs[selected.key]) : null;
@@ -162,19 +177,27 @@ export default function FreeResultView({ result, nickname, firstTime }: { result
         </div>
       </Section>
 
-      {result.paidSections.map((s) => (
-        <Section key={s.no} no={s.no} title={s.title.replace("{닉네임}", nickname)} free={false}>
-          {/* 본문은 결제 후 서버가 만든다 — 여기에는 실제 내용을 넣지 않는다. */}
-          <div aria-hidden className="h-24 rounded-2xl bg-cream/80 blur-sm" />
-        </Section>
-      ))}
+      {paidContent ?? (
+        <>
+          {result.paidSections.map((s) => (
+            <Section key={s.no} no={s.no} title={s.title.replace("{닉네임}", nickname)} free={false}>
+              {/* 본문은 결제 후 서버가 만든다 — 여기에는 실제 내용을 넣지 않는다. */}
+              <div aria-hidden className="h-24 rounded-2xl bg-cream/80 blur-sm" />
+            </Section>
+          ))}
 
-      <div className="rounded-2xl border border-gold px-4 py-4 text-center text-cream">
-        <p className="text-sm leading-relaxed text-cream/90">{result.paywallBox}</p>
-        <button className="mt-3 w-full rounded-full bg-gold px-6 py-3 font-bold text-navy" disabled>
-          결제는 준비 중이에요
-        </button>
-      </div>
+          <div className="rounded-2xl border border-gold px-4 py-4 text-center text-cream">
+            <p className="text-sm leading-relaxed text-cream/90">{result.paywallBox}</p>
+            {resultId ? (
+              <Link href={`/checkout/${resultId}`} className="mt-3 block w-full rounded-full bg-gold px-6 py-3 font-bold text-navy">
+                전체 리포트 보기
+              </Link>
+            ) : (
+              <p className="mt-3 text-xs text-cream/70">결과를 저장하면 전체 리포트를 볼 수 있어요.</p>
+            )}
+          </div>
+        </>
+      )}
 
       {result.care && (
         // 2026 한 단어가 '그만하자·이별·고생'이면 함께 보여준다(진행은 막지 않음, 마스터스펙 4장).
