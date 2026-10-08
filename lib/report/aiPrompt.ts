@@ -28,6 +28,9 @@ export function fillSystemPrompt(built: BuiltReportInput, dbSentences: string[])
     q3_wish_2027: i.answers.q3_wish_2027,
     soft_tone: String(i.soft_tone),
     wish_support: JSON.stringify(i.wish_support),
+    wish_edge: JSON.stringify(i.wish_edge),
+    movement: JSON.stringify(i.movement),
+    temperament: i.temperament,
     first_open_year: i.first_open_year ?? (i.closest_year ? `없음(가장 가까워지는 해: ${i.closest_year})` : "없음"),
     wish_reason: JSON.stringify(i.wish_reason),
     db_sentences: dbSentences.map((s) => `- ${s}`).join("\n") || "(없음)",
@@ -81,6 +84,8 @@ export function processPartOutput(
   part: PartId,
   built: BuiltReportInput,
   c1Rules: C1Rule[],
+  /** 화면에 쓰지 않는 말(당분간 캐릭터 동물 이름, show_character=false) — 나오면 실패 */
+  bannedWords: readonly string[] = [],
 ): PartOutcome {
   const requiredTokens = part === "C" && built.input.first_open_year ? ["열리는해"] : [];
   const issues = validateReport(text, {
@@ -92,6 +97,7 @@ export function processPartOutput(
     headwind2027: part === "B" && built.headwind2027,
     c1Rules,
   });
+  for (const w of bannedWords) if (text.includes(w)) issues.push({ code: "character_name", detail: w });
   const failures = issues.filter((i) => i.severity !== "경고");
   if (failures.length) return { ok: false, sections: {}, issues };
   const values = Object.fromEntries(Object.entries(built.tokens).map(([k, v]) => [k, v.value]));

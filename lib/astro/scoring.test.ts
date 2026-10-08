@@ -7,7 +7,7 @@ import {
   buildTimeline, groupRows, mergeRuns, scoreInWindow, selectPeriods, touchesDomain, turningPoints, type TimelineEvent,
 } from "./timeline.ts";
 import { computeWish, levelOf } from "./wish.ts";
-import { DOMAIN_BOOST, WISH_THRESHOLD } from "./scoringConfig.ts";
+import { DOMAIN_BOOST } from "./scoringConfig.ts";
 
 const { L } = computeNatal(new Date(Date.UTC(1996, 3, 1, 1, 17)), 37.2893, 127.0535);
 const NOW = new Date("2026-10-07T03:00:00Z");
@@ -72,25 +72,22 @@ test("groupRows: 연말은 월, 2027은 분기, 5년은 연 단위 행", () => {
   assert.deepEqual(groupRows(p.fiveYears.all, p.fiveYears.window, "year").map((r) => r.index), [2027, 2028, 2029, 2030, 2031]);
 });
 
-test("바람 지원도: 판정 경계와 '열리는 해'", () => {
-  assert.equal(levelOf(WISH_THRESHOLD), "순풍");
-  assert.equal(levelOf(-WISH_THRESHOLD), "역풍");
-  assert.equal(levelOf(0), "보통");
-  const w = computeWish(L, "안정", { stabilityIncludesMoon: true });
+test("바람 판정 v3: 샘플의 2028년 근거(목성 4하우스 통과, 토성–달 삼분 6·11월)", () => {
+  const w = computeWish(L, "안정", { birthDate: "1996-04-01", dayChart: true });
   assert.equal(w.years.length, 5);
-  // 스펙 샘플의 2028년 근거(토성–달 삼분 6·11월, 목성 4H ~8월)가 그대로 잡힌다.
   const y2028 = w.years.find((y) => y.year === 2028)!;
   assert.equal(y2028.level, "순풍");
   assert.ok(y2028.reasons.some((r) => r.kind === "house" && r.transit === "jupiter" && r.house === 4));
   assert.ok(y2028.reasons.some((r) => r.kind === "aspect" && r.transit === "saturn" && r.target === "moon" && r.aspect === "삼분"));
-  assert.equal(w.firstOpenYear, w.years.find((y) => y.level === "순풍")?.year ?? null);
-  if (w.firstOpenYear !== null) assert.equal(w.closestYear, null);
+  assert.equal(w.firstOpenYear, 2028);
+  assert.equal(w.closestYear, null);
+  assert.equal(levelOf(0), "보통");
 });
 
-test("바람 지원도: C등급은 하우스·축을 빼고 행성만 본다", () => {
+test("바람 판정 v3: C등급은 하우스·지배 행성·축을 빼고 주제 행성과 달만 본다", () => {
   const c = computeNatal(new Date(Date.UTC(1996, 3, 1, 3, 0)), 37.2893, 127.0535, false);
-  const w = computeWish(c.L, "나다움");
+  const w = computeWish(c.L, "나다움", { birthDate: "1996-04-01", dayChart: null });
   assert.equal(w.housesExcluded, true);
-  assert.deepEqual(w.points, ["sun"]);
-  assert.ok(w.years.every((y) => y.reasons.every((r) => r.kind === "aspect")));
+  assert.deepEqual(Object.keys(w.significators).sort(), ["moon", "sun"]);
+  assert.ok(w.years.every((y) => y.factors.every((r) => r.kind === "aspect") && y.profectionLord === null));
 });

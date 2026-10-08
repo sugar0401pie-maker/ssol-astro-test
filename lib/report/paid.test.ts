@@ -14,7 +14,7 @@ import { fillSystemPrompt, partUserMessage, processPartOutput, splitSections } f
 import { SYSTEM_PROMPT_TEMPLATE } from "./systemPrompt.ts";
 import { compileC1, type C1Row } from "./validate.ts";
 
-const db: AstroDb = JSON.parse(readFileSync(new URL("../../data/astro/db/astro_db_v1.1.json", import.meta.url), "utf8"));
+const db: AstroDb = JSON.parse(readFileSync(new URL("../../data/astro/db/astro_db_v1.2.json", import.meta.url), "utf8"));
 const ref: CalibrationTable = JSON.parse(readFileSync(new URL("../../data/astro/calibration.json", import.meta.url), "utf8"));
 const c1 = compileC1(db.dbs.C1.rows as unknown as C1Row[]);
 const NOW = new Date("2026-10-07T03:00:00Z");
@@ -24,9 +24,9 @@ function setup(answers: Answers = { q1: "직업·커리어", q2: "변화", q3: "
   const character = judgeCharacter(L, chart.elements, ref);
   const events = buildTimeline(L, { start: "2026-01-01", end: "2031-12-31" }, periodWindows(NOW).eoy);
   const periods = selectPeriods(events, answers.q1, NOW);
-  const wish = computeWish(L, answers.q3);
+  const wish = computeWish(L, answers.q3, { birthDate: "1996-04-01", dayChart: true });
   const skeleton = buildPaidSkeleton({ db, chart, longitudes: L, character, answers, events, periods, wish, nickname: "지우" });
-  const built = buildReportInput({ nickname: "지우", chart, character, answers, periods, wish });
+  const built = buildReportInput({ nickname: "지우", chart, character, answers, periods, wish, typeLine: "누군가에게 기대는 일에 에너지가 많이 들고, 그럴 때 먼저 다가가는 유형" });
   return { skeleton, built, wish };
 }
 
@@ -54,8 +54,8 @@ test("DB 뼈대: 4섹션 모두 있고, 연말 본문에 금성 역행(6H)·표 
 });
 
 test("{{근거}} 구절은 '-는'으로 끝난다", () => {
-  assert.equal(evidencePhrase(db, { kind: "house", transit: "jupiter", house: 4, intervals: [], value: 1 })?.endsWith("지나는"), true);
-  assert.equal(evidencePhrase(db, { kind: "aspect", transit: "saturn", target: "moon", aspect: "삼분", intervals: [], value: 1 }), "토성이 태어날 때의 달과 자연스럽게 돕는 각도를 이루는");
+  assert.equal(evidencePhrase(db, { kind: "house", transit: "jupiter", house: 4, intervals: [], days: 100, value: 1 })?.endsWith("지나는"), true);
+  assert.equal(evidencePhrase(db, { kind: "aspect", transit: "saturn", target: "moon", aspect: "삼분", intervals: [], exact: "2028-06-07", value: 1, profection: false }), "토성이 태어날 때의 달과 자연스럽게 돕는 각도를 이루는");
   assert.equal(evidencePhrase(db, undefined), null);
 });
 
@@ -91,6 +91,27 @@ test("AI 출력 처리: 토큰 밖 숫자·제목 누락·금지어·없는 토�
   assert.equal(processPartOutput(GOOD_A.replace("### 4. 연말까지 조심하면 좋을 것", "### 4. 연말"), "A", built, c1).ok, false);
   assert.equal(processPartOutput(GOOD_A + "\n\n반드시 좋아집니다.", "A", built, c1).ok, false);
   assert.equal(processPartOutput(GOOD_A.replace("{{E1_기간}}", "{{E9_기간}}"), "A", built, c1).ok, false);
+});
+
+test("AI 출력 처리: 캐릭터 동물 이름이 나오면 실패(당분간 화면 비노출)", () => {
+  const { built } = setup();
+  assert.equal(processPartOutput(GOOD_A + "\n\n수달처럼 먼저 다가가 보세요.", "A", built, c1, ["수달"]).ok, false);
+  assert.equal(processPartOutput(GOOD_A, "A", built, c1, ["수달"]).ok, true);
+});
+
+test("바람 v3: 리포트 입력에 판정 이름 두 말·움직임·기질·흐름 토큰이 들어간다", () => {
+  const { built, skeleton } = setup();
+  const i = built.input;
+  assert.ok(Object.values(i.wish_support).every((v) => /^(활짝 열리는 해\(순풍\)|내 손에 달린 해\(보통\)|기반을 다지는 해\(역풍\))$/.test(v)));
+  assert.equal(i.temperament, "활동"); // 샘플 기질(원본 샘플 판정 JSON)
+  assert.equal(i.movement[Object.keys(i.movement)[0]], "움직이는 해"); // 2027 = 움직이는 해
+  assert.ok(i.flow_2027.every((t) => built.tokens[t.slice(2, -2)]));
+  const s6 = skeleton.sections.find((x) => x.no === 6)!;
+  assert.equal(s6.stars?.length, 5);
+  assert.equal(s6.stars?.find((x) => x.firstOpen)?.year, 2028);
+  assert.ok(s6.table!.rows.every((r) => /\((순풍|보통|역풍)\)/.test(r.cells[0])));
+  const sys = fillSystemPrompt(built, []);
+  assert.ok(!/(?<!\{)\{(movement|temperament|wish_support)\}(?!\})/.test(sys));
 });
 
 test("섹션 나누기: 6·7을 한 출력에서 나눈다", () => {

@@ -4,11 +4,14 @@ import type { Competency, PlanetKey } from "./constants.ts";
 
 export const Q1_OPTIONS = ["직업·커리어", "진로·자기계발", "연애", "가족", "교우·사회관계", "재정·생활안정"] as const;
 export const Q2_OPTIONS = ["버텨", "배움", "변화", "멈춤", "성취", "이별", "고생", "그만하자", "시작", "설렘"] as const;
-export const Q3_OPTIONS = ["안정", "도약", "회복", "사랑", "좋은 사람들", "여유", "건강한 생활", "경제적 여유", "인정", "나다움"] as const;
+export const Q3_ALL = ["안정", "도약", "회복", "사랑", "좋은 사람들", "여유", "건강한 생활", "경제적 여유", "인정", "나다움", "새로운 시작"] as const;
+/** '새로운 시작'은 추가 후보(마스터스펙 4장, owner 결정 대기) — 엔진·DB에는 반영돼 있고 화면에만 숨긴다. 넣기로 하면 true. */
+export const SHOW_NEW_START_OPTION = false;
+export const Q3_OPTIONS: readonly Q3Wish[] = Q3_ALL.filter((o) => SHOW_NEW_START_OPTION || o !== "새로운 시작");
 
 export type Q1Domain = (typeof Q1_OPTIONS)[number];
 export type Q2Word = (typeof Q2_OPTIONS)[number];
-export type Q3Wish = (typeof Q3_OPTIONS)[number];
+export type Q3Wish = (typeof Q3_ALL)[number];
 
 export const Q_LABELS = {
   Q1: "요즘 제일 신경 쓰이는 부분은 무엇인가요?",
@@ -39,21 +42,28 @@ export const DOMAIN_MAP: Record<Q1Domain, { houses: number[]; points: Array<Plan
   "재정·생활안정": { houses: [2, 8], points: ["venus", "saturn"] },
 };
 
-/** Q3 바람 → 보는 자리(행성·축·하우스)와 연결 역량(5-2). */
-export type WishPoint = PlanetKey | "mc" | "asc" | `H${number}`;
-export const WISH_MAP: Record<Q3Wish, { points: WishPoint[]; competency: Competency }> = {
-  안정: { points: ["saturn", "H4", "H2"], competency: "믿기" },
-  도약: { points: ["jupiter", "H10", "mc", "mars"], competency: "선 지키기" },
-  회복: { points: ["moon", "H6", "H12"], competency: "회복하기" },
-  사랑: { points: ["venus", "H5", "H7"], competency: "기대기" },
-  "좋은 사람들": { points: ["H11", "H3", "mercury"], competency: "말하기" },
-  여유: { points: ["venus", "H12", "H5"], competency: "회복하기" },
+/**
+ * Q3 바람 → 바람이 걸린 하우스·주제 행성·연결 역량(마스터스펙 5-2 v3 / 04_데이터.json wish_map).
+ * 하우스는 지배 행성·하우스 안 행성·목성/토성 통과로 풀린다(lib/astro/wish.ts).
+ */
+export type WishNatural = PlanetKey | "asc" | "mc";
+export const WISH_MAP: Record<Q3Wish, { houses: number[]; natural: WishNatural[]; competency: Competency }> = {
+  안정: { houses: [4, 2], natural: ["moon", "saturn"], competency: "믿기" },
+  도약: { houses: [10], natural: ["mc", "sun", "jupiter"], competency: "선 지키기" },
+  인정: { houses: [10], natural: ["mc", "sun"], competency: "말하기" },
+  사랑: { houses: [5, 7], natural: ["venus"], competency: "기대기" },
+  "좋은 사람들": { houses: [11], natural: ["jupiter"], competency: "말하기" },
+  "경제적 여유": { houses: [2], natural: ["jupiter", "venus"], competency: "믿기" },
+  나다움: { houses: [1], natural: ["asc", "sun"], competency: "선 지키기" },
+  회복: { houses: [1, 12], natural: ["moon"], competency: "회복하기" },
+  여유: { houses: [12, 5], natural: ["moon", "venus"], competency: "회복하기" },
   // 루틴·습관으로만 해석, 질병·몸 상태 예측 금지
-  "건강한 생활": { points: ["H6", "H1", "mars"], competency: "선 지키기" },
-  "경제적 여유": { points: ["H2", "H8", "venus", "saturn"], competency: "믿기" },
-  인정: { points: ["sun", "H10", "mc"], competency: "말하기" },
-  나다움: { points: ["sun", "asc", "H1"], competency: "선 지키기" },
+  "건강한 생활": { houses: [1, 6], natural: ["moon"], competency: "선 지키기" },
+  "새로운 시작": { houses: [1, 9], natural: ["asc", "sun", "jupiter"], competency: "선 지키기" },
 };
+
+/** 변화를 바라는 바람 — 움직이는 해에 이루어짐 +1(C2 W_047). */
+export const CHANGE_WISHES: ReadonlySet<Q3Wish> = new Set(["도약", "나다움", "새로운 시작"]);
 
 export function isAnswers(v: unknown): v is Answers {
   if (!v || typeof v !== "object") return false;

@@ -4,15 +4,19 @@ import "server-only";
 // 모델은 스펙 이름(GPT-6.1 Sol)을 기본으로, 실제 모델 ID가 다르면 REPORT_MODEL 환경변수로 바꾼다.
 // AI 호출은 이 파일 한 곳에서만 한다(제공사·모델 교체 지점).
 import OpenAI from "openai";
+import { CHARACTER_GRID } from "@/lib/astro/constants";
 import type { Answers } from "@/lib/astro/answers";
 import type { BirthResult } from "@/lib/astro/birth";
 import { buildTimeline, periodWindows, selectPeriods } from "@/lib/astro/timeline";
-import { computeWish } from "@/lib/astro/wish";
+import { computeWish, type WishContext } from "@/lib/astro/wish";
 import { PARTS, fillSystemPrompt, partUserMessage, processPartOutput, type PartId } from "./aiPrompt";
-import type { AstroDb } from "./db";
+import { findRow, type AstroDb } from "./db";
 import { buildPaidSkeleton, type PaidSection } from "./paidSkeleton";
 import { buildReportInput } from "./reportInput";
 import { compileC1, type C1Row } from "./validate";
+
+/** 당분간 화면 비노출(show_character=false) — AI 출력에 나오면 그 파트를 다시 만든다. */
+const CHARACTER_NAMES = Object.values(CHARACTER_GRID).flat();
 
 export const REPORT_MODEL = process.env.REPORT_MODEL || "gpt-6.1-sol";
 
@@ -42,16 +46,17 @@ async function callModel(system: string, user: string): Promise<string> {
   return text;
 }
 
-export async function generatePaidReport(args: { db: AstroDb; resolved: Resolved; answers: Answers; nickname: string; now?: Date }): Promise<PaidReport> {
+export async function generatePaidReport(args: { db: AstroDb; resolved: Resolved; wishContext: WishContext; answers: Answers; nickname: string; now?: Date }): Promise<PaidReport> {
   const { db, resolved, answers, nickname } = args;
   const now = args.now ?? new Date();
   const { chart, longitudes: L, character } = resolved;
   const windows = periodWindows(now);
   const events = buildTimeline(L, { start: "2026-01-01", end: "2031-12-31" }, windows.eoy);
   const periods = selectPeriods(events, answers.q1, now);
-  const wish = computeWish(L, answers.q3);
+  const wish = computeWish(L, answers.q3, args.wishContext);
   const skeleton = buildPaidSkeleton({ db, chart, longitudes: L, character, answers, events, periods, wish, nickname });
-  const built = buildReportInput({ nickname, chart, character, answers, periods, wish });
+  const typeLine = findRow(db, "A5", (r) => r.character === character.name)?.type_line ?? "";
+  const built = buildReportInput({ nickname, chart, character, answers, periods, wish, typeLine });
   const c1 = compileC1(db.dbs.C1.rows as unknown as C1Row[]);
 
   const runPart = async (part: PartId) => {
@@ -61,7 +66,7 @@ export async function generatePaidReport(args: { db: AstroDb; resolved: Resolved
     const user = partUserMessage(built, part);
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
-        const out = processPartOutput(await callModel(system, user), part, built, c1);
+        const out = processPartOutput(await callModel(system, user), part, built, c1, CHARACTER_NAMES);
         if (out.ok) return out.sections;
         // 실패 사유는 코드만 남긴다(문장·개인정보는 로그에 남기지 않음).
         console.warn(`리포트 파트 ${part} 검증 실패(${attempt + 1}회):`, out.issues.filter((i) => i.severity !== "경고").map((i) => i.code).join(","));

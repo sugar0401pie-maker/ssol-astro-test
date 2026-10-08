@@ -6,7 +6,8 @@ import { isSoftTone, type Answers } from "../astro/answers.ts";
 import type { CharacterResult } from "../astro/character.ts";
 import type { Accuracy, NatalChart } from "../astro/natal.ts";
 import type { PeriodKey, PeriodResult, ScoredEvent } from "../astro/timeline.ts";
-import type { WishResult } from "../astro/wish.ts";
+import { EDGE_LABEL, WISH_LEVEL_DISPLAY, type WishResult } from "../astro/wish.ts";
+import { flowSteps } from "./movement.ts";
 import { formatMonths, formatRanges, formatYear, josa } from "./format.ts";
 import { POINT_KO, eventLabel, eventNames } from "./labels.ts";
 
@@ -25,13 +26,23 @@ export interface ReportEventInput {
 export interface ReportInput {
   user: { nickname: string; accuracy: Accuracy };
   chart: { sun: string; moon: string; asc: string | null; element: string };
+  /** 캐릭터(동물) 이름은 넣지 않는다 — 당분간 화면 비노출(show_character=false). name 자리에 유형 한 줄(A5 type_line). */
   character: { name: string; competency: string; style: string };
   answers: { q1_domain: string; q2_word_2026: string; q3_wish_2027: string };
   events_eoy: ReportEventInput[];
   events_2027: ReportEventInput[];
   events_5y: ReportEventInput[];
   domain_quiet: Partial<Record<PeriodKey, boolean>>;
+  /** 연도 토큰 → "활짝 열리는 해(순풍)"처럼 두 말 함께 */
   wish_support: Record<string, string>;
+  /** 연도 토큰 → 경계 표시(B10, 예: 활짝 열리는 해에 가까움). 없으면 빠짐 */
+  wish_edge: Record<string, string>;
+  /** 연도 토큰 → 움직이는 해 / 잔잔한 해 / ''(좋고 나쁨 없음) */
+  movement: Record<string, string>;
+  /** 활동 / 고정 / 변통 (B9 문장 버전) */
+  temperament: string;
+  /** 2027 '흐름 한눈에' 단계 토큰(서버가 단계로 묶음) */
+  flow_2027: string[];
   /** 연도 토큰 → 근거 목록(라벨 + 기간 토큰) */
   wish_reason: Record<string, Array<{ token: string; reason: string }>>;
   first_open_year: string | null;
@@ -66,6 +77,8 @@ export function buildReportInput(args: {
   answers: Answers;
   periods: Record<PeriodKey, PeriodResult>;
   wish: WishResult;
+  /** A5 type_line — 캐릭터 이름 대신 쓰는 유형 한 줄 */
+  typeLine: string;
 }): BuiltReportInput {
   const { nickname, chart, character, answers, periods, wish } = args;
   const tokens: Record<string, TokenInfo> = {};
@@ -93,12 +106,16 @@ export function buildReportInput(args: {
 
   const wish_support: Record<string, string> = {};
   const wish_reason: ReportInput["wish_reason"] = {};
+  const wish_edge: Record<string, string> = {};
+  const movement: Record<string, string> = {};
   const headwind_years: string[] = [];
   let r = 0;
   for (const y of wish.years) {
     const yt = `Y${y.year}`;
     tokens[yt] = { value: formatYear(y.year), meaning: `${y.year}년(연도)` };
-    wish_support[yt] = y.level;
+    wish_support[yt] = WISH_LEVEL_DISPLAY[y.level];
+    if (y.edge) wish_edge[yt] = EDGE_LABEL[y.edge];
+    movement[yt] = y.movementLabel;
     if (y.level === "역풍") headwind_years.push(yt);
     if (y.reasons.length) {
       wish_reason[yt] = y.reasons.map((f) => {
@@ -130,13 +147,21 @@ export function buildReportInput(args: {
       asc: placed(chart, "asc"),
       element: (Object.entries(chart.elements).sort((a, b) => b[1] - a[1])[0] ?? ["", 0])[0],
     },
-    character: { name: character.name, competency: character.competency, style: character.style },
+    character: { name: args.typeLine, competency: character.competency, style: character.style },
     answers: { q1_domain: answers.q1, q2_word_2026: answers.q2, q3_wish_2027: answers.q3 },
     events_eoy: events("eoy", "E", false),
     events_2027: events("year2027", "T", false),
     events_5y: events("fiveYears", "F", true),
     domain_quiet: { eoy: periods.eoy.domainQuiet, year2027: periods.year2027.domainQuiet, fiveYears: periods.fiveYears.domainQuiet },
     wish_support,
+    wish_edge,
+    movement,
+    temperament: wish.temperament,
+    flow_2027: flowSteps(periods.eoy, periods.year2027).map((text, i) => {
+      const name = `흐름${i + 1}`;
+      tokens[name] = { value: text, meaning: "2027년 흐름의 한 단계(시기 + 단계 이름)" };
+      return `{{${name}}}`;
+    }),
     wish_reason,
     first_open_year: yearToken(wish.firstOpenYear, "열리는해"),
     closest_year: yearToken(wish.closestYear, "가까워지는해"),

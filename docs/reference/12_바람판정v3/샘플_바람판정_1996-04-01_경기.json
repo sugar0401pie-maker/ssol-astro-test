@@ -1,0 +1,1220 @@
+{
+ "day_chart": true,
+ "temperament": {
+  "modality": {
+   "활동": 8,
+   "변통": 6,
+   "고정": 2
+  },
+  "dominant": "활동",
+  "fire_strong": true,
+  "variant": "활동"
+ },
+ "profection": {
+  "2027": "토성",
+  "2028": "토성",
+  "2029": "목성",
+  "2030": "화성",
+  "2031": "금성"
+ },
+ "안정": {
+  "significators": {
+   "수성": 1.0,
+   "달": 1.0,
+   "토성": 1.0
+  },
+  "years": {
+   "2027": {
+    "level": "보통",
+    "edge": "",
+    "edge_db": "",
+    "no_minus": false,
+    "display": "내 손에 달린 해(보통)",
+    "support": 2.6,
+    "movement": 3.6,
+    "movement_label": "움직이는 해",
+    "plus": [
+     {
+      "event": "목성-달 합",
+      "from": "2027-08-18",
+      "to": "2027-09-04",
+      "exact": "2027-08-27",
+      "score": 2.0,
+      "profection": false
+     },
+     {
+      "event": "목성-수성 삼분",
+      "from": "2027-03-26",
+      "to": "2027-05-01",
+      "exact": "2027-04-13",
+      "score": 1.4,
+      "profection": false
+     },
+     {
+      "event": "목성 4하우스 통과",
+      "days": 158,
+      "score": 1.3
+     }
+    ],
+    "minus": [
+     {
+      "event": "토성-수성 합",
+      "from": "2027-03-06",
+      "to": "2027-04-06",
+      "exact": "2027-03-22",
+      "score": -2.1,
+      "profection": false
+     }
+    ],
+    "move": [
+     {
+      "event": "천왕성-달 사각",
+      "exact": "2027-06-13",
+      "score": 0.9
+     },
+     {
+      "event": "천왕성-화성 육분",
+      "exact": "2027-05-27",
+      "score": 0.4
+     },
+     {
+      "event": "천왕성-천정 사각",
+      "exact": "2027-04-28",
+      "score": 0.9
+     },
+     {
+      "event": "해왕성-화성 합",
+      "exact": "2027-09-09",
+      "score": 1.0
+     },
+     {
+      "event": "명왕성-화성 육분",
+      "exact": "2027-12-25",
+      "score": 0.4
+     }
+    ]
+   },
+   "2028": {
+    "level": "순풍",
+    "edge": "",
+    "edge_db": "",
+    "no_minus": true,
+    "display": "활짝 열리는 해(순풍)",
+    "support": 5.32,
+    "movement": 2.6,
+    "movement_label": "",
+    "plus": [
+     {
+      "event": "목성 4하우스 통과",
+      "days": 237,
+      "score": 1.94
+     },
+     {
+      "event": "토성-달 삼분",
+      "from": "2028-05-21",
+      "to": "2028-06-27",
+      "exact": "2028-06-07",
+      "score": 1.57,
+      "profection": true
+     },
+     {
+      "event": "목성-토성 충",
+      "from": "2027-12-30",
+      "to": "2028-01-25",
+      "exact": "2028-01-12",
+      "score": 0.68,
+      "profection": true
+     },
+     {
+      "event": "토성-달 삼분",
+      "from": "2028-10-20",
+      "to": "2028-12-18",
+      "exact": "2028-11-14",
+      "score": 0.47,
+      "profection": true
+     }
+    ],
+    "minus": [],
+    "move": [
+     {
+      "event": "천왕성-태양 육분",
+      "exact": "2028-06-27",
+      "score": 0.4
+     },
+     {
+      "event": "천왕성-수성 육분",
+      "exact": "2028-09-19",
+      "score": 0.4
+     },
+     {
+      "event": "천왕성-화성 육분",
+      "exact": "2028-02-13",
+      "score": 0.4
+     },
+     {
+      "event": "해왕성-화성 합",
+      "exact": "2028-03-11",
+      "score": 1.0
+     },
+     {
+      "event": "명왕성-화성 육분",
+      "exact": "2028-10-19",
+      "score": 0.4
+     }
+    ]
+   },
+   "2029": {
+    "level": "보통",
+    "edge": "활짝 열리는 해에 가까움",
+    "edge_db": "EDGE_UP_CLEAR",
+    "no_minus": true,
+    "display": "내 손에 달린 해(보통)",
+    "support": 3.75,
+    "movement": 2.2,
+    "movement_label": "",
+    "plus": [
+     {
+      "event": "토성-달 삼분",
+      "from": "2029-01-24",
+      "to": "2029-03-17",
+      "exact": "2029-02-25",
+      "score": 1.57,
+      "profection": true
+     },
+     {
+      "event": "목성-달 육분",
+      "from": "2029-10-17",
+      "to": "2029-11-03",
+      "exact": "2029-10-26",
+      "score": 1.5,
+      "profection": true
+     },
+     {
+      "event": "목성-수성 충",
+      "from": "2029-06-09",
+      "to": "2029-06-18",
+      "exact": "2029-06-14",
+      "score": 0.68,
+      "profection": true
+     }
+    ],
+    "minus": [],
+    "move": [
+     {
+      "event": "천왕성-태양 육분",
+      "exact": "2029-04-15",
+      "score": 0.4
+     },
+     {
+      "event": "천왕성-수성 육분",
+      "exact": "2029-06-25",
+      "score": 0.4
+     },
+     {
+      "event": "해왕성-태양 합",
+      "exact": "2029-07-14",
+      "score": 1.0
+     },
+     {
+      "event": "명왕성-태양 육분",
+      "exact": "2029-05-11",
+      "score": 0.4
+     }
+    ]
+   },
+   "2030": {
+    "level": "보통",
+    "edge": "",
+    "edge_db": "",
+    "no_minus": false,
+    "display": "내 손에 달린 해(보통)",
+    "support": 1.26,
+    "movement": 2.6,
+    "movement_label": "",
+    "plus": [
+     {
+      "event": "목성-토성 삼분",
+      "from": "2030-02-26",
+      "to": "2030-03-29",
+      "exact": "2030-03-13",
+      "score": 2.1,
+      "profection": true
+     },
+     {
+      "event": "토성-토성 육분",
+      "from": "2030-05-11",
+      "to": "2030-06-10",
+      "exact": "2030-05-26",
+      "score": 0.75,
+      "profection": false
+     },
+     {
+      "event": "목성-달 사각",
+      "from": "2030-11-14",
+      "to": "2030-12-01",
+      "exact": "2030-11-23",
+      "score": 0.45,
+      "profection": false
+     },
+     {
+      "event": "목성-토성 삼분",
+      "from": "2030-10-09",
+      "to": "2030-10-28",
+      "exact": "2030-10-19",
+      "score": 0.42,
+      "profection": false
+     }
+    ],
+    "minus": [
+     {
+      "event": "토성-달 사각",
+      "from": "2030-07-11",
+      "to": "2030-09-04",
+      "exact": "2030-08-01",
+      "score": -1.89,
+      "profection": false
+     },
+     {
+      "event": "토성-달 사각",
+      "from": "2030-10-07",
+      "to": "2030-12-06",
+      "exact": "2030-11-12",
+      "score": -0.57,
+      "profection": false
+     }
+    ],
+    "move": [
+     {
+      "event": "천왕성-수성 육분",
+      "exact": "2030-01-01",
+      "score": 0.4
+     },
+     {
+      "event": "해왕성-태양 합",
+      "exact": "2030-04-22",
+      "score": 1.0
+     },
+     {
+      "event": "명왕성-태양 육분",
+      "exact": "2030-06-29",
+      "score": 0.4
+     },
+     {
+      "event": "토성 쌍둥이자리(1하우스) 이동",
+      "exact": "2030-06-01",
+      "score": 0.8
+     }
+    ]
+   },
+   "2031": {
+    "level": "보통",
+    "edge": "",
+    "edge_db": "",
+    "no_minus": false,
+    "display": "내 손에 달린 해(보통)",
+    "support": 2.25,
+    "movement": 3.4,
+    "movement_label": "움직이는 해",
+    "plus": [
+     {
+      "event": "목성-수성 삼분",
+      "from": "2030-12-24",
+      "to": "2031-01-11",
+      "exact": "2031-01-02",
+      "score": 1.4,
+      "profection": false
+     },
+     {
+      "event": "목성-달 삼분",
+      "from": "2031-12-08",
+      "to": "2031-12-24",
+      "exact": "2031-12-16",
+      "score": 1.4,
+      "profection": false
+     },
+     {
+      "event": "토성-수성 육분",
+      "from": "2031-06-12",
+      "to": "2031-07-14",
+      "exact": "2031-06-28",
+      "score": 0.75,
+      "profection": false
+     },
+     {
+      "event": "목성-토성 사각",
+      "from": "2031-03-13",
+      "to": "2031-05-19",
+      "exact": "2031-04-15",
+      "score": 0.45,
+      "profection": false
+     }
+    ],
+    "minus": [
+     {
+      "event": "토성-달 사각",
+      "from": "2031-03-30",
+      "to": "2031-05-05",
+      "exact": "2031-04-18",
+      "score": -1.89,
+      "profection": false
+     }
+    ],
+    "move": [
+     {
+      "event": "천왕성-상승궁 합",
+      "exact": "2031-07-31",
+      "score": 1.0
+     },
+     {
+      "event": "해왕성-태양 합",
+      "exact": "2031-12-24",
+      "score": 1.0
+     },
+     {
+      "event": "해왕성-수성 합",
+      "exact": "2031-07-02",
+      "score": 1.0
+     },
+     {
+      "event": "명왕성-태양 육분",
+      "exact": "2031-01-30",
+      "score": 0.4
+     }
+    ]
+   }
+  }
+ },
+ "도약": {
+  "significators": {
+   "목성": 1.0,
+   "토성": 0.8,
+   "천정": 1.0,
+   "태양": 1.0,
+   "달": 0.6
+  },
+  "years": {
+   "2027": {
+    "level": "역풍",
+    "edge": "내 손에 달린 해와 경계",
+    "edge_db": "EDGE_LOW_HIGH",
+    "no_minus": false,
+    "display": "기반을 다지는 해(역풍)",
+    "support": -0.88,
+    "movement": 3.6,
+    "movement_label": "움직이는 해",
+    "plus": [
+     {
+      "event": "목성-목성 삼분",
+      "from": "2027-09-30",
+      "to": "2027-10-19",
+      "exact": "2027-10-09",
+      "score": 1.4,
+      "profection": false
+     },
+     {
+      "event": "목성-달 합",
+      "from": "2027-08-18",
+      "to": "2027-09-04",
+      "exact": "2027-08-27",
+      "score": 1.2,
+      "profection": false
+     },
+     {
+      "event": "목성-천정 충",
+      "from": "2027-08-06",
+      "to": "2027-08-23",
+      "exact": "2027-08-15",
+      "score": 0.45,
+      "profection": false
+     }
+    ],
+    "minus": [
+     {
+      "event": "토성-목성 사각",
+      "from": "2027-03-09",
+      "to": "2027-04-09",
+      "exact": "2027-03-25",
+      "score": -2.83,
+      "profection": true
+     },
+     {
+      "event": "토성-태양 합",
+      "from": "2027-01-24",
+      "to": "2027-03-05",
+      "exact": "2027-02-15",
+      "score": -2.1,
+      "profection": false
+     }
+    ],
+    "move": [
+     {
+      "event": "천왕성-달 사각",
+      "exact": "2027-06-13",
+      "score": 0.9
+     },
+     {
+      "event": "천왕성-화성 육분",
+      "exact": "2027-05-27",
+      "score": 0.4
+     },
+     {
+      "event": "천왕성-천정 사각",
+      "exact": "2027-04-28",
+      "score": 0.9
+     },
+     {
+      "event": "해왕성-화성 합",
+      "exact": "2027-09-09",
+      "score": 1.0
+     },
+     {
+      "event": "명왕성-화성 육분",
+      "exact": "2027-12-25",
+      "score": 0.4
+     }
+    ]
+   },
+   "2028": {
+    "level": "순풍",
+    "edge": "",
+    "edge_db": "",
+    "no_minus": true,
+    "display": "활짝 열리는 해(순풍)",
+    "support": 5.36,
+    "movement": 2.6,
+    "movement_label": "",
+    "plus": [
+     {
+      "event": "목성-목성 삼분",
+      "from": "2028-04-28",
+      "to": "2028-05-30",
+      "exact": "2028-05-14",
+      "score": 1.4,
+      "profection": false
+     },
+     {
+      "event": "토성-천정 육분",
+      "from": "2028-04-30",
+      "to": "2028-06-01",
+      "exact": "2028-05-16",
+      "score": 1.12,
+      "profection": true
+     },
+     {
+      "event": "토성-달 삼분",
+      "from": "2028-05-21",
+      "to": "2028-06-27",
+      "exact": "2028-06-07",
+      "score": 0.94,
+      "profection": true
+     },
+     {
+      "event": "목성-토성 충",
+      "from": "2027-12-30",
+      "to": "2028-01-25",
+      "exact": "2028-01-12",
+      "score": 0.54,
+      "profection": true
+     }
+    ],
+    "minus": [],
+    "move": [
+     {
+      "event": "천왕성-태양 육분",
+      "exact": "2028-06-27",
+      "score": 0.4
+     },
+     {
+      "event": "천왕성-수성 육분",
+      "exact": "2028-09-19",
+      "score": 0.4
+     },
+     {
+      "event": "천왕성-화성 육분",
+      "exact": "2028-02-13",
+      "score": 0.4
+     },
+     {
+      "event": "해왕성-화성 합",
+      "exact": "2028-03-11",
+      "score": 1.0
+     },
+     {
+      "event": "명왕성-화성 육분",
+      "exact": "2028-10-19",
+      "score": 0.4
+     }
+    ]
+   },
+   "2029": {
+    "level": "순풍",
+    "edge": "",
+    "edge_db": "",
+    "no_minus": true,
+    "display": "활짝 열리는 해(순풍)",
+    "support": 8.82,
+    "movement": 2.2,
+    "movement_label": "",
+    "plus": [
+     {
+      "event": "목성-천정 삼분",
+      "from": "2029-10-05",
+      "to": "2029-10-22",
+      "exact": "2029-10-14",
+      "score": 2.1,
+      "profection": true
+     },
+     {
+      "event": "토성-목성 삼분",
+      "from": "2029-05-01",
+      "to": "2029-05-31",
+      "exact": "2029-05-16",
+      "score": 1.57,
+      "profection": true
+     },
+     {
+      "event": "목성-목성 육분",
+      "from": "2029-11-29",
+      "to": "2029-12-17",
+      "exact": "2029-12-08",
+      "score": 1.5,
+      "profection": true
+     },
+     {
+      "event": "토성-천정 육분",
+      "from": "2028-11-23",
+      "to": "2029-02-17",
+      "exact": "2029-01-05",
+      "score": 1.12,
+      "profection": true
+     }
+    ],
+    "minus": [],
+    "move": [
+     {
+      "event": "천왕성-태양 육분",
+      "exact": "2029-04-15",
+      "score": 0.4
+     },
+     {
+      "event": "천왕성-수성 육분",
+      "exact": "2029-06-25",
+      "score": 0.4
+     },
+     {
+      "event": "해왕성-태양 합",
+      "exact": "2029-07-14",
+      "score": 1.0
+     },
+     {
+      "event": "명왕성-태양 육분",
+      "exact": "2029-05-11",
+      "score": 0.4
+     }
+    ]
+   },
+   "2030": {
+    "level": "보통",
+    "edge": "",
+    "edge_db": "",
+    "no_minus": false,
+    "display": "내 손에 달린 해(보통)",
+    "support": 1.8,
+    "movement": 2.6,
+    "movement_label": "",
+    "plus": [
+     {
+      "event": "목성-토성 삼분",
+      "from": "2030-02-26",
+      "to": "2030-03-29",
+      "exact": "2030-03-13",
+      "score": 1.68,
+      "profection": true
+     },
+     {
+      "event": "목성-태양 삼분",
+      "from": "2030-12-06",
+      "to": "2030-12-23",
+      "exact": "2030-12-15",
+      "score": 1.4,
+      "profection": false
+     },
+     {
+      "event": "목성-목성 육분",
+      "from": "2030-07-05",
+      "to": "2030-07-25",
+      "exact": "2030-07-15",
+      "score": 1.0,
+      "profection": false
+     },
+     {
+      "event": "토성-토성 육분",
+      "from": "2030-05-11",
+      "to": "2030-06-10",
+      "exact": "2030-05-26",
+      "score": 0.6,
+      "profection": false
+     }
+    ],
+    "minus": [
+     {
+      "event": "토성-천정 사각",
+      "from": "2030-06-18",
+      "to": "2030-07-24",
+      "exact": "2030-07-05",
+      "score": -1.89,
+      "profection": false
+     },
+     {
+      "event": "토성-달 사각",
+      "from": "2030-07-11",
+      "to": "2030-09-04",
+      "exact": "2030-08-01",
+      "score": -1.13,
+      "profection": false
+     },
+     {
+      "event": "토성-천정 사각",
+      "from": "2030-11-20",
+      "to": "2031-01-22",
+      "exact": "2030-12-14",
+      "score": -0.57,
+      "profection": false
+     },
+     {
+      "event": "토성-달 사각",
+      "from": "2030-10-07",
+      "to": "2030-12-06",
+      "exact": "2030-11-12",
+      "score": -0.34,
+      "profection": false
+     }
+    ],
+    "move": [
+     {
+      "event": "천왕성-수성 육분",
+      "exact": "2030-01-01",
+      "score": 0.4
+     },
+     {
+      "event": "해왕성-태양 합",
+      "exact": "2030-04-22",
+      "score": 1.0
+     },
+     {
+      "event": "명왕성-태양 육분",
+      "exact": "2030-06-29",
+      "score": 0.4
+     },
+     {
+      "event": "토성 쌍둥이자리(1하우스) 이동",
+      "exact": "2030-06-01",
+      "score": 0.8
+     }
+    ]
+   },
+   "2031": {
+    "level": "보통",
+    "edge": "",
+    "edge_db": "",
+    "no_minus": false,
+    "display": "내 손에 달린 해(보통)",
+    "support": 1.48,
+    "movement": 3.4,
+    "movement_label": "움직이는 해",
+    "plus": [
+     {
+      "event": "목성-천정 육분",
+      "from": "2031-11-26",
+      "to": "2031-12-13",
+      "exact": "2031-12-04",
+      "score": 1.0,
+      "profection": false
+     },
+     {
+      "event": "목성-달 삼분",
+      "from": "2031-12-08",
+      "to": "2031-12-24",
+      "exact": "2031-12-16",
+      "score": 0.84,
+      "profection": false
+     },
+     {
+      "event": "토성-태양 육분",
+      "from": "2031-05-13",
+      "to": "2031-06-12",
+      "exact": "2031-05-28",
+      "score": 0.75,
+      "profection": false
+     },
+     {
+      "event": "목성-태양 사각",
+      "from": "2031-12-29",
+      "to": "2031-12-31",
+      "exact": "2031-12-31",
+      "score": 0.45,
+      "profection": false
+     }
+    ],
+    "minus": [
+     {
+      "event": "토성-천정 사각",
+      "from": "2031-02-13",
+      "to": "2031-04-12",
+      "exact": "2031-03-23",
+      "score": -1.89,
+      "profection": false
+     },
+     {
+      "event": "토성-달 사각",
+      "from": "2031-03-30",
+      "to": "2031-05-05",
+      "exact": "2031-04-18",
+      "score": -1.13,
+      "profection": false
+     }
+    ],
+    "move": [
+     {
+      "event": "천왕성-상승궁 합",
+      "exact": "2031-07-31",
+      "score": 1.0
+     },
+     {
+      "event": "해왕성-태양 합",
+      "exact": "2031-12-24",
+      "score": 1.0
+     },
+     {
+      "event": "해왕성-수성 합",
+      "exact": "2031-07-02",
+      "score": 1.0
+     },
+     {
+      "event": "명왕성-태양 육분",
+      "exact": "2031-01-30",
+      "score": 0.4
+     }
+    ]
+   }
+  }
+ },
+ "새로운 시작": {
+  "significators": {
+   "수성": 1.0,
+   "토성": 1.0,
+   "상승궁": 1.0,
+   "태양": 1.0,
+   "목성": 1.0,
+   "달": 0.6
+  },
+  "years": {
+   "2027": {
+    "level": "보통",
+    "edge": "",
+    "edge_db": "",
+    "no_minus": false,
+    "display": "내 손에 달린 해(보통)",
+    "support": 1.68,
+    "movement": 3.6,
+    "movement_label": "움직이는 해",
+    "plus": [
+     {
+      "event": "목성-상승궁 육분",
+      "from": "2027-01-01",
+      "to": "2027-01-29",
+      "exact": "2027-01-12",
+      "score": 1.5,
+      "profection": true
+     },
+     {
+      "event": "목성-수성 삼분",
+      "from": "2027-03-26",
+      "to": "2027-05-01",
+      "exact": "2027-04-13",
+      "score": 1.4,
+      "profection": false
+     },
+     {
+      "event": "목성-목성 삼분",
+      "from": "2027-09-30",
+      "to": "2027-10-19",
+      "exact": "2027-10-09",
+      "score": 1.4,
+      "profection": false
+     },
+     {
+      "event": "목성-달 합",
+      "from": "2027-08-18",
+      "to": "2027-09-04",
+      "exact": "2027-08-27",
+      "score": 1.2,
+      "profection": false
+     }
+    ],
+    "minus": [
+     {
+      "event": "토성-목성 사각",
+      "from": "2027-03-09",
+      "to": "2027-04-09",
+      "exact": "2027-03-25",
+      "score": -2.83,
+      "profection": true
+     },
+     {
+      "event": "토성-수성 합",
+      "from": "2027-03-06",
+      "to": "2027-04-06",
+      "exact": "2027-03-22",
+      "score": -2.1,
+      "profection": false
+     },
+     {
+      "event": "토성-태양 합",
+      "from": "2027-01-24",
+      "to": "2027-03-05",
+      "exact": "2027-02-15",
+      "score": -2.1,
+      "profection": false
+     }
+    ],
+    "move": [
+     {
+      "event": "천왕성-달 사각",
+      "exact": "2027-06-13",
+      "score": 0.9
+     },
+     {
+      "event": "천왕성-화성 육분",
+      "exact": "2027-05-27",
+      "score": 0.4
+     },
+     {
+      "event": "천왕성-천정 사각",
+      "exact": "2027-04-28",
+      "score": 0.9
+     },
+     {
+      "event": "해왕성-화성 합",
+      "exact": "2027-09-09",
+      "score": 1.0
+     },
+     {
+      "event": "명왕성-화성 육분",
+      "exact": "2027-12-25",
+      "score": 0.4
+     }
+    ]
+   },
+   "2028": {
+    "level": "순풍",
+    "edge": "",
+    "edge_db": "",
+    "no_minus": true,
+    "display": "활짝 열리는 해(순풍)",
+    "support": 6.43,
+    "movement": 2.6,
+    "movement_label": "",
+    "plus": [
+     {
+      "event": "목성-목성 삼분",
+      "from": "2028-04-28",
+      "to": "2028-05-30",
+      "exact": "2028-05-14",
+      "score": 1.4,
+      "profection": false
+     },
+     {
+      "event": "토성-상승궁 육분",
+      "from": "2028-02-17",
+      "to": "2028-03-24",
+      "exact": "2028-03-07",
+      "score": 1.12,
+      "profection": true
+     },
+     {
+      "event": "토성-달 삼분",
+      "from": "2028-05-21",
+      "to": "2028-06-27",
+      "exact": "2028-06-07",
+      "score": 0.94,
+      "profection": true
+     },
+     {
+      "event": "목성-토성 충",
+      "from": "2027-12-30",
+      "to": "2028-01-25",
+      "exact": "2028-01-12",
+      "score": 0.68,
+      "profection": true
+     }
+    ],
+    "minus": [],
+    "move": [
+     {
+      "event": "천왕성-태양 육분",
+      "exact": "2028-06-27",
+      "score": 0.4
+     },
+     {
+      "event": "천왕성-수성 육분",
+      "exact": "2028-09-19",
+      "score": 0.4
+     },
+     {
+      "event": "천왕성-화성 육분",
+      "exact": "2028-02-13",
+      "score": 0.4
+     },
+     {
+      "event": "해왕성-화성 합",
+      "exact": "2028-03-11",
+      "score": 1.0
+     },
+     {
+      "event": "명왕성-화성 육분",
+      "exact": "2028-10-19",
+      "score": 0.4
+     }
+    ]
+   },
+   "2029": {
+    "level": "순풍",
+    "edge": "",
+    "edge_db": "",
+    "no_minus": true,
+    "display": "활짝 열리는 해(순풍)",
+    "support": 8.3,
+    "movement": 2.2,
+    "movement_label": "",
+    "plus": [
+     {
+      "event": "토성-목성 삼분",
+      "from": "2029-05-01",
+      "to": "2029-05-31",
+      "exact": "2029-05-16",
+      "score": 1.57,
+      "profection": true
+     },
+     {
+      "event": "목성-목성 육분",
+      "from": "2029-11-29",
+      "to": "2029-12-17",
+      "exact": "2029-12-08",
+      "score": 1.5,
+      "profection": true
+     },
+     {
+      "event": "목성-상승궁 삼분",
+      "from": "2028-12-22",
+      "to": "2029-04-03",
+      "exact": "2029-03-17",
+      "score": 1.4,
+      "profection": false
+     },
+     {
+      "event": "토성-달 삼분",
+      "from": "2029-01-24",
+      "to": "2029-03-17",
+      "exact": "2029-02-25",
+      "score": 0.94,
+      "profection": true
+     }
+    ],
+    "minus": [],
+    "move": [
+     {
+      "event": "천왕성-태양 육분",
+      "exact": "2029-04-15",
+      "score": 0.4
+     },
+     {
+      "event": "천왕성-수성 육분",
+      "exact": "2029-06-25",
+      "score": 0.4
+     },
+     {
+      "event": "해왕성-태양 합",
+      "exact": "2029-07-14",
+      "score": 1.0
+     },
+     {
+      "event": "명왕성-태양 육분",
+      "exact": "2029-05-11",
+      "score": 0.4
+     }
+    ]
+   },
+   "2030": {
+    "level": "보통",
+    "edge": "활짝 열리는 해에 가까움",
+    "edge_db": "EDGE_UP_MIXED",
+    "no_minus": false,
+    "display": "내 손에 달린 해(보통)",
+    "support": 3.85,
+    "movement": 2.6,
+    "movement_label": "",
+    "plus": [
+     {
+      "event": "목성-토성 삼분",
+      "from": "2030-02-26",
+      "to": "2030-03-29",
+      "exact": "2030-03-13",
+      "score": 2.1,
+      "profection": true
+     },
+     {
+      "event": "목성-태양 삼분",
+      "from": "2030-12-06",
+      "to": "2030-12-23",
+      "exact": "2030-12-15",
+      "score": 1.4,
+      "profection": false
+     },
+     {
+      "event": "목성-목성 육분",
+      "from": "2030-07-05",
+      "to": "2030-07-25",
+      "exact": "2030-07-15",
+      "score": 1.0,
+      "profection": false
+     },
+     {
+      "event": "토성-토성 육분",
+      "from": "2030-05-11",
+      "to": "2030-06-10",
+      "exact": "2030-05-26",
+      "score": 0.75,
+      "profection": false
+     }
+    ],
+    "minus": [
+     {
+      "event": "토성-달 사각",
+      "from": "2030-07-11",
+      "to": "2030-09-04",
+      "exact": "2030-08-01",
+      "score": -1.13,
+      "profection": false
+     },
+     {
+      "event": "토성 1하우스 통과",
+      "days": 214,
+      "score": -0.62
+     },
+     {
+      "event": "토성-달 사각",
+      "from": "2030-10-07",
+      "to": "2030-12-06",
+      "exact": "2030-11-12",
+      "score": -0.34,
+      "profection": false
+     }
+    ],
+    "move": [
+     {
+      "event": "천왕성-수성 육분",
+      "exact": "2030-01-01",
+      "score": 0.4
+     },
+     {
+      "event": "해왕성-태양 합",
+      "exact": "2030-04-22",
+      "score": 1.0
+     },
+     {
+      "event": "명왕성-태양 육분",
+      "exact": "2030-06-29",
+      "score": 0.4
+     },
+     {
+      "event": "토성 쌍둥이자리(1하우스) 이동",
+      "exact": "2030-06-01",
+      "score": 0.8
+     }
+    ]
+   },
+   "2031": {
+    "level": "순풍",
+    "edge": "",
+    "edge_db": "",
+    "no_minus": false,
+    "display": "활짝 열리는 해(순풍)",
+    "support": 4.31,
+    "movement": 3.4,
+    "movement_label": "움직이는 해",
+    "plus": [
+     {
+      "event": "목성-수성 삼분",
+      "from": "2030-12-24",
+      "to": "2031-01-11",
+      "exact": "2031-01-02",
+      "score": 1.4,
+      "profection": false
+     },
+     {
+      "event": "목성-달 삼분",
+      "from": "2031-12-08",
+      "to": "2031-12-24",
+      "exact": "2031-12-16",
+      "score": 0.84,
+      "profection": false
+     },
+     {
+      "event": "토성-수성 육분",
+      "from": "2031-06-12",
+      "to": "2031-07-14",
+      "exact": "2031-06-28",
+      "score": 0.75,
+      "profection": false
+     },
+     {
+      "event": "토성-태양 육분",
+      "from": "2031-05-13",
+      "to": "2031-06-12",
+      "exact": "2031-05-28",
+      "score": 0.75,
+      "profection": false
+     }
+    ],
+    "minus": [
+     {
+      "event": "토성-달 사각",
+      "from": "2031-03-30",
+      "to": "2031-05-05",
+      "exact": "2031-04-18",
+      "score": -1.13,
+      "profection": false
+     },
+     {
+      "event": "토성 1하우스 통과",
+      "days": 365,
+      "score": -1.05
+     }
+    ],
+    "move": [
+     {
+      "event": "천왕성-상승궁 합",
+      "exact": "2031-07-31",
+      "score": 1.0
+     },
+     {
+      "event": "해왕성-태양 합",
+      "exact": "2031-12-24",
+      "score": 1.0
+     },
+     {
+      "event": "해왕성-수성 합",
+      "exact": "2031-07-02",
+      "score": 1.0
+     },
+     {
+      "event": "명왕성-태양 육분",
+      "exact": "2031-01-30",
+      "score": 0.4
+     }
+    ]
+   }
+  }
+ }
+}

@@ -87,19 +87,19 @@ test("리포트 입력 조립: 날짜는 토큰으로만, 판정·근거는 서�
   const answers = { q1: "직업·커리어", q2: "변화", q3: "안정" } as const;
   const events = buildTimeline(L, { start: "2026-01-01", end: "2031-12-31" }, { start: "2026-10-07", end: "2026-12-31" });
   const periods = selectPeriods(events, answers.q1, new Date("2026-10-07T03:00:00Z"));
-  const wish = computeWish(L, answers.q3, { stabilityIncludesMoon: true });
-  const built = buildReportInput({ nickname: "지우", chart, character, answers, periods, wish });
+  const wish = computeWish(L, answers.q3, { birthDate: "1996-04-01", dayChart: true });
+  const built = buildReportInput({ nickname: "지우", chart, character, answers, periods, wish, typeLine: "누군가에게 기대는 일에 에너지가 많이 들고, 그럴 때 먼저 다가가는 유형" });
   const json = JSON.stringify(built.input);
   // 입력 본문에 날짜(YYYY-MM-DD)가 직접 들어가지 않는다 — 전부 토큰.
   assert.ok(!/\d{4}-\d{2}-\d{2}/.test(json));
   assert.equal(built.input.chart.sun, "양자리/11H");
-  assert.equal(built.input.character.name, "수달");
+  assert.equal(built.input.character.name, "누군가에게 기대는 일에 에너지가 많이 들고, 그럴 때 먼저 다가가는 유형"); // 동물 이름은 AI에 주지 않는다
   assert.equal(built.input.soft_tone, false);
   assert.ok(built.input.events_eoy.length > 0 && built.input.events_eoy.every((e) => built.tokens[e.token]));
   if (wish.firstOpenYear) assert.equal(tokenValues(built.tokens)["열리는해"], `${wish.firstOpenYear}년`);
   assert.ok(built.allowedNames.includes("양자리") && built.allowedNames.includes("토성"));
   assert.ok(built.allowedHouses.includes(11));
-  const soft = buildReportInput({ nickname: "지우", chart, character, answers: { ...answers, q2: "그만하자" }, periods, wish });
+  const soft = buildReportInput({ nickname: "지우", chart, character, answers: { ...answers, q2: "그만하자" }, periods, wish, typeLine: "누군가에게 기대는 일에 에너지가 많이 들고, 그럴 때 먼저 다가가는 유형" });
   assert.equal(soft.input.soft_tone, true);
 });
 

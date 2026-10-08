@@ -1,0 +1,1555 @@
+{
+ "planets": {
+  "sun": {
+   "lon": 11.6,
+   "sign": "양자리",
+   "deg": 11.6,
+   "house": 11
+  },
+  "moon": {
+   "lon": 156.72,
+   "sign": "처녀자리",
+   "deg": 6.7,
+   "house": 4
+  },
+  "mercury": {
+   "lon": 15.55,
+   "sign": "양자리",
+   "deg": 15.5,
+   "house": 11
+  },
+  "venus": {
+   "lon": 57.48,
+   "sign": "황소자리",
+   "deg": 27.5,
+   "house": 12
+  },
+  "mars": {
+   "lon": 5.77,
+   "sign": "양자리",
+   "deg": 5.8,
+   "house": 11
+  },
+  "jupiter": {
+   "lon": 285.94,
+   "sign": "염소자리",
+   "deg": 15.9,
+   "house": 8
+  },
+  "saturn": {
+   "lon": 359.23,
+   "sign": "물고기자리",
+   "deg": 29.2,
+   "house": 10
+  },
+  "uranus": {
+   "lon": 304.0,
+   "sign": "물병자리",
+   "deg": 4.0,
+   "house": 9
+  },
+  "neptune": {
+   "lon": 297.53,
+   "sign": "염소자리",
+   "deg": 27.5,
+   "house": 8
+  },
+  "pluto": {
+   "lon": 242.92,
+   "sign": "사수자리",
+   "deg": 2.9,
+   "house": 7
+  },
+  "asc": {
+   "lon": 85.59,
+   "sign": "쌍둥이자리",
+   "deg": 25.6,
+   "house": 1
+  },
+  "mc": {
+   "lon": 334.1,
+   "sign": "물고기자리",
+   "deg": 4.1,
+   "house": 10
+  }
+ },
+ "accuracy": "A",
+ "aspects": [
+  {
+   "a": "sun",
+   "b": "mercury",
+   "aspect": "합",
+   "orb": 3.9
+  },
+  {
+   "a": "sun",
+   "b": "mars",
+   "aspect": "합",
+   "orb": 5.8
+  },
+  {
+   "a": "sun",
+   "b": "jupiter",
+   "aspect": "사각",
+   "orb": 4.3
+  },
+  {
+   "a": "moon",
+   "b": "pluto",
+   "aspect": "사각",
+   "orb": 3.8
+  },
+  {
+   "a": "moon",
+   "b": "mc",
+   "aspect": "충",
+   "orb": 2.6
+  },
+  {
+   "a": "mercury",
+   "b": "jupiter",
+   "aspect": "사각",
+   "orb": 0.4
+  },
+  {
+   "a": "venus",
+   "b": "saturn",
+   "aspect": "육분",
+   "orb": 1.8
+  },
+  {
+   "a": "venus",
+   "b": "neptune",
+   "aspect": "삼분",
+   "orb": 0.1
+  },
+  {
+   "a": "venus",
+   "b": "pluto",
+   "aspect": "충",
+   "orb": 5.4
+  },
+  {
+   "a": "mars",
+   "b": "uranus",
+   "aspect": "육분",
+   "orb": 1.8
+  },
+  {
+   "a": "mars",
+   "b": "pluto",
+   "aspect": "삼분",
+   "orb": 2.8
+  },
+  {
+   "a": "saturn",
+   "b": "uranus",
+   "aspect": "육분",
+   "orb": 4.8
+  },
+  {
+   "a": "saturn",
+   "b": "neptune",
+   "aspect": "육분",
+   "orb": 1.7
+  },
+  {
+   "a": "saturn",
+   "b": "pluto",
+   "aspect": "삼분",
+   "orb": 3.7
+  },
+  {
+   "a": "saturn",
+   "b": "asc",
+   "aspect": "사각",
+   "orb": 3.6
+  },
+  {
+   "a": "uranus",
+   "b": "pluto",
+   "aspect": "육분",
+   "orb": 1.1
+  },
+  {
+   "a": "neptune",
+   "b": "pluto",
+   "aspect": "육분",
+   "orb": 5.4
+  },
+  {
+   "a": "pluto",
+   "b": "mc",
+   "aspect": "사각",
+   "orb": 1.2
+  }
+ ],
+ "elements": {
+  "불": 7,
+  "흙": 6,
+  "공기": 0,
+  "물": 1
+ },
+ "character": {
+  "name": "수달",
+  "competency": "기대기",
+  "style": "다가가기",
+  "percentiles": {
+   "기대기": 0.3,
+   "믿기": 0.93,
+   "선 지키기": 0.37,
+   "말하기": 0.44,
+   "회복하기": 0.46
+  },
+  "needs_confirm": false,
+  "element_tie": false
+ },
+ "transits": [
+  {
+   "transit": "saturn",
+   "target": "venus",
+   "aspect": "육분",
+   "from": "2026-01-01",
+   "to": "2026-02-09",
+   "exact": "2026-01-19",
+   "saturn_return": false
+  },
+  {
+   "transit": "saturn",
+   "target": "asc",
+   "aspect": "사각",
+   "from": "2026-01-01",
+   "to": "2026-01-20",
+   "exact": "2026-01-01",
+   "saturn_return": false
+  },
+  {
+   "transit": "uranus",
+   "target": "venus",
+   "aspect": "합",
+   "from": "2026-01-01",
+   "to": "2026-04-05",
+   "exact": "2026-02-11",
+   "saturn_return": false
+  },
+  {
+   "transit": "saturn",
+   "target": "saturn",
+   "aspect": "합",
+   "from": "2026-01-17",
+   "to": "2026-02-24",
+   "exact": "2026-02-07",
+   "saturn_return": true
+  },
+  {
+   "transit": "jupiter",
+   "target": "mercury",
+   "aspect": "사각",
+   "from": "2026-01-31",
+   "to": "2026-04-20",
+   "exact": "2026-03-28",
+   "saturn_return": false
+  },
+  {
+   "transit": "pluto",
+   "target": "mars",
+   "aspect": "육분",
+   "from": "2026-02-20",
+   "to": "2026-07-27",
+   "exact": "2026-05-07",
+   "saturn_return": false
+  },
+  {
+   "transit": "saturn",
+   "target": "mars",
+   "aspect": "합",
+   "from": "2026-03-18",
+   "to": "2026-04-19",
+   "exact": "2026-04-03",
+   "saturn_return": false
+  },
+  {
+   "transit": "saturn",
+   "target": "sun",
+   "aspect": "합",
+   "from": "2026-05-05",
+   "to": "2026-06-19",
+   "exact": "2026-05-25",
+   "saturn_return": false
+  },
+  {
+   "transit": "jupiter",
+   "target": "venus",
+   "aspect": "육분",
+   "from": "2026-06-09",
+   "to": "2026-06-27",
+   "exact": "2026-06-18",
+   "saturn_return": false
+  },
+  {
+   "transit": "uranus",
+   "target": "mc",
+   "aspect": "사각",
+   "from": "2026-06-11",
+   "to": "2026-08-26",
+   "exact": "2026-07-09",
+   "saturn_return": false
+  },
+  {
+   "transit": "neptune",
+   "target": "mars",
+   "aspect": "합",
+   "from": "2026-06-14",
+   "to": "2026-07-31",
+   "exact": "2026-07-07",
+   "saturn_return": false
+  },
+  {
+   "transit": "saturn",
+   "target": "mercury",
+   "aspect": "합",
+   "from": "2026-06-19",
+   "to": "2026-09-03",
+   "exact": "2026-07-27",
+   "saturn_return": false
+  },
+  {
+   "transit": "uranus",
+   "target": "mars",
+   "aspect": "육분",
+   "from": "2026-07-13",
+   "to": "2026-11-11",
+   "exact": "2026-09-11",
+   "saturn_return": false
+  },
+  {
+   "transit": "jupiter",
+   "target": "mars",
+   "aspect": "삼분",
+   "from": "2026-07-18",
+   "to": "2026-08-04",
+   "exact": "2026-07-26",
+   "saturn_return": false
+  },
+  {
+   "transit": "uranus",
+   "target": "moon",
+   "aspect": "사각",
+   "from": "2026-08-08",
+   "to": "2026-10-15",
+   "exact": "2026-09-11",
+   "saturn_return": false
+  },
+  {
+   "transit": "jupiter",
+   "target": "sun",
+   "aspect": "삼분",
+   "from": "2026-08-13",
+   "to": "2026-08-31",
+   "exact": "2026-08-22",
+   "saturn_return": false
+  },
+  {
+   "transit": "jupiter",
+   "target": "mercury",
+   "aspect": "삼분",
+   "from": "2026-09-01",
+   "to": "2026-09-19",
+   "exact": "2026-09-10",
+   "saturn_return": false
+  },
+  {
+   "transit": "saturn",
+   "target": "sun",
+   "aspect": "합",
+   "from": "2026-09-03",
+   "to": "2026-10-27",
+   "exact": "2026-10-01",
+   "saturn_return": false
+  },
+  {
+   "transit": "uranus",
+   "target": "mc",
+   "aspect": "사각",
+   "from": "2026-09-26",
+   "to": "2026-12-22",
+   "exact": "2026-11-16",
+   "saturn_return": false
+  },
+  {
+   "transit": "jupiter",
+   "target": "asc",
+   "aspect": "육분",
+   "from": "2026-10-27",
+   "to": "2027-01-29",
+   "exact": "2027-01-12",
+   "saturn_return": false
+  },
+  {
+   "transit": "jupiter",
+   "target": "venus",
+   "aspect": "사각",
+   "from": "2026-11-12",
+   "to": "2027-01-13",
+   "exact": "2026-12-13",
+   "saturn_return": false
+  },
+  {
+   "transit": "pluto",
+   "target": "mars",
+   "aspect": "육분",
+   "from": "2026-12-29",
+   "to": "2028-02-11",
+   "exact": "2027-12-25",
+   "saturn_return": false
+  },
+  {
+   "transit": "saturn",
+   "target": "sun",
+   "aspect": "합",
+   "from": "2027-01-24",
+   "to": "2027-03-05",
+   "exact": "2027-02-15",
+   "saturn_return": false
+  },
+  {
+   "transit": "saturn",
+   "target": "mercury",
+   "aspect": "합",
+   "from": "2027-03-06",
+   "to": "2027-04-06",
+   "exact": "2027-03-22",
+   "saturn_return": false
+  },
+  {
+   "transit": "jupiter",
+   "target": "mercury",
+   "aspect": "삼분",
+   "from": "2027-03-26",
+   "to": "2027-05-01",
+   "exact": "2027-04-13",
+   "saturn_return": false
+  },
+  {
+   "transit": "uranus",
+   "target": "mc",
+   "aspect": "사각",
+   "from": "2027-03-27",
+   "to": "2027-05-24",
+   "exact": "2027-04-28",
+   "saturn_return": false
+  },
+  {
+   "transit": "neptune",
+   "target": "mars",
+   "aspect": "합",
+   "from": "2027-03-30",
+   "to": "2027-11-06",
+   "exact": "2027-09-09",
+   "saturn_return": false
+  },
+  {
+   "transit": "uranus",
+   "target": "mars",
+   "aspect": "육분",
+   "from": "2027-05-02",
+   "to": "2027-06-22",
+   "exact": "2027-05-27",
+   "saturn_return": false
+  },
+  {
+   "transit": "uranus",
+   "target": "moon",
+   "aspect": "사각",
+   "from": "2027-05-18",
+   "to": "2027-07-10",
+   "exact": "2027-06-13",
+   "saturn_return": false
+  },
+  {
+   "transit": "saturn",
+   "target": "asc",
+   "aspect": "육분",
+   "from": "2027-05-28",
+   "to": "2027-07-22",
+   "exact": "2027-06-18",
+   "saturn_return": false
+  },
+  {
+   "transit": "jupiter",
+   "target": "asc",
+   "aspect": "육분",
+   "from": "2027-06-23",
+   "to": "2027-07-14",
+   "exact": "2027-07-03",
+   "saturn_return": false
+  },
+  {
+   "transit": "jupiter",
+   "target": "venus",
+   "aspect": "사각",
+   "from": "2027-07-03",
+   "to": "2027-07-23",
+   "exact": "2027-07-13",
+   "saturn_return": false
+  },
+  {
+   "transit": "jupiter",
+   "target": "mc",
+   "aspect": "충",
+   "from": "2027-08-06",
+   "to": "2027-08-23",
+   "exact": "2027-08-15",
+   "saturn_return": false
+  },
+  {
+   "transit": "jupiter",
+   "target": "moon",
+   "aspect": "합",
+   "from": "2027-08-18",
+   "to": "2027-09-04",
+   "exact": "2027-08-27",
+   "saturn_return": false
+  },
+  {
+   "transit": "saturn",
+   "target": "asc",
+   "aspect": "육분",
+   "from": "2027-08-28",
+   "to": "2027-10-28",
+   "exact": "2027-10-03",
+   "saturn_return": false
+  },
+  {
+   "transit": "jupiter",
+   "target": "asc",
+   "aspect": "사각",
+   "from": "2027-11-22",
+   "to": "2028-03-04",
+   "exact": "2027-12-08",
+   "saturn_return": false
+  },
+  {
+   "transit": "uranus",
+   "target": "moon",
+   "aspect": "사각",
+   "from": "2027-11-24",
+   "to": "2028-04-28",
+   "exact": "2027-12-31",
+   "saturn_return": false
+  },
+  {
+   "transit": "jupiter",
+   "target": "venus",
+   "aspect": "삼분",
+   "from": "2027-12-07",
+   "to": "2028-02-17",
+   "exact": "2028-01-08",
+   "saturn_return": false
+  },
+  {
+   "transit": "uranus",
+   "target": "mars",
+   "aspect": "육분",
+   "from": "2027-12-17",
+   "to": "2028-04-09",
+   "exact": "2028-02-13",
+   "saturn_return": false
+  },
+  {
+   "transit": "neptune",
+   "target": "mars",
+   "aspect": "합",
+   "from": "2028-01-23",
+   "to": "2028-04-20",
+   "exact": "2028-03-11",
+   "saturn_return": false
+  },
+  {
+   "transit": "saturn",
+   "target": "asc",
+   "aspect": "육분",
+   "from": "2028-02-17",
+   "to": "2028-03-24",
+   "exact": "2028-03-07",
+   "saturn_return": false
+  },
+  {
+   "transit": "saturn",
+   "target": "mc",
+   "aspect": "육분",
+   "from": "2028-04-30",
+   "to": "2028-06-01",
+   "exact": "2028-05-16",
+   "saturn_return": false
+  },
+  {
+   "transit": "saturn",
+   "target": "moon",
+   "aspect": "삼분",
+   "from": "2028-05-21",
+   "to": "2028-06-27",
+   "exact": "2028-06-07",
+   "saturn_return": false
+  },
+  {
+   "transit": "uranus",
+   "target": "sun",
+   "aspect": "육분",
+   "from": "2028-06-02",
+   "to": "2028-07-28",
+   "exact": "2028-06-27",
+   "saturn_return": false
+  },
+  {
+   "transit": "jupiter",
+   "target": "asc",
+   "aspect": "사각",
+   "from": "2028-07-21",
+   "to": "2028-08-11",
+   "exact": "2028-08-01",
+   "saturn_return": false
+  },
+  {
+   "transit": "jupiter",
+   "target": "venus",
+   "aspect": "삼분",
+   "from": "2028-08-01",
+   "to": "2028-08-21",
+   "exact": "2028-08-11",
+   "saturn_return": false
+  },
+  {
+   "transit": "pluto",
+   "target": "mars",
+   "aspect": "육분",
+   "from": "2028-08-15",
+   "to": "2028-12-20",
+   "exact": "2028-10-19",
+   "saturn_return": false
+  },
+  {
+   "transit": "uranus",
+   "target": "mercury",
+   "aspect": "육분",
+   "from": "2028-08-29",
+   "to": "2028-10-10",
+   "exact": "2028-09-19",
+   "saturn_return": false
+  },
+  {
+   "transit": "jupiter",
+   "target": "mars",
+   "aspect": "충",
+   "from": "2028-09-12",
+   "to": "2028-09-29",
+   "exact": "2028-09-21",
+   "saturn_return": false
+  },
+  {
+   "transit": "neptune",
+   "target": "mars",
+   "aspect": "합",
+   "from": "2028-10-08",
+   "to": "2029-02-20",
+   "exact": "2028-12-17",
+   "saturn_return": false
+  },
+  {
+   "transit": "jupiter",
+   "target": "sun",
+   "aspect": "충",
+   "from": "2028-10-09",
+   "to": "2028-10-27",
+   "exact": "2028-10-18",
+   "saturn_return": false
+  },
+  {
+   "transit": "saturn",
+   "target": "moon",
+   "aspect": "삼분",
+   "from": "2028-10-20",
+   "to": "2028-12-18",
+   "exact": "2028-11-14",
+   "saturn_return": false
+  },
+  {
+   "transit": "jupiter",
+   "target": "mercury",
+   "aspect": "충",
+   "from": "2028-10-27",
+   "to": "2028-11-15",
+   "exact": "2028-11-05",
+   "saturn_return": false
+  },
+  {
+   "transit": "uranus",
+   "target": "sun",
+   "aspect": "육분",
+   "from": "2028-11-12",
+   "to": "2029-05-14",
+   "exact": "2029-04-15",
+   "saturn_return": false
+  },
+  {
+   "transit": "saturn",
+   "target": "mc",
+   "aspect": "육분",
+   "from": "2028-11-23",
+   "to": "2029-02-17",
+   "exact": "2029-01-05",
+   "saturn_return": false
+  },
+  {
+   "transit": "jupiter",
+   "target": "asc",
+   "aspect": "삼분",
+   "from": "2028-12-22",
+   "to": "2029-04-03",
+   "exact": "2029-03-17",
+   "saturn_return": false
+  },
+  {
+   "transit": "saturn",
+   "target": "moon",
+   "aspect": "삼분",
+   "from": "2029-01-24",
+   "to": "2029-03-17",
+   "exact": "2029-02-25",
+   "saturn_return": false
+  },
+  {
+   "transit": "pluto",
+   "target": "sun",
+   "aspect": "육분",
+   "from": "2029-04-02",
+   "to": "2029-06-20",
+   "exact": "2029-05-11",
+   "saturn_return": false
+  },
+  {
+   "transit": "neptune",
+   "target": "sun",
+   "aspect": "합",
+   "from": "2029-05-12",
+   "to": "2029-09-18",
+   "exact": "2029-07-14",
+   "saturn_return": false
+  },
+  {
+   "transit": "uranus",
+   "target": "mercury",
+   "aspect": "육분",
+   "from": "2029-05-31",
+   "to": "2029-07-24",
+   "exact": "2029-06-25",
+   "saturn_return": false
+  },
+  {
+   "transit": "jupiter",
+   "target": "mercury",
+   "aspect": "충",
+   "from": "2029-06-09",
+   "to": "2029-06-18",
+   "exact": "2029-06-14",
+   "saturn_return": false
+  },
+  {
+   "transit": "jupiter",
+   "target": "asc",
+   "aspect": "삼분",
+   "from": "2029-08-21",
+   "to": "2029-09-11",
+   "exact": "2029-09-01",
+   "saturn_return": false
+  },
+  {
+   "transit": "jupiter",
+   "target": "mc",
+   "aspect": "삼분",
+   "from": "2029-10-05",
+   "to": "2029-10-22",
+   "exact": "2029-10-14",
+   "saturn_return": false
+  },
+  {
+   "transit": "jupiter",
+   "target": "moon",
+   "aspect": "육분",
+   "from": "2029-10-17",
+   "to": "2029-11-03",
+   "exact": "2029-10-26",
+   "saturn_return": false
+  },
+  {
+   "transit": "uranus",
+   "target": "mercury",
+   "aspect": "육분",
+   "from": "2029-11-26",
+   "to": "2030-05-12",
+   "exact": "2030-01-01",
+   "saturn_return": false
+  },
+  {
+   "transit": "pluto",
+   "target": "sun",
+   "aspect": "육분",
+   "from": "2030-02-01",
+   "to": "2030-09-07",
+   "exact": "2030-06-29",
+   "saturn_return": false
+  },
+  {
+   "transit": "jupiter",
+   "target": "venus",
+   "aspect": "충",
+   "from": "2030-02-04",
+   "to": "2030-04-20",
+   "exact": "2030-03-23",
+   "saturn_return": false
+  },
+  {
+   "transit": "neptune",
+   "target": "sun",
+   "aspect": "합",
+   "from": "2030-03-13",
+   "to": "2030-06-14",
+   "exact": "2030-04-22",
+   "saturn_return": false
+  },
+  {
+   "transit": "saturn",
+   "target": "venus",
+   "aspect": "합",
+   "from": "2030-04-27",
+   "to": "2030-05-27",
+   "exact": "2030-05-12",
+   "saturn_return": false
+  },
+  {
+   "transit": "saturn",
+   "target": "mc",
+   "aspect": "사각",
+   "from": "2030-06-18",
+   "to": "2030-07-24",
+   "exact": "2030-07-05",
+   "saturn_return": false
+  },
+  {
+   "transit": "saturn",
+   "target": "mars",
+   "aspect": "육분",
+   "from": "2030-07-02",
+   "to": "2030-08-15",
+   "exact": "2030-07-21",
+   "saturn_return": false
+  },
+  {
+   "transit": "saturn",
+   "target": "moon",
+   "aspect": "사각",
+   "from": "2030-07-11",
+   "to": "2030-09-04",
+   "exact": "2030-08-01",
+   "saturn_return": false
+  },
+  {
+   "transit": "neptune",
+   "target": "sun",
+   "aspect": "합",
+   "from": "2030-08-19",
+   "to": "2031-04-04",
+   "exact": "2030-10-18",
+   "saturn_return": false
+  },
+  {
+   "transit": "jupiter",
+   "target": "venus",
+   "aspect": "충",
+   "from": "2030-09-30",
+   "to": "2030-10-20",
+   "exact": "2030-10-10",
+   "saturn_return": false
+  },
+  {
+   "transit": "saturn",
+   "target": "moon",
+   "aspect": "사각",
+   "from": "2030-10-07",
+   "to": "2030-12-06",
+   "exact": "2030-11-12",
+   "saturn_return": false
+  },
+  {
+   "transit": "saturn",
+   "target": "mars",
+   "aspect": "육분",
+   "from": "2030-10-28",
+   "to": "2030-12-18",
+   "exact": "2030-11-24",
+   "saturn_return": false
+  },
+  {
+   "transit": "jupiter",
+   "target": "mc",
+   "aspect": "사각",
+   "from": "2030-11-02",
+   "to": "2030-11-20",
+   "exact": "2030-11-11",
+   "saturn_return": false
+  },
+  {
+   "transit": "jupiter",
+   "target": "mars",
+   "aspect": "삼분",
+   "from": "2030-11-10",
+   "to": "2030-11-27",
+   "exact": "2030-11-19",
+   "saturn_return": false
+  },
+  {
+   "transit": "jupiter",
+   "target": "moon",
+   "aspect": "사각",
+   "from": "2030-11-14",
+   "to": "2030-12-01",
+   "exact": "2030-11-23",
+   "saturn_return": false
+  },
+  {
+   "transit": "saturn",
+   "target": "mc",
+   "aspect": "사각",
+   "from": "2030-11-20",
+   "to": "2031-01-22",
+   "exact": "2030-12-14",
+   "saturn_return": false
+  },
+  {
+   "transit": "jupiter",
+   "target": "sun",
+   "aspect": "삼분",
+   "from": "2030-12-06",
+   "to": "2030-12-23",
+   "exact": "2030-12-15",
+   "saturn_return": false
+  },
+  {
+   "transit": "pluto",
+   "target": "sun",
+   "aspect": "육분",
+   "from": "2030-12-06",
+   "to": "2031-03-25",
+   "exact": "2031-01-30",
+   "saturn_return": false
+  },
+  {
+   "transit": "jupiter",
+   "target": "mercury",
+   "aspect": "삼분",
+   "from": "2030-12-24",
+   "to": "2031-01-11",
+   "exact": "2031-01-02",
+   "saturn_return": false
+  },
+  {
+   "transit": "jupiter",
+   "target": "asc",
+   "aspect": "충",
+   "from": "2031-02-13",
+   "to": "2031-03-16",
+   "exact": "2031-02-26",
+   "saturn_return": false
+  },
+  {
+   "transit": "saturn",
+   "target": "mc",
+   "aspect": "사각",
+   "from": "2031-02-13",
+   "to": "2031-04-12",
+   "exact": "2031-03-23",
+   "saturn_return": false
+  },
+  {
+   "transit": "saturn",
+   "target": "mars",
+   "aspect": "육분",
+   "from": "2031-03-19",
+   "to": "2031-04-27",
+   "exact": "2031-04-09",
+   "saturn_return": false
+  },
+  {
+   "transit": "saturn",
+   "target": "moon",
+   "aspect": "사각",
+   "from": "2031-03-30",
+   "to": "2031-05-05",
+   "exact": "2031-04-18",
+   "saturn_return": false
+  },
+  {
+   "transit": "neptune",
+   "target": "mercury",
+   "aspect": "합",
+   "from": "2031-04-30",
+   "to": "2031-10-13",
+   "exact": "2031-07-02",
+   "saturn_return": false
+  },
+  {
+   "transit": "saturn",
+   "target": "sun",
+   "aspect": "육분",
+   "from": "2031-05-13",
+   "to": "2031-06-12",
+   "exact": "2031-05-28",
+   "saturn_return": false
+  },
+  {
+   "transit": "jupiter",
+   "target": "asc",
+   "aspect": "충",
+   "from": "2031-05-16",
+   "to": "2031-06-19",
+   "exact": "2031-06-03",
+   "saturn_return": false
+  },
+  {
+   "transit": "saturn",
+   "target": "mercury",
+   "aspect": "육분",
+   "from": "2031-06-12",
+   "to": "2031-07-14",
+   "exact": "2031-06-28",
+   "saturn_return": false
+  },
+  {
+   "transit": "uranus",
+   "target": "asc",
+   "aspect": "합",
+   "from": "2031-07-03",
+   "to": "2031-09-13",
+   "exact": "2031-07-31",
+   "saturn_return": false
+  },
+  {
+   "transit": "pluto",
+   "target": "sun",
+   "aspect": "육분",
+   "from": "2031-07-06",
+   "to": "2031-12-31",
+   "exact": "2031-09-15",
+   "saturn_return": false
+  },
+  {
+   "transit": "jupiter",
+   "target": "asc",
+   "aspect": "충",
+   "from": "2031-10-11",
+   "to": "2031-11-03",
+   "exact": "2031-10-23",
+   "saturn_return": false
+  },
+  {
+   "transit": "uranus",
+   "target": "asc",
+   "aspect": "합",
+   "from": "2031-10-23",
+   "to": "2031-12-31",
+   "exact": "2031-12-09",
+   "saturn_return": false
+  },
+  {
+   "transit": "neptune",
+   "target": "sun",
+   "aspect": "합",
+   "from": "2031-11-23",
+   "to": "2031-12-31",
+   "exact": "2031-12-24",
+   "saturn_return": false
+  },
+  {
+   "transit": "jupiter",
+   "target": "mc",
+   "aspect": "육분",
+   "from": "2031-11-26",
+   "to": "2031-12-13",
+   "exact": "2031-12-04",
+   "saturn_return": false
+  },
+  {
+   "transit": "jupiter",
+   "target": "mars",
+   "aspect": "사각",
+   "from": "2031-12-03",
+   "to": "2031-12-20",
+   "exact": "2031-12-12",
+   "saturn_return": false
+  },
+  {
+   "transit": "jupiter",
+   "target": "moon",
+   "aspect": "삼분",
+   "from": "2031-12-08",
+   "to": "2031-12-24",
+   "exact": "2031-12-16",
+   "saturn_return": false
+  },
+  {
+   "transit": "jupiter",
+   "target": "sun",
+   "aspect": "사각",
+   "from": "2031-12-29",
+   "to": "2031-12-31",
+   "exact": "2031-12-31",
+   "saturn_return": false
+  }
+ ],
+ "stations": [
+  {
+   "planet": "mercury",
+   "type": "역행 시작",
+   "date": "2026-02-27",
+   "sign": "물고기자리",
+   "house": 10
+  },
+  {
+   "planet": "mercury",
+   "type": "순행 시작",
+   "date": "2026-03-21",
+   "sign": "물고기자리",
+   "house": 10
+  },
+  {
+   "planet": "mercury",
+   "type": "역행 시작",
+   "date": "2026-06-30",
+   "sign": "게자리",
+   "house": 2
+  },
+  {
+   "planet": "mercury",
+   "type": "순행 시작",
+   "date": "2026-07-24",
+   "sign": "게자리",
+   "house": 2
+  },
+  {
+   "planet": "mercury",
+   "type": "역행 시작",
+   "date": "2026-10-25",
+   "sign": "전갈자리",
+   "house": 6
+  },
+  {
+   "planet": "mercury",
+   "type": "순행 시작",
+   "date": "2026-11-14",
+   "sign": "전갈자리",
+   "house": 6
+  },
+  {
+   "planet": "mercury",
+   "type": "역행 시작",
+   "date": "2027-02-10",
+   "sign": "물고기자리",
+   "house": 10
+  },
+  {
+   "planet": "mercury",
+   "type": "순행 시작",
+   "date": "2027-03-04",
+   "sign": "물병자리",
+   "house": 9
+  },
+  {
+   "planet": "mercury",
+   "type": "역행 시작",
+   "date": "2027-06-11",
+   "sign": "게자리",
+   "house": 2
+  },
+  {
+   "planet": "mercury",
+   "type": "순행 시작",
+   "date": "2027-07-05",
+   "sign": "쌍둥이자리",
+   "house": 1
+  },
+  {
+   "planet": "mercury",
+   "type": "역행 시작",
+   "date": "2027-10-08",
+   "sign": "전갈자리",
+   "house": 6
+  },
+  {
+   "planet": "mercury",
+   "type": "순행 시작",
+   "date": "2027-10-29",
+   "sign": "천칭자리",
+   "house": 5
+  },
+  {
+   "planet": "mercury",
+   "type": "역행 시작",
+   "date": "2028-01-25",
+   "sign": "물병자리",
+   "house": 9
+  },
+  {
+   "planet": "mercury",
+   "type": "순행 시작",
+   "date": "2028-02-15",
+   "sign": "물병자리",
+   "house": 9
+  },
+  {
+   "planet": "mercury",
+   "type": "역행 시작",
+   "date": "2028-05-22",
+   "sign": "쌍둥이자리",
+   "house": 1
+  },
+  {
+   "planet": "mercury",
+   "type": "순행 시작",
+   "date": "2028-06-15",
+   "sign": "쌍둥이자리",
+   "house": 1
+  },
+  {
+   "planet": "mercury",
+   "type": "역행 시작",
+   "date": "2028-09-20",
+   "sign": "천칭자리",
+   "house": 5
+  },
+  {
+   "planet": "mercury",
+   "type": "순행 시작",
+   "date": "2028-10-12",
+   "sign": "천칭자리",
+   "house": 5
+  },
+  {
+   "planet": "mercury",
+   "type": "역행 시작",
+   "date": "2029-01-08",
+   "sign": "물병자리",
+   "house": 9
+  },
+  {
+   "planet": "mercury",
+   "type": "순행 시작",
+   "date": "2029-01-28",
+   "sign": "염소자리",
+   "house": 8
+  },
+  {
+   "planet": "mercury",
+   "type": "역행 시작",
+   "date": "2029-05-02",
+   "sign": "황소자리",
+   "house": 12
+  },
+  {
+   "planet": "mercury",
+   "type": "순행 시작",
+   "date": "2029-05-26",
+   "sign": "황소자리",
+   "house": 12
+  },
+  {
+   "planet": "mercury",
+   "type": "역행 시작",
+   "date": "2029-09-03",
+   "sign": "천칭자리",
+   "house": 5
+  },
+  {
+   "planet": "mercury",
+   "type": "순행 시작",
+   "date": "2029-09-25",
+   "sign": "처녀자리",
+   "house": 4
+  },
+  {
+   "planet": "mercury",
+   "type": "역행 시작",
+   "date": "2029-12-23",
+   "sign": "염소자리",
+   "house": 8
+  },
+  {
+   "planet": "mercury",
+   "type": "순행 시작",
+   "date": "2030-01-12",
+   "sign": "염소자리",
+   "house": 8
+  },
+  {
+   "planet": "mercury",
+   "type": "역행 시작",
+   "date": "2030-04-13",
+   "sign": "황소자리",
+   "house": 12
+  },
+  {
+   "planet": "mercury",
+   "type": "순행 시작",
+   "date": "2030-05-07",
+   "sign": "양자리",
+   "house": 11
+  },
+  {
+   "planet": "mercury",
+   "type": "역행 시작",
+   "date": "2030-08-16",
+   "sign": "처녀자리",
+   "house": 4
+  },
+  {
+   "planet": "mercury",
+   "type": "순행 시작",
+   "date": "2030-09-09",
+   "sign": "처녀자리",
+   "house": 4
+  },
+  {
+   "planet": "mercury",
+   "type": "역행 시작",
+   "date": "2030-12-06",
+   "sign": "염소자리",
+   "house": 8
+  },
+  {
+   "planet": "mercury",
+   "type": "순행 시작",
+   "date": "2030-12-26",
+   "sign": "사수자리",
+   "house": 7
+  },
+  {
+   "planet": "mercury",
+   "type": "역행 시작",
+   "date": "2031-03-26",
+   "sign": "양자리",
+   "house": 11
+  },
+  {
+   "planet": "mercury",
+   "type": "순행 시작",
+   "date": "2031-04-19",
+   "sign": "양자리",
+   "house": 11
+  },
+  {
+   "planet": "mercury",
+   "type": "역행 시작",
+   "date": "2031-07-30",
+   "sign": "사자자리",
+   "house": 3
+  },
+  {
+   "planet": "mercury",
+   "type": "순행 시작",
+   "date": "2031-08-23",
+   "sign": "사자자리",
+   "house": 3
+  },
+  {
+   "planet": "mercury",
+   "type": "역행 시작",
+   "date": "2031-11-20",
+   "sign": "사수자리",
+   "house": 7
+  },
+  {
+   "planet": "mercury",
+   "type": "순행 시작",
+   "date": "2031-12-10",
+   "sign": "전갈자리",
+   "house": 6
+  },
+  {
+   "planet": "venus",
+   "type": "역행 시작",
+   "date": "2026-10-04",
+   "sign": "전갈자리",
+   "house": 6
+  },
+  {
+   "planet": "venus",
+   "type": "순행 시작",
+   "date": "2026-11-14",
+   "sign": "천칭자리",
+   "house": 5
+  },
+  {
+   "planet": "venus",
+   "type": "역행 시작",
+   "date": "2028-05-11",
+   "sign": "쌍둥이자리",
+   "house": 1
+  },
+  {
+   "planet": "venus",
+   "type": "순행 시작",
+   "date": "2028-06-23",
+   "sign": "쌍둥이자리",
+   "house": 1
+  },
+  {
+   "planet": "venus",
+   "type": "역행 시작",
+   "date": "2029-12-17",
+   "sign": "염소자리",
+   "house": 8
+  },
+  {
+   "planet": "venus",
+   "type": "순행 시작",
+   "date": "2030-01-27",
+   "sign": "염소자리",
+   "house": 8
+  },
+  {
+   "planet": "venus",
+   "type": "역행 시작",
+   "date": "2031-07-21",
+   "sign": "사자자리",
+   "house": 3
+  },
+  {
+   "planet": "venus",
+   "type": "순행 시작",
+   "date": "2031-09-02",
+   "sign": "사자자리",
+   "house": 3
+  },
+  {
+   "planet": "mars",
+   "type": "역행 시작",
+   "date": "2027-01-11",
+   "sign": "처녀자리",
+   "house": 4
+  },
+  {
+   "planet": "mars",
+   "type": "순행 시작",
+   "date": "2027-04-02",
+   "sign": "사자자리",
+   "house": 3
+  },
+  {
+   "planet": "mars",
+   "type": "역행 시작",
+   "date": "2029-02-15",
+   "sign": "천칭자리",
+   "house": 5
+  },
+  {
+   "planet": "mars",
+   "type": "순행 시작",
+   "date": "2029-05-06",
+   "sign": "처녀자리",
+   "house": 4
+  },
+  {
+   "planet": "mars",
+   "type": "역행 시작",
+   "date": "2031-03-29",
+   "sign": "전갈자리",
+   "house": 6
+  },
+  {
+   "planet": "mars",
+   "type": "순행 시작",
+   "date": "2031-06-14",
+   "sign": "전갈자리",
+   "house": 6
+  }
+ ],
+ "ingress": [
+  {
+   "planet": "jupiter",
+   "date": "2026-01-01",
+   "sign": "게자리",
+   "house": 2
+  },
+  {
+   "planet": "jupiter",
+   "date": "2026-07-01",
+   "sign": "사자자리",
+   "house": 3
+  },
+  {
+   "planet": "jupiter",
+   "date": "2027-07-27",
+   "sign": "처녀자리",
+   "house": 4
+  },
+  {
+   "planet": "jupiter",
+   "date": "2028-08-25",
+   "sign": "천칭자리",
+   "house": 5
+  },
+  {
+   "planet": "jupiter",
+   "date": "2029-09-25",
+   "sign": "전갈자리",
+   "house": 6
+  },
+  {
+   "planet": "jupiter",
+   "date": "2030-10-23",
+   "sign": "사수자리",
+   "house": 7
+  },
+  {
+   "planet": "jupiter",
+   "date": "2031-11-16",
+   "sign": "염소자리",
+   "house": 8
+  },
+  {
+   "planet": "saturn",
+   "date": "2026-01-01",
+   "sign": "물고기자리",
+   "house": 10
+  },
+  {
+   "planet": "saturn",
+   "date": "2026-02-14",
+   "sign": "양자리",
+   "house": 11
+  },
+  {
+   "planet": "saturn",
+   "date": "2028-04-14",
+   "sign": "황소자리",
+   "house": 12
+  },
+  {
+   "planet": "saturn",
+   "date": "2030-06-01",
+   "sign": "쌍둥이자리",
+   "house": 1
+  },
+  {
+   "planet": "uranus",
+   "date": "2026-01-01",
+   "sign": "황소자리",
+   "house": 12
+  },
+  {
+   "planet": "uranus",
+   "date": "2026-04-26",
+   "sign": "쌍둥이자리",
+   "house": 1
+  }
+ ]
+}

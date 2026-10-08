@@ -16,7 +16,8 @@ export interface ValidationIssue {
     | "headwind_sugarcoat"
     | "ending_run"
     | "ending_ratio"
-    | "c1";
+    | "c1"
+    | "character_name";
   detail: string;
   /** C1 사전의 심각도. '경고'는 재생성 사유가 아니라 기록용. 나머지 검사는 모두 '실패'. */
   severity?: "실패" | "경고";

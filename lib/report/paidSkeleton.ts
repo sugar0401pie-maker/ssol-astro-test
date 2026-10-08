@@ -6,16 +6,29 @@ import type { CharacterResult } from "../astro/character.ts";
 import { elementOf, type PointKey } from "../astro/constants.ts";
 import type { Longitudes, NatalChart } from "../astro/natal.ts";
 import { clipIntervals, groupRows, type PeriodKey, type PeriodResult, type ScoredEvent, type TimelineEvent, type Unit } from "../astro/timeline.ts";
-import type { WishFactor, WishResult } from "../astro/wish.ts";
+import { WISH_LEVEL_DISPLAY, type MovementLabel, type WishFactor, type WishLevel, type WishResult } from "../astro/wish.ts";
 import { ELEMENT_ID, aspectGroup, findRow, pad2, row, tryFill, type AstroDb } from "./db.ts";
 import { a8Id } from "./freeResult.ts";
 import { formatDate, formatRanges, josa, QUARTER_LABELS } from "./format.ts";
 import { POINT_KO, eventLabel } from "./labels.ts";
+import { edgeLines, flowSteps, movementLine } from "./movement.ts";
 
 export interface TableRow {
   label: string;
   cells: string[];
   reasons: Array<{ title: string; when: string; meaning: string }>;
+}
+
+/** 5년 타임라인(디자인가이드 7장): 별 크기 = 이루어짐, 반짝임 고리 = 움직임, 펄골드 채움 = 처음 열리는 해 */
+export interface TimelineStar {
+  year: number;
+  level: WishLevel;
+  /** "활짝 열리는 해(순풍)"처럼 두 말 함께 */
+  display: string;
+  edgeBadge: string | null;
+  movement: MovementLabel;
+  firstOpen: boolean;
+  theme: string;
 }
 
 export interface PaidSection {
@@ -24,6 +37,10 @@ export interface PaidSection {
   /** DB 문장 문단(AI가 실패하면 이게 본문) */
   paragraphs: string[];
   table: { columns: string[]; rows: TableRow[] } | null;
+  /** 5번: '2027년 흐름 한눈에' 단계(화살표 한 줄 / 모바일 세로 칩) */
+  flow?: string[];
+  /** 6번: 5년 타임라인 별 */
+  stars?: TimelineStar[];
 }
 
 export interface PaidSkeleton {
@@ -87,8 +104,10 @@ export function evidencePhrase(db: AstroDb, f: WishFactor | undefined): string |
   return `${josa(planet, "이/가")} ${josa(target, "와/과")} ${g === "HARM" ? "자연스럽게 돕는" : "긴장하는"} 각도를 이루는`;
 }
 
-function wishRow(db: AstroDb, wish: string, level: string) {
-  return findRow(db, "A13", (r) => r.wish === wish && r.level === level);
+/** A13 행 — v1.2부터 판정 칸이 두 말 함께 표기("활짝 열리는 해(순풍)")와 "열리는 해"다. */
+function wishRow(db: AstroDb, wish: string, level: WishLevel | "열리는 해") {
+  const label = level === "열리는 해" ? level : WISH_LEVEL_DISPLAY[level];
+  return findRow(db, "A13", (r) => r.wish === wish && r.level === label);
 }
 
 /** 그해 목성이 가장 오래 머무는 하우스(A·B등급만). */
@@ -151,12 +170,17 @@ export function buildPaidSkeleton(args: {
     const w = wishRow(db, answers.q3, y27.level);
     const filled = tryFill(w?.text, { 근거: evidencePhrase(db, y27.reasons[0]) ?? "" });
     if (filled && !(y27.level !== "보통" && !evidencePhrase(db, y27.reasons[0]))) p5.push(filled);
+    const edge = edgeLines(db, y27);
+    if (edge) p5.push(`${edge.line} ${edge.edgeLine}`);
+    // 움직임은 판정 뒤에 한 문장(B9 기질 버전, 마스터스펙 5-3)
+    const mv = movementLine(db, y27, wish.temperament, answers.q3);
+    if (mv) p5.push(mv);
   }
   if (b7) p5.push(`놓아줄 것 — ${b7.let_go}`, `키울 것 — ${b7.grow}`);
 
   // ---- 6. 앞으로 5년 ----
   const p6: string[] = [];
-  const open = wishRow(db, answers.q3, "열리는해");
+  const open = wishRow(db, answers.q3, "열리는 해");
   if (wish.firstOpenYear) {
     const y = wish.years.find((x) => x.year === wish.firstOpenYear)!;
     const filled = tryFill(open?.text, { 열리는해: `${wish.firstOpenYear}년`, 근거: evidencePhrase(db, y.reasons[0]) ?? "" });
@@ -165,15 +189,23 @@ export function buildPaidSkeleton(args: {
     const filled = tryFill(open?.fallback_text, { 가까운해: `${wish.closestYear}년` });
     if (filled) p6.push(filled);
   }
+  // 기반을 다지는 해(역풍) 문단은 A13 문장이 '다가오는 해(2027)' 기준이라 다른 해에 쓰지 않는다(DB 문장을 코드에서 고치지 않음) — AI가 {{역풍해}} 토큰으로 쓴다.
   for (const s of periods.fiveYears.top) {
     const id = a8Id(s.event);
     const text = id ? row(db, "A8", id)?.text : null;
     if (text && !p6.includes(text)) p6.push(text);
   }
+  const stars: TimelineStar[] = [];
   const fiveRows: TableRow[] = wish.years.map((y) => {
-    const level = wishRow(db, answers.q3, y.level)?.short_line ?? y.level;
+    const short = wishRow(db, answers.q3, y.level)?.short_line ?? WISH_LEVEL_DISPLAY[y.level];
+    const edge = edgeLines(db, y);
+    const level = [short, edge ? `(${edge.badge})` : "", y.movementLabel ? `· ${y.movementLabel}` : ""].filter(Boolean).join(" ");
     const jhY = jupiterHouseIn(events, y.year, longitudes.asc);
     const theme = jhY ? t(db, "A9", `JUP_H${pad2(jhY)}`, "keyword") : "";
+    stars.push({
+      year: y.year, level: y.level, display: WISH_LEVEL_DISPLAY[y.level], edgeBadge: edge?.badge ?? null,
+      movement: y.movementLabel, firstOpen: y.year === wish.firstOpenYear, theme,
+    });
     const w = { start: `${y.year}-01-01`, end: `${y.year}-12-31` };
     const rs = periods.fiveYears.all.filter((s) => clipIntervals(s.event.intervals, w).length).slice(0, 3);
     return {
@@ -209,8 +241,8 @@ export function buildPaidSkeleton(args: {
 
   const sections: PaidSection[] = [
     { no: 4, title: "연말까지 조심하면 좋을 것", paragraphs: p4, table: { columns: ["시기", "무엇을 조심할까"], rows: tableRows(db, eoy, "month", "careful") } },
-    { no: 5, title: "2027년을 맞는 마음가짐", paragraphs: p5, table: { columns: ["시기", "마음가짐"], rows: tableRows(db, periods.year2027, "quarter", "future") } },
-    { no: 6, title: `앞으로 5년, ${nickname}님의 삶은 이렇게 흘러갈 거예요`, paragraphs: p6, table: { columns: ["연도", "바람", "한 해의 테마"], rows: fiveRows } },
+    { no: 5, title: "2027년을 맞는 마음가짐", paragraphs: p5, table: { columns: ["시기", "마음가짐"], rows: tableRows(db, periods.year2027, "quarter", "future") }, flow: flowSteps(eoy, periods.year2027) },
+    { no: 6, title: `앞으로 5년, ${nickname}님의 삶은 이렇게 흘러갈 거예요`, paragraphs: p6, table: { columns: ["연도", "바람", "한 해의 테마"], rows: fiveRows }, stars },
     { no: 7, title: "별이 주는 질문과 웰니스 제안", paragraphs: p7, table: null },
   ];
   return {

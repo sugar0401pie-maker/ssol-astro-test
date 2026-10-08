@@ -4,14 +4,15 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { CHARACTER_GRID, COMPETENCY_BY_PLANET, ELEMENTS, SIGNS, STYLES } from "../astro/constants.ts";
-import { Q1_OPTIONS, Q2_OPTIONS, Q3_OPTIONS, type Answers } from "../astro/answers.ts";
+import { Q1_OPTIONS, Q2_OPTIONS, Q3_ALL, type Answers } from "../astro/answers.ts";
+import { b9Id } from "./movement.ts";
 import { computeNatal } from "../astro/natal.ts";
 import { judgeCharacter, type CalibrationTable } from "../astro/character.ts";
 import { ELEMENT_ID, POINT_ID, SIGN_ID, fillTemplate, firstSentence, pad2, row, tryFill, type AstroDb } from "./db.ts";
 import { c1Hits, compileC1, type C1Row } from "./validate.ts";
 import { buildFreeResult, candidateCards } from "./freeResult.ts";
 
-const db: AstroDb = JSON.parse(readFileSync(new URL("../../data/astro/db/astro_db_v1.1.json", import.meta.url), "utf8"));
+const db: AstroDb = JSON.parse(readFileSync(new URL("../../data/astro/db/astro_db_v1.2.json", import.meta.url), "utf8"));
 const ref: CalibrationTable = JSON.parse(readFileSync(new URL("../../data/astro/calibration.json", import.meta.url), "utf8"));
 const has = (t: string, id: string) => assert.ok(row(db, t, id), `${t} ${id} 없음`);
 
@@ -45,12 +46,20 @@ test("DB: 엔진이 만드는 ID가 모두 있다", () => {
       assert.ok(db.dbs.B6.rows.find((r) => r.character === n)?.choice_line, `B6 ${n}`);
     });
   Q2_OPTIONS.forEach((w, i) => assert.equal(row(db, "A12", `Q2_${pad2(i + 1)}`)?.word, w));
-  for (const wish of Q3_OPTIONS)
-    for (const level of ["순풍", "보통", "역풍", "열리는해"]) assert.ok(db.dbs.A13.rows.find((r) => r.wish === wish && r.level === level), `A13 ${wish} ${level}`);
+  for (const wish of Q3_ALL)
+    for (const level of ["활짝 열리는 해(순풍)", "내 손에 달린 해(보통)", "기반을 다지는 해(역풍)", "열리는 해"]) assert.ok(db.dbs.A13.rows.find((r) => r.wish === wish && r.level === level), `A13 ${wish} ${level}`);
   for (const comp of Object.values(COMPETENCY_BY_PLANET)) {
     for (const d of Q1_OPTIONS) assert.ok(db.dbs.A14.rows.find((r) => r.competency === comp && r.domain === d), `A14 ${comp} ${d}`);
-    for (const wish of Q3_OPTIONS) assert.ok(db.dbs.A17a.rows.find((r) => r.competency === comp && r.wish === wish), `A17a ${comp} ${wish}`);
+    for (const wish of Q3_ALL) assert.ok(db.dbs.A17a.rows.find((r) => r.competency === comp && r.wish === wish), `A17a ${comp} ${wish}`);
   }
+  // 바람 판정 v3: 움직임 × 기질 × 바람 묶음(B9), 경계(B10), 유형 한 줄(A5 type_line)
+  for (const mv of ["움직이는 해", "잔잔한 해"] as const)
+    for (const tp of ["활동", "고정", "변통"] as const) for (const wish of ["도약", "안정"] as const) {
+      const id = b9Id(mv, tp, wish);
+      assert.ok(id && row(db, "B9", id)?.line, `B9 ${mv} ${tp} ${wish}`);
+    }
+  for (const id of ["EDGE_UP_CLEAR", "EDGE_UP_MIXED", "EDGE_MID_LOW", "EDGE_LOW_HIGH"]) has("B10", id);
+  for (const r of db.dbs.A5.rows) assert.ok(r.type_line, `A5 type_line ${r.id}`);
   for (const id of ["FIX_DISCLAIMER", "FIX_GRADE_A", "FIX_GRADE_B", "FIX_GRADE_C", "FIX_ADD_TIME", "FIX_CANDIDATE_CHOICE", "FIX_PAYWALL_BOX", "FIX_CARE_CARD", "FIX_LOADING", "FIX_PRIVACY_NOTE"]) has("A15", id);
   for (const id of ["TP_SATURN_RETURN_1", "TP_SATURN_RETURN_2", "TP_JUPITER_RETURN", "TP_URANUS_OPPOSITION", "TP_NEPTUNE_SQUARE", "TP_URANUS_INTO_ASC_SIGN", "TP_SATURN_INTO_ASC_SIGN", "TP_QUIET_YEAR", "TP_SOLAR_ECLIPSE_ON_POINT", "TP_LUNAR_ECLIPSE_ON_POINT"]) has("A18", id);
 });

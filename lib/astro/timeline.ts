@@ -155,7 +155,7 @@ export function buildTimeline(L: Longitudes, range: Window, fastWindow?: Window)
         const target = L[g];
         if (target === undefined || g === k) continue;
         for (const [ang, name] of ASPECTS) {
-          for (const grp of mergeRuns(scanRuns(fdays, pos, target, ang, FAST_TRANSIT_ORB), MERGE_GAP_DAYS.fast)) {
+          for (const grp of mergeRuns(scanRuns(fdays, pos, target, ang, FAST_TRANSIT_ORB[k]), MERGE_GAP_DAYS.fast)) {
             pushTransit(k, g, name, grp, null);
           }
         }
