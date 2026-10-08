@@ -8,6 +8,7 @@ import { REPORT_PRICE } from "@/lib/billing/pricing";
 import { getRealSession } from "@/lib/supabase/browser";
 import BirthChartWheel from "@/components/chart/BirthChartWheel";
 import ElementBars from "@/components/chart/ElementBars";
+import ShareSheet from "@/components/share/ShareSheet";
 import type { WheelSelection } from "@/components/chart/labels";
 import type { FreeResult, WheelSheet } from "@/lib/report/freeResult";
 
@@ -296,6 +297,15 @@ export default function FreeResultView({
           </div>
         </div>
       )}
+
+      <ShareSheet
+        chart={chart}
+        sunSign={result.sunSign}
+        sunSignIndex={result.sunSignIndex}
+        typeLine={character.name ?? character.typeLine}
+        competency={character.competency}
+        style={character.style}
+      />
 
       <p className="text-xs leading-relaxed text-cream/70">{result.disclaimer}</p>
       {unpaid && !paywallVisible && (
