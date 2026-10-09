@@ -1,4 +1,4 @@
 // 유료 리포트 가격(마스터스펙 6-2 확정: 1,900원, 쏘웰라 3일 이용권 안내 포함 — 이용권은 쏘웰라 가입 시 기본 제공이라
 // 여기서 따로 지급하지 않는다, owner 2026-10-08). 금액은 서버가 주문을 만들 때 이 값으로 정한다(브라우저 값 무시).
 export const REPORT_PRICE = 1900;
-export const REPORT_ORDER_NAME = "쏠 점성술 하우스 전체 리포트";
+export const REPORT_ORDER_NAME = "쏠 아스트로 하우스 전체 리포트";

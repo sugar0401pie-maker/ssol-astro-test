@@ -11,7 +11,7 @@ const notoSansKr = Noto_Sans_KR({
 });
 
 export const metadata: Metadata = {
-  title: "쏠 점성술 하우스",
+  title: "쏠 아스트로 하우스",
   description: "출생차트로 나를 돌아보는 쏠 웰니스 하우스의 자기성찰 콘텐츠. 예측 도구가 아니며 진단·상담을 대신하지 않습니다.",
 };
 

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import ResultsList from "@/components/results/ResultsList";
 
-export const metadata: Metadata = { title: "쏠 점성술 하우스 — 내 결과" };
+export const metadata: Metadata = { title: "쏠 아스트로 하우스 — 내 결과" };
 
 export default function ResultsPage() {
   return (

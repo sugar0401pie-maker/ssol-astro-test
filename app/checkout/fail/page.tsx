@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import CheckoutFail from "@/components/checkout/CheckoutFail";
 
-export const metadata: Metadata = { title: "쏠 점성술 하우스 — 결제" };
+export const metadata: Metadata = { title: "쏠 아스트로 하우스 — 결제" };
 
 export default function Page() {
   return (

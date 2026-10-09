@@ -83,7 +83,7 @@ export function buildShareSvg(args: { chart: NatalChart; sunSign: string; sunSig
     texts.push({ text: l, y, size: 44, weight: 700, color: "#FDF6E9" });
     y += 58;
   }
-  texts.push({ text: "쏠 점성술 하우스 · astro.ssolwellnesshouse.com", y: SHARE_H - 50, size: 30, weight: 400, color: "#FDF6E9", alpha: 0.7 });
+  texts.push({ text: "쏠 아스트로 하우스 · astro.ssolwellnesshouse.com", y: SHARE_H - 50, size: 30, weight: 400, color: "#FDF6E9", alpha: 0.7 });
   return { svg: `<svg xmlns="http://www.w3.org/2000/svg" width="${SHARE_W}" height="${SHARE_H}" viewBox="0 0 ${SHARE_W} ${SHARE_H}">${parts.join("")}</svg>`, texts };
 }
 

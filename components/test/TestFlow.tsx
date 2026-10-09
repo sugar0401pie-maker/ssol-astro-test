@@ -258,7 +258,7 @@ export default function TestFlow() {
             if (name) setStep("experience");
           }}
         >
-          <Big>쏠 점성술 하우스에 오신 당신을 환영합니다.</Big>
+          <Big>쏠 아스트로 하우스에 오신 당신을 환영합니다.</Big>
           <p className="text-cream/80">당신을 뭐라고 불러드리면 될까요?</p>
           <input
             className={field}

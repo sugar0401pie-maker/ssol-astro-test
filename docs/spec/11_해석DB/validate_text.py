@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""쏠 점성술 하우스 — 금지어·형식 검증기 (C1 사전 기반).
+"""쏠 아스트로 하우스 — 금지어·형식 검증기 (C1 사전 기반).
 
     from validate_text import validate
     hits = validate(text, scope='DB')   # 또는 scope='AI'
@@ -24,10 +24,11 @@ SKIP_KEYS = {
     'id', 'review_note', 'dates', 'image_file', 'house', 'house_label',
     'period_label', 'event', 'name', 'minutes', 'houses', 'planets',
     'scene_hint', 'in_service_range',
+    'section', 'note', 'slot', 'variant', 'level', 'wish', 'word',
 }
 SKIP_KEY_RE = re.compile(r'(_theory|^p\d+_id$)')
 DIGIT_OK_ROWS = {'FIX_PAYWALL_BOX', 'FIX_SOWELLA_3DAY'}
-SKIP_FILES = {'C1.json', 'C2.json'}  # 사전 자체(데이터)
+SKIP_FILES = {'C1.json', 'C2.json', 'B11.json'}  # 사전 자체(데이터)
 
 _rules = None
 

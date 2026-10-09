@@ -6,7 +6,7 @@ import Link from "next/link";
 // 임의로 요약·수정하지 않았다(문의 메일만 owner 지정 contact@ssolwellness.com). 점성술 서비스 고유 내용
 // 출생 정보(점성술 테스트 결과 도출에만 사용)·결제대행사(토스페이먼츠)는 2026-10-08 owner 지시로 추가했다.
 // 어두운 배경 위 흰 긴 글 금지(디자인가이드 2장) → 본문은 크림 상자 위 남색 글자.
-export const metadata: Metadata = { title: "쏠 점성술 하우스 — 약관 및 정책" };
+export const metadata: Metadata = { title: "쏠 아스트로 하우스 — 약관 및 정책" };
 
 function P({ children }: { children: React.ReactNode }) {
   return <p className="text-[14px] leading-6 text-navy/85">{children}</p>;
@@ -331,7 +331,7 @@ export default function LegalPage() {
             동의하지 않는 경우 테스트 서비스 이용이 제한될 수 있습니다.
           </P>
           <UL items={["필수: 닉네임(또는 이름), 성별 관련 선택 정보, 테스트 문항 응답 내용"]} />
-          <p className="mt-4 text-[14px] font-medium text-navy">나-1. 점성술 테스트(쏠 점성술 하우스) 이용 시 — 출생 정보</p>
+          <p className="mt-4 text-[14px] font-medium text-navy">나-1. 점성술 테스트(쏠 아스트로 하우스) 이용 시 — 출생 정보</p>
           <UL items={["필수: 생년월일, 태어난 시간(또는 시간대·모름 중 선택), 태어난 곳(도시 이름과 좌표만, 상세 주소는 받지 않음), 세 가지 질문의 답"]} />
           <P>
             출생 정보는 점성술 테스트 결과(출생차트)를 도출하는 데에만 사용하며, 그 밖의 용도로는 사용하지 않습니다.

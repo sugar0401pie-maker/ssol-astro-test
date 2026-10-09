@@ -7,7 +7,7 @@ import type { NatalChart } from "@/lib/astro/natal";
 import { buildShareSvg, svgToPng } from "./shareImage";
 
 const SITE_URL = "https://astro.ssolwellnesshouse.com";
-const SHARE_TEXT = "출생차트로 나를 돌아보는 쏠 점성술 하우스";
+const SHARE_TEXT = "출생차트로 나를 돌아보는 쏠 아스트로 하우스";
 
 export default function ShareSheet(props: { chart: NatalChart; sunSign: string; sunSignIndex: number; typeLine: string; competency: string; style: string }) {
   const [open, setOpen] = useState(false);

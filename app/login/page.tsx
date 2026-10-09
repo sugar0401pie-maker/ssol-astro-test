@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import LoginClient from "./LoginClient";
 
-export const metadata: Metadata = { title: "쏠 점성술 하우스 — 로그인" };
+export const metadata: Metadata = { title: "쏠 아스트로 하우스 — 로그인" };
 
 export default function LoginPage() {
   return (

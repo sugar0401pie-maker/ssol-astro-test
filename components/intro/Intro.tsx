@@ -44,7 +44,7 @@ export default function Intro() {
       </svg>
 
       <p className="mt-8 text-sm text-gold">쏠 하우스의 밤하늘 아래에서 나를 읽는다</p>
-      <h1 className="mt-2 text-3xl font-bold text-cream">쏠 점성술 하우스</h1>
+      <h1 className="mt-2 text-3xl font-bold text-cream">쏠 아스트로 하우스</h1>
       <p className="mt-3 text-base text-cream/85">별이 주는 질문, 심리학이 주는 답.</p>
       <p className="mt-5 text-sm leading-relaxed text-cream/75">
         태어난 날짜·시간·장소로 나만의 출생차트를 그리고,

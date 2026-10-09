@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import CheckoutPage from "@/components/checkout/CheckoutPage";
 
-export const metadata: Metadata = { title: "쏠 점성술 하우스 — 결제" };
+export const metadata: Metadata = { title: "쏠 아스트로 하우스 — 결제" };
 
 export default async function Checkout({ params }: PageProps<"/checkout/[resultId]">) {
   const { resultId } = await params;
