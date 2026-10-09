@@ -7,7 +7,7 @@ import Link from "next/link";
 // 화면 문구는 스펙 확정본 그대로. 아직 없는 것: 인트로(디저트 테스트와 동일 화면), 역량 동점 확인 화면, 결제.
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Q1_OPTIONS, Q2_OPTIONS, Q3_OPTIONS, Q_LABELS, type Answers } from "@/lib/astro/answers";
-import { prevStep } from "./steps";
+import { isPage, pathOf, prevStep, restorableStep, stepFromPath, type Progress } from "./steps";
 import { KOREA_REGIONS } from "@/lib/astro/places";
 import type { FreeResult } from "@/lib/report/freeResult";
 import { getRealSession } from "@/lib/supabase/browser";
@@ -56,6 +56,40 @@ function clearFlow() {
   }
 }
 
+// 화면마다 주소가 있어(/test/birth 등) 새로고침해도 이 탭 안에서는 이어 가도록 진행 상태를 sessionStorage에 둔다.
+// 탭을 닫으면 사라지고, 결과를 저장하면 출생 정보는 지우고 결과 id만 남긴다.
+const PROGRESS_KEY = "astro_test_progress_v1";
+type SavedProgress = SavedFlow & { consents?: Partial<Record<ConsentItemId, boolean>>; savedId?: string | null };
+function loadProgress(): SavedProgress | null {
+  try {
+    const raw = sessionStorage.getItem(PROGRESS_KEY);
+    return raw ? (JSON.parse(raw) as SavedProgress) : null;
+  } catch {
+    return null;
+  }
+}
+function storeProgress(p: SavedProgress | { savedId: string }) {
+  try {
+    sessionStorage.setItem(PROGRESS_KEY, JSON.stringify(p));
+  } catch {
+    /* 저장소를 못 쓰는 환경 — 새로고침하면 처음부터 */
+  }
+}
+
+/** 첫 화면: 예전 로그인 흐름에서 돌아왔으면 동의 화면, 아니면 주소의 화면(앞 답이 없으면 답이 있는 화면까지) */
+function initialStep(oldFlow: SavedFlow | null, progress: SavedProgress | null): Step {
+  if (oldFlow) return "consent";
+  const requested = stepFromPath(window.location.pathname) ?? "welcome";
+  if (requested === "welcome" || !progress?.nickname) return "welcome";
+  const p: Progress = {
+    nickname: progress.nickname,
+    firstTime: progress.firstTime,
+    consented: allConsented(progress.consents ?? {}),
+    answers: progress.answers as Progress["answers"],
+  };
+  return restorableStep(requested, p);
+}
+
 // 클라이언트 번들에 계산 엔진이 딸려 오지 않도록 시간대 표는 여기 따로 둔다(lib/astro/birth.ts의 TIME_BANDS와 같은 키).
 const BANDS = [
   { id: "dawn", label: "새벽 (00–06시)" },
@@ -92,8 +126,10 @@ function Big({ children }: { children: React.ReactNode }) {
 
 export default function TestFlow() {
   // 이 컴포넌트는 브라우저에서만 그린다(app/test/TestClient.tsx) — 그래서 첫 상태를 sessionStorage에서 바로 읽어도 된다.
-  const [restored] = useState(loadFlow);
-  const [step, setStep] = useState<Step>(restored ? "consent" : "welcome");
+  const [oldFlow] = useState(loadFlow);
+  const [progress] = useState(() => (oldFlow ? null : loadProgress()));
+  const restored: SavedProgress | null = oldFlow ?? progress;
+  const [step, setStepState] = useState<Step>(() => initialStep(oldFlow, progress));
   const [nickname, setNickname] = useState(restored?.nickname ?? "");
   // 경험 응답: '처음'이면 결과에서 태양·달·상승궁 용어에 한 줄 설명을 붙인다(6-1 기타).
   const [firstTime, setFirstTime] = useState<boolean | null>(restored?.firstTime ?? null);
@@ -109,7 +145,7 @@ export default function TestFlow() {
   const [city, setCity] = useState<PickedCity | null>(restored?.city ?? null);
   const [answers, setAnswers] = useState<Partial<Answers>>(restored?.answers ?? {});
   // 생년월일 화면의 필수 동의 3가지(개인정보처리방침·약관·저장). 셋 다 체크해야 다음으로 넘어간다(owner 결정 2026-10-09).
-  const [consents, setConsents] = useState<Partial<Record<ConsentItemId, boolean>>>({});
+  const [consents, setConsents] = useState<Partial<Record<ConsentItemId, boolean>>>(restored?.consents ?? {});
   const consented = allConsented(consents);
   // 캐릭터 후보를 고른 경우 그 대표 시각 — 저장 요청에도 그대로 보낸다.
   const [pick, setPick] = useState<string | null>(restored?.pick ?? null);
@@ -134,9 +170,62 @@ export default function TestFlow() {
   const [result, setResult] = useState<FreeResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // ---- 화면 주소와 뒤로 가기 ----
+  // 지나온 화면 목록(이 탭에서 이 컴포넌트가 push한 것). 뒤로 가기 버튼·브라우저 뒤로 가기가 같은 목록을 쓴다.
+  const trail = useRef<{ stack: Step[]; pos: number }>({ stack: [step], pos: 0 });
+  useEffect(() => {
+    // 처음 주소를 실제 화면에 맞춘다(새로고침으로 되돌아간 경우 등)
+    if (isPage(step) && window.location.pathname !== pathOf(step)) window.history.replaceState(null, "", pathOf(step));
+    // 저장된 결과 화면을 새로고침했으면 그 결과로
+    const asked = stepFromPath(window.location.pathname);
+    if (!oldFlow && progress?.savedId && (asked === "result" || asked === "candidates" || asked === "tie")) window.location.replace(`/results/${progress.savedId}`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  function setStep(next: Step) {
+    setStepState(next);
+    if (!isPage(next)) return; // 계산 중·저장 재시도는 주소를 바꾸지 않는다
+    const t = trail.current;
+    if (t.stack[t.pos] === next) return;
+    t.stack = [...t.stack.slice(0, t.pos + 1), next];
+    t.pos++;
+    window.history.pushState(null, "", pathOf(next));
+  }
+  useEffect(() => {
+    const onPop = () => {
+      const target = stepFromPath(window.location.pathname);
+      if (!target) return;
+      const t = trail.current;
+      if (t.stack[t.pos - 1] === target) t.pos--;
+      else if (t.stack[t.pos + 1] === target) t.pos++;
+      // 다시 그릴 수 없는 화면(계산 결과가 없는 후보·결과)이면 마지막 질문으로
+      const drawable = (target === "candidates" && candidates.length === 0) || (target === "tie" && !tie) || (target === "result" && !result) ? "q3" : target;
+      setStepState(drawable);
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, [candidates.length, tie, result]);
+  function goBack() {
+    const prev = prevStep(step, firstTime);
+    if (!prev) return;
+    // 이 탭에서 지나온 화면이면 브라우저 뒤로 가기와 똑같이, 아니면(새로고침 직후) 주소만 바꿔 이동
+    if (trail.current.pos > 0 && trail.current.stack[trail.current.pos - 1] === prev) window.history.back();
+    else {
+      setStepState(prev);
+      window.history.replaceState(null, "", pathOf(prev));
+      trail.current = { stack: [prev], pos: 0 };
+    }
+  }
+
   const name = nickname.trim();
   const maxDay = daysInMonth(year, month);
   const safeDay = Math.min(day, maxDay);
+
+  // 진행 상태를 이 탭에 담아 둔다(새로고침해도 이어 가기). 결과를 저장한 뒤에는 결과 id만.
+  useEffect(() => {
+    if (savedId) storeProgress({ savedId });
+    else if (step !== "result")
+      storeProgress({ nickname, firstTime, year, month, day, hour, minute, unknownTime, band, region, overseas, city, answers, pick, competencyPick, consents });
+  }, [savedId, step, nickname, firstTime, year, month, day, hour, minute, unknownTime, band, region, overseas, city, answers, pick, competencyPick, consents]);
 
   const birthTime = useMemo(() => {
     if (!unknownTime) return { kind: "exact", hour, minute } as const;
@@ -246,7 +335,7 @@ export default function TestFlow() {
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 px-4 py-10">
       {prevStep(step, firstTime) && (
-        <button type="button" className="self-start text-sm text-cream/80" onClick={() => setStep(prevStep(step, firstTime)!)}>
+        <button type="button" className="self-start text-sm text-cream/80" onClick={goBack}>
           ← 이전
         </button>
       )}

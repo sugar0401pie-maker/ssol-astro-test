@@ -20,3 +20,80 @@ export function prevStep(step: Step, firstTime: boolean | null): Step | null {
       return null;
   }
 }
+
+// ---- 화면마다 주소(owner 2026-10-09: "테스트 각각 별도 페이지로 만들어서 뒤로 갈 수 있도록") ----
+// 계산 중(loading)·저장 재시도(consent)는 주소를 바꾸지 않는다 — 뒤로 가기로 그 화면에 다시 들어가지 않게.
+
+const SLUG: Partial<Record<Step, string>> = {
+  welcome: "",
+  experience: "experience",
+  firstTime: "intro",
+  birth: "birth",
+  q1: "q1",
+  q2: "q2",
+  q3: "q3",
+  candidates: "type",
+  tie: "type-check",
+  result: "result",
+};
+
+/** 주소가 있는 화면인가 */
+export function isPage(step: Step): boolean {
+  return step in SLUG;
+}
+
+export function pathOf(step: Step): string {
+  const s = SLUG[step];
+  return s ? `/test/${s}` : "/test";
+}
+
+/** 주소 → 화면. 모르는 주소면 null */
+export function stepFromPath(pathname: string): Step | null {
+  const slug = pathname.replace(/\/+$/, "").replace(/^\/test\/?/, "");
+  if (pathname.replace(/\/+$/, "") === "/test") return "welcome";
+  const hit = (Object.entries(SLUG) as Array<[Step, string]>).find(([, v]) => v && v === slug);
+  return hit ? hit[0] : null;
+}
+
+/** 새로고침했을 때 이어 갈 수 있는 진행 상태(이 탭의 sessionStorage) */
+export interface Progress {
+  nickname: string;
+  firstTime: boolean | null;
+  consented: boolean;
+  answers: { q1?: string; q2?: string; q3?: string };
+  /** 결과를 저장했으면 그 id — 결과 화면을 새로고침하면 저장된 결과로 보낸다 */
+  savedId?: string | null;
+}
+
+/**
+ * 새로고침한 주소의 화면을 그대로 보여 줘도 되는지 — 앞 화면의 답이 없으면 답이 있는 가장 뒤 화면으로 되돌린다.
+ * 후보·동점·결과는 계산 결과가 메모리에만 있어 다시 그릴 수 없으므로 마지막 질문으로(저장된 결과가 있으면 그쪽은 화면에서 처리).
+ */
+export function restorableStep(requested: Step, p: Progress | null): Step {
+  if (!p) return "welcome";
+  const ok = (s: Step): boolean => {
+    switch (s) {
+      case "welcome":
+        return true;
+      case "experience":
+        return !!p.nickname.trim();
+      case "firstTime":
+        return ok("experience") && p.firstTime === true;
+      case "birth":
+        return ok("experience") && p.firstTime !== null;
+      case "q1":
+        return ok("birth") && p.consented;
+      case "q2":
+        return ok("q1") && !!p.answers.q1;
+      case "q3":
+        return ok("q2") && !!p.answers.q2;
+      default:
+        return false;
+    }
+  };
+  const want = requested === "candidates" || requested === "tie" || requested === "result" ? "q3" : requested;
+  // 요청한 화면에서 '이전' 방향으로 거슬러 올라가며 처음 보여 줄 수 있는 화면
+  let s: Step | null = want;
+  while (s && !ok(s)) s = s === "firstTime" ? "experience" : prevStep(s, p.firstTime);
+  return s ?? "welcome";
+}
