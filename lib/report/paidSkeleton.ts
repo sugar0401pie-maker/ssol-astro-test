@@ -188,10 +188,14 @@ export function buildPaidSkeleton(args: {
     const mv = movementLine(db, y27, wish.temperament, answers.q3);
     if (mv) p5.push(mv);
   }
+  // C등급(시간 모름)은 하우스·상승궁 없이 주제 행성과 달로만 판정했다는 사실을 판정 문장 곁에 밝힌다(마스터스펙 5-2). 문장은 DB(A15) 그대로.
+  const gradeC = args.chart.accuracy === "C" ? t(db, "A15", "FIX_GRADE_C", "text") : "";
+  if (gradeC) p5.push(gradeC);
   if (b7) p5.push(`놓아줄 것 — ${b7.let_go}`, `키울 것 — ${b7.grow}`);
 
   // ---- 6. 앞으로 5년 ----
   const p6: string[] = [];
+  if (gradeC) p6.push(gradeC);
   const open = wishRow(db, answers.q3, "열리는 해");
   if (wish.firstOpenYear) {
     const y = wish.years.find((x) => x.year === wish.firstOpenYear)!;
