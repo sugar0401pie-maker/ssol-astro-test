@@ -14,7 +14,7 @@ import { getRealSession } from "@/lib/supabase/browser";
 import { apiHeaders } from "@/lib/guest/client";
 import CitySearch, { type PickedCity } from "./CitySearch";
 import ConsentStep from "./ConsentStep";
-import { allConsented, CONSENT_ITEMS, CONSENT_LINES, type ConsentItemId } from "@/lib/results/consent";
+import { allConsented, CONSENT_ERROR, CONSENT_ITEMS, CONSENT_LINES, type ConsentItemId } from "@/lib/results/consent";
 import FreeResultView from "./FreeResultView";
 
 import type { Step } from "./steps";
@@ -146,6 +146,7 @@ export default function TestFlow() {
   // 생년월일 화면의 필수 동의 3가지(개인정보처리방침·약관·저장). 셋 다 체크해야 다음으로 넘어간다(owner 결정 2026-10-09).
   const [consents, setConsents] = useState<Partial<Record<ConsentItemId, boolean>>>(restored?.consents ?? {});
   const consented = allConsented(consents);
+  const [consentTried, setConsentTried] = useState(false);
   // 캐릭터 후보를 고른 경우 그 대표 시각 — 저장 요청에도 그대로 보낸다.
   const [pick, setPick] = useState<string | null>(restored?.pick ?? null);
   const [saving, setSaving] = useState(false);
@@ -473,7 +474,7 @@ export default function TestFlow() {
                 checked={consented}
                 onChange={(e) => setConsents(Object.fromEntries(CONSENT_ITEMS.map((c) => [c.id, e.target.checked])))}
               />
-              모두 동의합니다.
+              모두 동의합니다
             </label>
             {CONSENT_ITEMS.map((c) => (
               <label key={c.id} className="flex items-start gap-2 text-sm leading-relaxed text-cream/90">
@@ -492,6 +493,13 @@ export default function TestFlow() {
                       <a href={c.link.href} target="_blank" rel="noreferrer" className="underline">{c.link.text}</a>
                     </>
                   )}
+                  {c.extraLink && (
+                    <>
+                      {" · "}
+                      <a href={c.extraLink.href} target="_blank" rel="noreferrer" className="underline">{c.extraLink.text}</a>
+                    </>
+                  )}
+                  {c.note && <span className="mt-0.5 block text-xs text-cream/70">{c.note}</span>}
                 </span>
               </label>
             ))}
@@ -505,10 +513,19 @@ export default function TestFlow() {
             </details>
           </fieldset>
 
-          <button className={btnPrimary} disabled={(overseas && !city) || !consented} onClick={() => { startPrefetch(); setStep("q1"); }}>
+          <button
+            className={btnPrimary}
+            disabled={overseas && !city}
+            onClick={() => {
+              // 동의하지 않으면 넘어가지 않고 안내(04_데이터.json 4_birth.consents.error)
+              if (!consented) return setConsentTried(true);
+              startPrefetch();
+              setStep("q1");
+            }}
+          >
             다음
           </button>
-          {!consented && <p className="-mt-3 text-center text-xs text-cream/70">세 가지 모두 동의해야 다음으로 넘어갈 수 있어요.</p>}
+          {consentTried && !consented && <p role="alert" className="-mt-3 text-center text-sm text-gold">{CONSENT_ERROR}</p>}
         </div>
       )}
 
