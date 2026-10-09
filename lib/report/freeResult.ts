@@ -92,6 +92,8 @@ export interface FreeResult {
   paywallBox: string;
   /** 결제 팝업 문구(B11 PAY_POPUP, "안내 · 덧붙임 · [버튼]") */
   payPopup: string;
+  /** 저장·로그인 화면 문구(B11 SAVE_DONE·LOGIN_BIG·LOGIN_SMALL·LOGIN_DONE) */
+  saveCopy: { saveDone: string; loginBig: string; loginSmall: string; loginDone: string };
   disclaimer: string;
   paidSections: typeof PAID_SECTION_TITLES;
 }
@@ -444,6 +446,12 @@ export function buildFreeResult(args: {
       : null,
     paywallBox: text(db, "A15", "FIX_PAYWALL_BOX", "text").replace(/\s*→\s*\[.*\]\s*$/, ""),
     payPopup: b11(db, "PAY_POPUP"),
+    saveCopy: {
+      saveDone: b11(db, "SAVE_DONE"),
+      loginBig: fillSummary(b11(db, "LOGIN_BIG"), { 닉네임: nickname }) ?? "",
+      loginSmall: b11(db, "LOGIN_SMALL"),
+      loginDone: b11(db, "LOGIN_DONE"),
+    },
     disclaimer: text(db, "A15", "FIX_DISCLAIMER", "text"),
     paidSections: PAID_SECTION_TITLES,
   };

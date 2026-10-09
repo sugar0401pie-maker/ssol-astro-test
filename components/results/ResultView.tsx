@@ -69,7 +69,8 @@ export default function ResultView({ id }: { id: string }) {
   return (
     <div className="flex flex-col gap-6">
       <Link href="/results" className="text-sm text-cream/80 underline">← 내 결과</Link>
-      {data.guest && !session && <SaveSuggestion resultId={id} paid={data.paid} onSaved={() => location.reload()} />}
+      {/* 비회원: 저장은 [저장하기] 버튼이 맡는다. 결제한 비회원에게만 보관(가입) 카드를 함께 보여 준다(쏘웰라 이용권은 계정이 있어야 씀). */}
+      {data.guest && !session && data.paid && <SaveSuggestion resultId={id} paid onSaved={() => location.reload()} />}
       <FreeResultView
         result={data.result}
         nickname={data.nickname}

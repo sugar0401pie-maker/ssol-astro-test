@@ -11,7 +11,6 @@ import { isPage, pathOf, prevStep, restorableStep, stepFromPath, type Progress }
 import { KOREA_REGIONS } from "@/lib/astro/places";
 import type { FreeResult } from "@/lib/report/freeResult";
 import { getRealSession } from "@/lib/supabase/browser";
-import SaveSuggestion from "@/components/results/SaveSuggestion";
 import { apiHeaders } from "@/lib/guest/client";
 import CitySearch, { type PickedCity } from "./CitySearch";
 import ConsentStep from "./ConsentStep";
@@ -152,8 +151,6 @@ export default function TestFlow() {
   const [saving, setSaving] = useState(false);
   const [saveNote, setSaveNote] = useState<string | null>(null);
   const [savedId, setSavedId] = useState<string | null>(null);
-  // 저장 시점에 로그인돼 있었는지 — 아니면 결과 위에 저장(가입·로그인) 권유 카드
-  const [loggedIn, setLoggedIn] = useState(false);
   // 역량 동점 확인에서 고른 역량(저장 요청에도 그대로 보낸다)
   const [competencyPick, setCompetencyPick] = useState<string | null>(restored?.competencyPick ?? null);
   const [tie, setTie] = useState<{ intro: string; options: Array<{ competency: string; style: string; label: string; card: string }> } | null>(null);
@@ -259,7 +256,6 @@ export default function TestFlow() {
     try {
       // 로그인했으면 계정에, 아니면 이 브라우저의 비회원 열쇠로 익명 저장한다.
       const session = await getRealSession();
-      setLoggedIn(!!session);
       const res = await fetch("/api/results", {
         method: "POST",
         headers: apiHeaders(session, { "content-type": "application/json" }),
@@ -587,18 +583,13 @@ export default function TestFlow() {
       {step === "result" && result && (
         <>
           {saveNote && <p className="rounded-xl bg-cream px-3 py-2 text-sm text-navy">{saveNote}</p>}
-          {!loggedIn && savedId && (
-            <SaveSuggestion
-              resultId={savedId}
-              prefill={{ birthDate: `${year}-${String(month).padStart(2, "0")}-${String(safeDay).padStart(2, "0")}`, nickname: name }}
-              onSaved={() => setLoggedIn(true)}
-            />
-          )}
+
           <FreeResultView
             result={result}
             nickname={name}
             firstTime={firstTime === true}
             resultId={savedId}
+            savePrefill={{ birthDate: `${year}-${String(month).padStart(2, "0")}-${String(safeDay).padStart(2, "0")}`, nickname: name }}
             onAddTime={() => {
               // C등급: 입력한 날짜·장소는 그대로 두고 시간만 다시 넣는 화면으로(새 결과로 저장된다)
               setUnknownTime(false);

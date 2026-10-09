@@ -40,6 +40,7 @@ export default function AuthStep({
   onSignedIn,
   beforeRedirect,
   title,
+  subtitle,
   prefill,
   initialMode = "signin",
   oauthRedirect,
@@ -51,6 +52,8 @@ export default function AuthStep({
   oauthRedirect?: string;
   beforeRedirect?: () => void;
   title?: string;
+  /** 제목 아래 작은 글(없으면 '같은 계정' 안내) */
+  subtitle?: string;
   /** 테스트에서 이미 받은 값(가입 화면에 미리 채움) */
   prefill?: { birthDate?: string; nickname?: string };
 }) {
@@ -95,7 +98,7 @@ export default function AuthStep({
       <h1 className="text-xl font-bold leading-relaxed text-cream">
         {mode === "signup" ? "계정 만들기" : mode === "reset" ? "비밀번호 재설정" : title ?? "결과를 저장하고 보려면 로그인해 주세요."}
       </h1>
-      <p className="text-sm leading-relaxed text-cream/80">쏠 웰니스 하우스(쏘웰라·디저트 테스트)와 같은 계정이에요. 한 번 가입하면 모든 곳에서 쓸 수 있어요.</p>
+      <p className="text-sm leading-relaxed text-cream/80">{mode === "signin" && subtitle ? subtitle : "쏠 웰니스 하우스(쏘웰라·디저트 테스트)와 같은 계정이에요. 한 번 가입하면 모든 곳에서 쓸 수 있어요."}</p>
       {!configured && <p className="rounded-xl bg-cream px-3 py-2 text-sm text-navy">설정 오류로 로그인을 사용할 수 없어요. 잠시 후 다시 시도해 주세요.</p>}
 
       {mode !== "reset" && (

@@ -9,7 +9,7 @@ import { apiHeaders } from "@/lib/guest/client";
 import { getRealSession } from "@/lib/supabase/browser";
 import BirthChartWheel from "@/components/chart/BirthChartWheel";
 import ElementBars from "@/components/chart/ElementBars";
-import ShareSheet from "@/components/share/ShareSheet";
+import ActionRow from "@/components/share/ActionRow";
 import type { WheelSelection } from "@/components/chart/labels";
 import type { FreeResult, WheelSheet } from "@/lib/report/freeResult";
 
@@ -112,6 +112,7 @@ export default function FreeResultView({
   paidContent,
   onAddTime,
   paidPending,
+  savePrefill,
 }: {
   result: FreeResult;
   nickname: string;
@@ -124,6 +125,8 @@ export default function FreeResultView({
   onAddTime?: () => void;
   /** 결제는 끝났고 리포트를 쓰는 중 — 유료 섹션 제목·첫 문장·블러 자리를 그대로 두고 안내만 바꾼다(디자인가이드 2장 '같은 자리에서 채워진다') */
   paidPending?: string;
+  /** 저장하기 → 가입할 때 미리 채울 값 */
+  savePrefill?: { birthDate?: string; nickname?: string };
 }) {
   const [selected, setSelected] = useState<WheelSelection | null>(null);
   const [tipIndex, setTipIndex] = useState(() => (firstTime ? initialTipIndex() : -1));
@@ -156,6 +159,15 @@ export default function FreeResultView({
   }, [unpaid]);
   const { chart, character, year2026 } = result;
   const popup = splitPayPopup(result.payPopup ?? "");
+  const share = {
+    chart,
+    sunSign: result.sunSign,
+    sunSignIndex: result.sunSignIndex,
+    typeLine: character.name ?? character.typeLine,
+    competency: character.competency,
+    style: character.style,
+    nickname,
+  };
   const sheet = !selected
     ? null
     : selected.kind === "planet"
@@ -318,6 +330,9 @@ export default function FreeResultView({
         </div>
       </Section>
 
+      {/* 무료 구간 끝: [SNS 공유하기] + [저장하기](마스터스펙 6-1 화면 9) */}
+      <ActionRow share={share} copy={result.saveCopy} resultId={resultId ?? null} prefill={savePrefill} />
+
       {paidContent ?? (
         <div ref={lockedRef} className="flex flex-col gap-10">
           {result.paidSections.map((s) => {
@@ -342,6 +357,11 @@ export default function FreeResultView({
         </div>
       )}
 
+      {paidContent && (
+        // 리포트 끝에도 같은 줄
+        <ActionRow share={share} copy={result.saveCopy} resultId={resultId ?? null} prefill={savePrefill} />
+      )}
+
       {result.care && (
         // 2026 한 단어가 '그만하자·이별·고생'이면 함께 보여준다(진행은 막지 않음, 마스터스펙 4장).
         <div className="rounded-2xl bg-cream px-4 py-4 text-sm leading-relaxed text-navy">
@@ -354,14 +374,6 @@ export default function FreeResultView({
         </div>
       )}
 
-      <ShareSheet
-        chart={chart}
-        sunSign={result.sunSign}
-        sunSignIndex={result.sunSignIndex}
-        typeLine={character.name ?? character.typeLine}
-        competency={character.competency}
-        style={character.style}
-      />
 
       <p className="text-xs leading-relaxed text-cream/70">{result.disclaimer}</p>
       {unpaid && lockedVisible && (
