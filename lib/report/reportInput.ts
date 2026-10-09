@@ -101,7 +101,7 @@ export function buildReportInput(args: {
       eventNames(s.event).forEach((n) => names.add(n));
       const e = s.event;
       if (e.kind === "transit") addHouses(e.targetHouse, e.transitHouse);
-      else addHouses(e.house);
+      else if (e.kind !== "chiron_return") addHouses(e.house);
       return { token, event: eventLabel(s.event), score: s.score, domain_relevant: s.domainRelevant };
     });
 

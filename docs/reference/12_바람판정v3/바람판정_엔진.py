@@ -48,7 +48,7 @@ CHANGE_WISHES = {'도약', '나다움', '새로운 시작'}
 W = dict(jup_good=2.0, jup_hard=0.5, sat_good=1.5, sat_bad=-3.0, mars_bad=-1.0,
          jup_house=3.0, sat_house=-1.5, profection=1.5, extra_pass=0.3,
          sect_in=0.7, sect_out=1.3, moon_aux=0.6, change_bonus=1.0)
-MOVE = dict(conj=1.0, hard=0.9, soft=0.4, saturn_return=1.0, saturn_angular_ingress=0.8)
+MOVE = dict(conj=1.0, hard=0.9, soft=0.4, saturn_return=1.0, saturn_angular_ingress=0.8, chiron_return=1.0)
 
 
 def sign_of(x):
@@ -206,6 +206,10 @@ def judge_years(L, birth, wish, sky, years, with_time=True, day_chart=True):
         if ex.year in res:
             res[ex.year]['movement'] += MOVE['saturn_return']
             res[ex.year]['move'].append({'event': '토성 리턴', 'exact': ex.isoformat(), 'score': MOVE['saturn_return']})
+    _n, _cr = chiron_return(birth, years)
+    for y, ex in _cr.items():
+        res[y]['movement'] += MOVE['chiron_return']
+        res[y]['move'].append({'event': '키론 리턴', 'exact': ex, 'score': MOVE['chiron_return']})
     if with_time:
         asc_s = sign_of(L['asc'])
         prev = None
@@ -241,3 +245,36 @@ def label(res, wish, th_support, th_move):
                                            '역풍': '기반을 다지는 해(역풍)'}[lv],
                   'support': round(s, 2), 'movement': round(mv, 2), 'movement_label': mlab}
     return out
+
+
+# ---- 키론(Chiron) — 13_키론/chiron_lon_5d.json (5일 간격 표, 선형 보간) ----
+import json as _json, os as _os
+_CH = None
+def chiron_lon_jd(jd, path=_os.path.join(_os.path.dirname(__file__), 'chiron_lon_5d.json')):
+    global _CH
+    if _CH is None:
+        _CH = _json.load(open(path))
+    i = (jd - _CH['jd0']) / _CH['step']
+    k = int(i); f = i - k
+    a, b = _CH['lon'][k], _CH['lon'][k + 1]
+    d = (b - a + 540) % 360 - 180
+    return (a + d * f) % 360
+
+def _jd(d):
+    return (d - datetime.date(2000, 1, 1)).days + 2451544.5 + 0.125  # 03:00 UTC
+
+def chiron_return(birth_date, years, orb=1.5):
+    """출생 키론 위치로 돌아오는 날(정확일) — 연도별 목록"""
+    natal = chiron_lon_jd(_jd(birth_date) - 0.125 + 0.5)
+    out = {}
+    for y in years:
+        best = None
+        d = datetime.date(y, 1, 1)
+        while d.year == y:
+            o = abs((chiron_lon_jd(_jd(d)) - natal + 540) % 360 - 180)
+            if o <= orb and (best is None or o < best[1]):
+                best = (d, o)
+            d += datetime.timedelta(days=1)
+        if best:
+            out[y] = best[0].isoformat()
+    return natal, out

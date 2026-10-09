@@ -8,6 +8,7 @@ import {
   ASPECT_WEIGHT, DOMAIN_BOOST, ECLIPSE_BASE, ECLIPSE_NATAL_ORB, EOY_MODE, FAST_TRANSIT_ORB, FAST_TRANSIT_PLANETS,
   MERGE_GAP_DAYS, MILESTONE_SCORE, PLANET_WEIGHT, STATION_BASE, STATION_PLANET_WEIGHT, TARGET_WEIGHT, TOP_EVENTS, durationFactor,
 } from "./scoringConfig.ts";
+import { chironReturnRuns } from "./chiron.ts";
 import { computeStationsAndIngress, computeTransits, dailyPositions, dailyRange, sampleTime, scanRuns, type Run } from "./transits.ts";
 
 export interface Interval {
@@ -47,6 +48,8 @@ export type TimelineEvent = BaseEvent &
         /** 출생 행성·축과 합/충 3° 안이면 그 대상 */
         contact: { target: PointKey; aspect: "합" | "충" } | null;
       }
+    /** 키론 리턴(약 50세 나이 마일스톤, 마스터스펙 3-2). 키론은 astronomy-engine에 없어 owner의 위치표(chiron.ts)로 계산 */
+    | { kind: "chiron_return" }
   );
 
 export interface ScoredEvent {
@@ -106,13 +109,12 @@ const MILESTONES: Array<{ kind: MilestoneKind; transit: PlanetKey; target: Plane
   { kind: "uranus_opposition", transit: "uranus", target: "uranus", angle: 180, aspect: "충" },
   { kind: "neptune_square", transit: "neptune", target: "neptune", angle: 90, aspect: "사각" },
 ];
-// 키론 리턴(약 50세)은 astronomy-engine이 키론을 계산하지 못해 아직 넣지 않았다.
 
 /**
  * range 전체의 이벤트를 한 번에 뽑는다. fastWindow가 있으면 그 기간만 수성·금성·화성 트랜짓도 뽑는다
  * (빠른 행성은 연말 파트에만 쓰고, 6년치를 다 훑을 필요는 없다).
  */
-export function buildTimeline(L: Longitudes, range: Window, fastWindow?: Window): TimelineEvent[] {
+export function buildTimeline(L: Longitudes, range: Window, fastWindow?: Window, opts: { birthDate?: string } = {}): TimelineEvent[] {
   const events: TimelineEvent[] = [];
   const days = dailyRange(range.start, range.end);
 
@@ -144,6 +146,12 @@ export function buildTimeline(L: Longitudes, range: Window, fastWindow?: Window)
     const pos = dailyPositions(m.transit, days);
     const runs = scanRuns(days, pos, L[m.target], m.angle, TRANSIT_ORB[m.transit as keyof typeof TRANSIT_ORB]);
     for (const g of mergeRuns(runs, MERGE_GAP_DAYS.slow)) pushTransit(m.transit, m.target, m.aspect, g, m.kind);
+  }
+
+  // 2-b) 키론 리턴 — 출생일(현지 날짜)이 있을 때만. 오브 1.5° 안 구간(역행 재통과는 묶는다)
+  if (opts.birthDate) {
+    const runs = chironReturnRuns(opts.birthDate, days).map((r) => ({ ...r, orb: 0 }));
+    for (const g of mergeRuns(runs, MERGE_GAP_DAYS.slow)) events.push({ id: `c:chiron:${g[0].from}`, kind: "chiron_return", intervals: g });
   }
 
   // 3) 빠른 행성 트랜짓(연말 파트용)
@@ -243,6 +251,8 @@ export function touchesDomain(e: TimelineEvent, domain: Q1Domain): boolean {
       return hasPoint(e.planet) || hasHouse(e.house);
     case "eclipse":
       return hasHouse(e.house) || (e.contact !== null && hasPoint(e.contact.target));
+    case "chiron_return":
+      return false;
   }
 }
 
@@ -258,6 +268,8 @@ export function baseScore(e: TimelineEvent, inWindow: Interval[]): number {
       return (PLANET_WEIGHT[e.planet] ?? 1) * 1.5;
     case "eclipse":
       return ECLIPSE_BASE * (e.contact ? (TARGET_WEIGHT[e.contact.target] ?? 1) : 1);
+    case "chiron_return":
+      return MILESTONE_SCORE.chiron_return;
   }
 }
 
@@ -280,7 +292,7 @@ export type PeriodKey = "year2026" | "eoy" | "year2027" | "fiveYears";
 export function periodFilter(period: PeriodKey, e: TimelineEvent): boolean {
   switch (period) {
     case "year2026":
-      return (e.kind === "transit" && ["jupiter", "saturn", "uranus", "neptune", "pluto"].includes(e.transit)) || e.kind === "ingress";
+      return (e.kind === "transit" && ["jupiter", "saturn", "uranus", "neptune", "pluto"].includes(e.transit)) || e.kind === "ingress" || e.kind === "chiron_return";
     case "eoy":
       return (e.kind === "transit" && ["mars", "venus", "mercury", "jupiter", "saturn"].includes(e.transit)) || e.kind === "retrograde";
     case "year2027":
@@ -293,7 +305,8 @@ export function periodFilter(period: PeriodKey, e: TimelineEvent): boolean {
     case "fiveYears":
       return (
         (e.kind === "transit" && (["saturn", "uranus", "neptune", "pluto"].includes(e.transit) || e.milestone !== null)) ||
-        (e.kind === "ingress" && e.planet === "jupiter")
+        (e.kind === "ingress" && e.planet === "jupiter") ||
+        e.kind === "chiron_return"
       );
   }
 }
@@ -342,7 +355,7 @@ export function pickFiveYearTop(events: TimelineEvent[], w: Window, domain: Q1Do
     const best = scoreInWindow(pool, { start: `${y}-01-01`, end: `${y}-12-31` }, domain)[0];
     if (best) picked.add(best.event.id);
   }
-  for (const e of pool) if (e.kind === "transit" && e.milestone && clipIntervals(e.intervals, w).length) picked.add(e.id);
+  for (const e of pool) if (((e.kind === "transit" && e.milestone) || e.kind === "chiron_return") && clipIntervals(e.intervals, w).length) picked.add(e.id);
   return scoreInWindow(pool.filter((e) => picked.has(e.id)), w, domain).sort((a, b) =>
     a.intervalsInWindow[0].from < b.intervalsInWindow[0].from ? -1 : 1,
   );
@@ -351,7 +364,7 @@ export function pickFiveYearTop(events: TimelineEvent[], w: Window, domain: Q1Do
 /** 2026 회고의 '올해의 전환점': 특정 날짜 이벤트(토성 리턴 등 마일스톤, 외행성·목성·토성 별자리 이동). */
 export function turningPoints(events: TimelineEvent[], w: Window): TimelineEvent[] {
   return events
-    .filter((e) => (e.kind === "ingress" || (e.kind === "transit" && e.milestone !== null)) && clipIntervals(e.intervals, w).length > 0)
+    .filter((e) => (e.kind === "ingress" || e.kind === "chiron_return" || (e.kind === "transit" && e.milestone !== null)) && clipIntervals(e.intervals, w).length > 0)
     .sort((a, b) => ((a.intervals[0].exact ?? a.intervals[0].from) < (b.intervals[0].exact ?? b.intervals[0].from) ? -1 : 1));
 }
 

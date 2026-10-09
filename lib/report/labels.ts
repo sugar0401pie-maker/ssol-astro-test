@@ -32,6 +32,8 @@ export function eventLabel(e: TimelineEvent): string {
       return `${POINT_KO[e.planet]} ${e.sign} 진입${h(e.house)}`;
     case "eclipse":
       return `${ECLIPSE_KO[e.detail] ?? ""}${e.eclipse === "solar" ? "일식" : "월식"}(${e.sign}${e.house ? ` ${e.house}H` : ""})${e.contact ? ` · 출생 ${POINT_KO[e.contact.target]}과 ${e.contact.aspect}` : ""}`;
+    case "chiron_return":
+      return "키론 리턴(나이 마일스톤)";
   }
 }
 
@@ -46,5 +48,7 @@ export function eventNames(e: TimelineEvent): string[] {
       return [POINT_KO[e.planet], e.sign];
     case "eclipse":
       return ["태양", "달", e.sign, ...(e.contact ? [POINT_KO[e.contact.target]] : [])];
+    case "chiron_return":
+      return [];
   }
 }

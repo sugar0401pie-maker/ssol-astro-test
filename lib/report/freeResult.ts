@@ -218,6 +218,7 @@ export function a18For(e: TimelineEvent, ascSign: string | null, birthYear: numb
         return { id: "TP_NEPTUNE_SQUARE", personal: true };
     }
   }
+  if (e.kind === "chiron_return") return { id: "TP_CHIRON_RETURN", personal: true };
   if (e.kind === "eclipse" && e.contact?.aspect === "합") {
     return { id: e.eclipse === "solar" ? "TP_SOLAR_ECLIPSE_ON_POINT" : "TP_LUNAR_ECLIPSE_ON_POINT", personal: true };
   }
@@ -289,13 +290,15 @@ export function buildFreeResult(args: {
   answers: Answers;
   nickname: string;
   birthYear: number;
+  /** 현지 출생일 'YYYY-MM-DD' — 키론 리턴(2026 전환점) 계산용. 없으면 키론은 빠진다 */
+  birthDate?: string;
   now?: Date;
 }): FreeResult {
   const { db, chart, longitudes, character, answers, nickname, birthYear } = args;
   const today = new Date((args.now ?? new Date()).getTime() + 9 * 3_600_000).toISOString().slice(0, 10);
   const nick = { 닉네임: nickname };
   const w = { start: "2026-01-01", end: "2026-12-31" };
-  const events = buildTimeline(longitudes, w);
+  const events = buildTimeline(longitudes, w, undefined, { birthDate: args.birthDate });
 
   // 2026 분기별 표: 분기마다 A8 문장이 있는 상위 이벤트 2개. 끝난 분기는 과거형(table_past), 지금·앞 분기는 table_future.
   const scored = scoreInWindow(events.filter((e) => periodFilter("year2026", e) || e.kind === "eclipse"), w, answers.q1);

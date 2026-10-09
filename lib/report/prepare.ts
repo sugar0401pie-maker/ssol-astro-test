@@ -13,7 +13,7 @@ export function prepareSkeleton(args: { db: AstroDb; resolved: Resolved; wishCon
   const { db, resolved, answers, nickname, now } = args;
   const { chart, longitudes: L, character } = resolved;
   const windows = periodWindows(now);
-  const events = buildTimeline(L, { start: "2026-01-01", end: "2031-12-31" }, windows.eoy);
+  const events = buildTimeline(L, { start: "2026-01-01", end: "2031-12-31" }, windows.eoy, { birthDate: args.wishContext.birthDate });
   const periods = selectPeriods(events, answers.q1, now);
   const wish = computeWish(L, answers.q3, args.wishContext);
   const skeleton = buildPaidSkeleton({ db, chart, longitudes: L, character, answers, events, periods, wish, nickname });

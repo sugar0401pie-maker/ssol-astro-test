@@ -60,6 +60,6 @@ export function computeFree(input: BirthInput, answers: Answers, nickname: strin
   return {
     kind: "result",
     birth: { ...birth, resolved: birth.resolved },
-    result: buildFreeResult({ db: ASTRO_DB, chart, longitudes, character, answers, nickname, birthYear: input.year }),
+    result: buildFreeResult({ db: ASTRO_DB, chart, longitudes, character, answers, nickname, birthYear: input.year, birthDate: birth.stored.local.slice(0, 10) }),
   };
 }

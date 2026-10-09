@@ -21,6 +21,7 @@ import {
 } from "./scoringConfig.ts";
 import type { Interval } from "./timeline.ts";
 import { dailyPositions, dailyRange, scanRuns } from "./transits.ts";
+import { chironReturnYears } from "./chiron.ts";
 
 export type WishLevel = "순풍" | "보통" | "역풍";
 export const WISH_LEVEL_DISPLAY: Record<WishLevel, string> = {
@@ -43,8 +44,8 @@ export type WishFactor =
   | { kind: "house"; transit: PlanetKey; house: number; intervals: Interval[]; days: number; value: number };
 
 export interface MovementFactor {
-  kind: "outer" | "saturn_return" | "saturn_ingress";
-  transit: PlanetKey;
+  kind: "outer" | "saturn_return" | "saturn_ingress" | "chiron_return";
+  transit: PlanetKey | "chiron";
   /** outer: 닿은 개인 지점 */
   target?: PointKey;
   aspect?: AspectName;
@@ -289,6 +290,12 @@ export function computeWish(
     if (!a) continue;
     a.movement += MOVEMENT_SCORE.saturnReturn;
     a.moves.push({ kind: "saturn_return", transit: "saturn", exact: run.exact, value: MOVEMENT_SCORE.saturnReturn });
+  }
+  // 키론 리턴(약 50세): 원본 엔진과 같이 해마다 한 번, 출생일 기준(시간 모름이어도 계산)
+  for (const [y, exact] of chironReturnYears(ctx.birthDate, [...acc.keys()])) {
+    const a = acc.get(y)!;
+    a.movement += MOVEMENT_SCORE.chironReturn;
+    a.moves.push({ kind: "chiron_return", transit: "chiron", exact, value: MOVEMENT_SCORE.chironReturn });
   }
   if (timed) {
     const ascS = signIndex(L.asc as number);

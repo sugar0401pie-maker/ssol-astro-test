@@ -39,6 +39,9 @@ test("바람이 걸린 자리·이루어짐·움직임 점수가 원본과 같�
         assert.equal(y.factors.filter((f) => f.value > 0).length, e.plus.length, `${c.utc} ${wish} ${y.year} plus`);
         assert.equal(y.factors.filter((f) => f.value < 0).length, e.minus.length, `${c.utc} ${wish} ${y.year} minus`);
         assert.equal(y.moves.length, e.move.length, `${c.utc} ${wish} ${y.year} move`);
+        // 키론 리턴 정확일까지 원본과 같은지(2026-10-09 키론 표 추가)
+        const chiron = (e.move as Array<[string, string]>).find((m) => m[0] === "키론 리턴");
+        assert.equal(y.moves.find((m) => m.kind === "chiron_return")?.exact, chiron?.[1], `${c.utc} ${wish} ${y.year} chiron`);
         n++;
       }
     }

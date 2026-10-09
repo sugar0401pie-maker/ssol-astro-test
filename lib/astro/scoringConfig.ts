@@ -27,7 +27,7 @@ export function durationFactor(daysInWindow: number): number {
 
 /** 리턴·마일스톤은 계산 대신 고정 점수. v1.1 C2(옛 W_032~W_034) 값을 그대로 둔다 —
  *  v1.2 C2에서 이 행이 빠져서(이벤트 순위용 점수라 바람 판정과 무관) 지금은 Claude 출발값으로 관리. */
-export const MILESTONE_SCORE = { saturn_return: 9, jupiter_return: 4, uranus_opposition: 7, neptune_square: 7 } as const;
+export const MILESTONE_SCORE = { saturn_return: 9, jupiter_return: 4, uranus_opposition: 7, neptune_square: 7, chiron_return: 7 } as const; // chiron_return: Claude 출발값(천왕성 충·해왕성 사각과 같은 급)
 
 /** 스펙 5-1: Q1 고민 영역을 건드리는 이벤트 가산. (스펙 확정값) */
 export const DOMAIN_BOOST = 1.5; // W_029
@@ -76,7 +76,7 @@ export const WISH_SCORE = {
 export const WISH_THRESHOLDS = { low: 0, high: 4, edge: 1 } as const;
 
 /** 움직임 — W_053~W_057, 표시 기준 W_058~W_059 */
-export const MOVEMENT_SCORE = { conj: 1.0, hard: 0.9, soft: 0.4, saturnReturn: 1.0, saturnAngularIngress: 0.8 } as const;
+export const MOVEMENT_SCORE = { conj: 1.0, hard: 0.9, soft: 0.4, saturnReturn: 1.0, saturnAngularIngress: 0.8, chironReturn: 1.0 } as const; // chironReturn: C2에 행 없음 — 바람판정_엔진.py MOVE 값(2026-10-09)
 export const MOVEMENT_THRESHOLDS = { calm: 1.8, moving: 3.2 } as const;
 
 /** 기질 양태 점수 — W_061 */

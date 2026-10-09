@@ -182,3 +182,23 @@ test("후보 선택 카드(B6)", () => {
   assert.equal(c.intro, row(db, "A15", "FIX_CANDIDATE_CHOICE")!.text);
   assert.ok(c.cards["복어"].length > 0 && c.cards["수달"].length > 0);
 });
+
+test("키론 리턴(약 50세): 2026년에 오면 '올해의 전환점'에 A18 TP_CHIRON_RETURN, 출생일이 없으면 빠진다", () => {
+  // 1976-09-01 10:00 서울 — 키론이 2026-08-03에 출생 위치로 돌아온다(바람판정_엔진.py chiron_return과 같은 계산)
+  const { chart, L } = computeNatal(new Date(Date.UTC(1976, 8, 1, 1, 0)), 37.5663, 126.9779);
+  const character = judgeCharacter(L, chart.elements, ref);
+  const args = { db, chart, longitudes: L, character, answers: { q1: "가족", q2: "변화", q3: "회복" } as Answers, nickname: "하늘", birthYear: 1976, now: new Date("2026-10-07T03:00:00Z") };
+  const line = (row(db, "A18", "TP_CHIRON_RETURN")!.text as string).split("{{날짜}}")[1].slice(0, 12);
+  assert.ok(buildFreeResult({ ...args, birthDate: "1976-09-01" }).year2026.turningPoints.some((t) => t.includes(line)));
+  assert.ok(!buildFreeResult(args).year2026.turningPoints.some((t) => t.includes(line)));
+});
+
+test("키론 리턴이 2027~2031에 오면 5년 파트의 나이 마일스톤으로 들어간다", async () => {
+  const { buildTimeline, pickFiveYearTop } = await import("../astro/timeline.ts");
+  const { L } = computeNatal(new Date(Date.UTC(1978, 5, 14, 18, 0)), 37.5663, 126.9779);
+  const w = { start: "2027-01-01", end: "2031-12-31" };
+  const top = pickFiveYearTop(buildTimeline(L, w, undefined, { birthDate: "1978-06-15" }), w, "가족");
+  const ch = top.find((s) => s.event.kind === "chiron_return");
+  assert.ok(ch);
+  assert.equal(ch!.intervalsInWindow[0].from.slice(0, 4), "2028");
+});

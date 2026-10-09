@@ -7,6 +7,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 tmp = tempfile.mkdtemp()
 shutil.copy(os.path.join(ROOT, 'docs/reference/07_엔진_프로토타입.py'), os.path.join(tmp, 'natal_core.py'))
 shutil.copy(os.path.join(ROOT, 'docs/reference/12_바람판정v3/바람판정_엔진.py'), os.path.join(tmp, 'wish_engine.py'))
+shutil.copy(os.path.join(ROOT, 'docs/reference/12_바람판정v3/chiron_lon_5d.json'), os.path.join(tmp, 'chiron_lon_5d.json'))  # 키론 표(엔진이 같은 폴더에서 읽음)
 sys.path.insert(0, tmp)
 import natal_core as N, wish_engine as E
 
@@ -36,5 +37,8 @@ for i in range(12):
     lat, lng = random.choice([(37.5663, 126.9779), (35.1798, 129.075), (33.489, 126.4983), (51.5, -0.12)])
     local = (dt + datetime.timedelta(hours=9)).date()  # 기준값용 '현지 날짜' — 테스트도 같은 값을 넣는다
     cases.append(case(dt, lat, lng, local, random.sample(list(E.WISH), 3), with_time=(i % 4 != 3)))
+# 키론 리턴(약 50세)이 2027~2031에 들어오는 출생(1977~1981년생) — 무작위 표본에는 거의 없어 따로 넣는다.
+cases.append(case(datetime.datetime(1978, 6, 14, 18, 0), 37.5663, 126.9779, datetime.date(1978, 6, 15), ['안정', '도약', '나다움']))
+cases.append(case(datetime.datetime(1980, 2, 2, 3, 0), 35.1798, 129.075, datetime.date(1980, 2, 2), ['회복', '인정'], with_time=False))
 json.dump(cases, open(os.path.join(ROOT, 'test/fixtures/wish-v3.json'), 'w'), ensure_ascii=False)
 print('cases', len(cases))
