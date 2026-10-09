@@ -19,6 +19,10 @@
   --font-sans: var(--font-noto-sans-kr), system-ui, sans-serif;
 }
 
+html {
+  background-color: var(--astro-navy); /* 페이지가 화면보다 길 때 아래쪽도 밤색으로 */
+}
+
 body {
   background: linear-gradient(to bottom, var(--astro-midnight), var(--astro-navy)) fixed;
   color: var(--astro-cream);
@@ -37,5 +41,33 @@ body {
   .astro-ring {
     animation: none;
     stroke-dasharray: 3 3;
+  }
+}
+
+/* 화면 공통 배경의 아주 옅은 별 입자(디자인가이드 2장): 3~4초 주기의 느린 반짝임, '동작 줄이기'면 정지. 장식이라 클릭을 막지 않는다. */
+.astro-stars {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    radial-gradient(1px 1px at 12% 18%, rgb(253 246 233 / 0.55), transparent 60%),
+    radial-gradient(1px 1px at 78% 9%, rgb(253 246 233 / 0.45), transparent 60%),
+    radial-gradient(1.5px 1.5px at 35% 42%, rgb(203 178 122 / 0.5), transparent 60%),
+    radial-gradient(1px 1px at 88% 36%, rgb(253 246 233 / 0.4), transparent 60%),
+    radial-gradient(1px 1px at 22% 71%, rgb(253 246 233 / 0.35), transparent 60%),
+    radial-gradient(1.5px 1.5px at 64% 63%, rgb(253 246 233 / 0.4), transparent 60%),
+    radial-gradient(1px 1px at 52% 22%, rgb(253 246 233 / 0.3), transparent 60%),
+    radial-gradient(1px 1px at 8% 88%, rgb(203 178 122 / 0.35), transparent 60%),
+    radial-gradient(1px 1px at 93% 82%, rgb(253 246 233 / 0.35), transparent 60%);
+  animation: astro-twinkle 3.5s ease-in-out infinite;
+}
+@keyframes astro-twinkle {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .astro-stars {
+    animation: none;
   }
 }

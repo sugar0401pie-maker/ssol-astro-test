@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Noto_Sans_KR } from "next/font/google";
 import "./globals.css";
 import SiteFooter from "@/components/SiteFooter";
+import AuthFooterLink from "@/components/auth/AuthFooterLink";
 
 const notoSansKr = Noto_Sans_KR({
   variable: "--font-noto-sans-kr",
@@ -24,7 +25,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="ko" className={`${notoSansKr.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
+        <div className="astro-stars" aria-hidden="true" />
         {children}
+        <AuthFooterLink />
         <SiteFooter />
       </body>
     </html>
