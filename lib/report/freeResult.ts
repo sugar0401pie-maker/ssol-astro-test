@@ -1,6 +1,6 @@
 // 무료 구간(1~3번 섹션) 화면 데이터 조립 — AI 호출 0회(마스터스펙 6-2), 문장은 전부 해석 DB(A1~A18, B1·B2·B6)에서.
 // 유료 섹션(4~7)은 제목만 보낸다 — 본문을 브라우저에 보내고 블러로 가리면 결제 없이 볼 수 있기 때문.
-// 휠 탭 시트도 같은 이유로, 태양·달·상승궁 외 행성은 첫 문장만 보낸다(나머지는 유료).
+// 출생차트의 모든 행성·하우스·각도 설명은 무료(2026-10-09 결정): 휠 탭 시트 전체 + 본문 '나의 행성 읽기'·'행성끼리의 관계'.
 // DB 문장의 토큰을 못 채우면 그 문장은 빼고 보여준다(fail safe) — 빈칸·괄호가 화면에 나가지 않게.
 import { isSoftTone, type Answers, type Q2Word } from "../astro/answers.ts";
 import type { CharacterResult } from "../astro/character.ts";
@@ -10,8 +10,9 @@ import type { Accuracy, Longitudes, NatalChart } from "../astro/natal.ts";
 import {
   buildTimeline, clipIntervals, groupRows, periodFilter, scoreInWindow, turningPoints, type ScoredEvent, type TimelineEvent,
 } from "../astro/timeline.ts";
-import { POINT_ID, SIGN_ID, ELEMENT_ID, aspectGroup, firstSentence, findRow, pad2, row, tryFill, type AstroDb } from "./db.ts";
+import { POINT_ID, SIGN_ID, ELEMENT_ID, aspectGroup, findRow, pad2, row, tryFill, type AstroDb } from "./db.ts";
 import { formatDate, formatRanges, QUARTER_LABELS } from "./format.ts";
+import { a12Variant, b11, fillSummary } from "./variants.ts";
 import { POINT_KO, eventLabel } from "./labels.ts";
 
 export const PAID_SECTION_TITLES = [
@@ -44,7 +45,16 @@ export interface FreeResult {
   wheelSheets: { planets: Partial<Record<PointKey, WheelSheet>>; signs: Record<string, WheelSheet>; lines: Record<string, WheelSheet> };
   /** 처음인 사용자의 휠 3단계 안내 말풍선(A15 FIX_WHEEL_TIP_1~3) */
   wheelTips: string[];
+  /** 섹션 1 '나의 행성 읽기'(수성~명왕성, B1a·B1b + B2a·B2b)와 '행성끼리의 관계'(주요 각도 3개, B3) — 무료 */
+  planetReading: {
+    head: string;
+    planets: Array<{ key: PointKey; title: string; shortLine: string; text: string; houseLine: string | null }>;
+    aspectsHead: string;
+    aspects: Array<{ title: string; sub: string; lineMeaning: string; text: string }>;
+  };
   character: {
+    /** 굵은 한 줄 요약(B11 SUM_TYPE) */
+    summary: string | null;
     /** 동물 이름 — SHOW_CHARACTER가 false면 null(브라우저에 보내지 않는다) */
     name: string | null;
     /** 유형 한 줄(A5 type_line) */
@@ -68,6 +78,10 @@ export interface FreeResult {
   sunSignIndex: number;
   softTone: boolean;
   year2026: {
+    /** 굵은 한 줄 요약(B11 SUM_2026) */
+    summary: string | null;
+    /** 분기 표 소제목(B11 HEAD_2026_Q) */
+    quarterHead: string;
     intro: string;
     turningPoints: string[];
     quarters: Array<{ label: string; cell: string; reasons: Array<{ title: string; when: string; meaning: string }> }>;
@@ -110,14 +124,15 @@ function planetSheet(db: AstroDb, key: PointKey, chart: NatalChart): WheelSheet 
   if (key === "sun" || key === "moon" || key === "asc") {
     const table = key === "sun" ? "A2" : key === "moon" ? "A3" : "A4";
     const lines = [text(db, table, `${POINT_ID[key]}_${sid}`, "text")];
-    if (houseLine?.short_line) lines.push(houseLine.short_line);
+    if (houseLine) lines.push(`${houseLine.short_line} ${houseLine.text}`.trim());
     return { title, lines: lines.filter(Boolean), partial: false };
   }
-  if (key === "mc") return { title, lines: [text(db, "A16", "TERM_MC", "meaning_line")].filter(Boolean), partial: false };
-  // 나머지 행성: 첫 문장만(나머지는 결제 후)
+  if (key === "mc") return { title, lines: [text(db, "A16", "TERM_MC", "meaning_line"), text(db, "A16", "TERM_MC", "detail")].filter(Boolean), partial: false };
+  // 나머지 행성: 별자리(B1a·B1b) + 하우스(B2a·B2b) 문장 전체 — 2026-10-09부터 무료
   const signRow = row(db, "B1a", `PL_${POINT_ID[key]}_${sid}`) ?? row(db, "B1b", `PL_${POINT_ID[key]}_${sid}`);
-  const lines = [signRow?.short_line ? firstSentence(signRow.short_line) : text(db, "A16", `TERM_${POINT_ID[key]}`, "meaning_line")];
-  return { title, lines: lines.filter(Boolean), partial: true };
+  const lines = signRow ? [signRow.short_line, signRow.text] : [text(db, "A16", `TERM_${POINT_ID[key]}`, "meaning_line")];
+  if (houseLine) lines.push(`${p.house}하우스 · ${houseLine.short_line} ${houseLine.text}`.trim());
+  return { title, lines: lines.filter(Boolean), partial: false };
 }
 
 /** A6 '쉬운 정의' 한 줄(역량·방식). */
@@ -155,6 +170,42 @@ function lineSheets(db: AstroDb, chart: NatalChart): Record<string, WheelSheet> 
     if (lines[0]) out[key] = { title: `${POINT_KO[asp.a]}-${POINT_KO[asp.b]} ${asp.aspect}`, lines, partial: false };
   }
   return out;
+}
+
+const READING_PLANETS = ["mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune", "pluto"] as const;
+// 주요 각도 고르기(프로토타입 planetReading과 같은 규칙): (행성 무게 합) × 각도 무게 × (1 − 오브/6), B3 행이 있는 것만 3개.
+const READING_WEIGHT: Partial<Record<PointKey, number>> = { sun: 3, moon: 3, mercury: 2, venus: 2, mars: 2, jupiter: 1.5, saturn: 1.5, uranus: 1, neptune: 1, pluto: 1 };
+const READING_ASPECT_W: Record<string, number> = { 합: 1, 충: 0.9, 사각: 0.9, 삼분: 0.7, 육분: 0.5 };
+
+/** 섹션 1 '나의 행성 읽기'·'행성끼리의 관계'(2026-10-09, 마스터스펙 6-1-1). 하우스 문장은 A·B등급만. */
+export function planetReading(db: AstroDb, chart: NatalChart): FreeResult["planetReading"] {
+  const planets = READING_PLANETS.flatMap((k) => {
+    const p = chart.planets[k];
+    if (!p) return [];
+    const sid = SIGN_ID[p.sign];
+    const outer = k === "uranus" || k === "neptune" || k === "pluto";
+    const b1 = row(db, outer ? "B1b" : "B1a", `PL_${POINT_ID[k]}_${sid}`);
+    const b2 = p.house ? row(db, k === "mercury" || k === "venus" || k === "mars" ? "B2a" : "B2b", `HS_${POINT_ID[k]}_H${pad2(p.house)}`) : null;
+    return [{
+      key: k as PointKey,
+      title: `${POINT_KO[k]} · ${p.sign}${p.house ? ` · ${p.house}하우스` : ""}`,
+      shortLine: b1?.short_line ?? "",
+      text: b1?.text ?? "",
+      houseLine: b2 ? `${p.house}하우스 · ${b2.short_line}` : null,
+    }];
+  });
+  const group = (a: string) => (a === "합" ? "CONJ" : a === "삼분" || a === "육분" ? "HARM" : "TENSE");
+  const aspects = chart.aspects
+    .filter((a) => READING_WEIGHT[a.a] && READING_WEIGHT[a.b])
+    .map((a) => ({ a, sc: (READING_WEIGHT[a.a]! + READING_WEIGHT[a.b]!) * READING_ASPECT_W[a.aspect] * (1 - a.orb / 6) }))
+    .sort((x, y) => y.sc - x.sc)
+    .flatMap(({ a }) => {
+      const g = group(a.aspect);
+      const r = row(db, "B3", `ASP_${POINT_ID[a.a]}_${POINT_ID[a.b]}_${g}`) ?? row(db, "B3", `ASP_${POINT_ID[a.b]}_${POINT_ID[a.a]}_${g}`);
+      return r ? [{ title: r.title, sub: `${a.aspect} · 오차 ${a.orb.toFixed(1)}°`, lineMeaning: r.line_meaning, text: r.text }] : [];
+    })
+    .slice(0, 3);
+  return { head: b11(db, "HEAD_PLANETS"), planets, aspectsHead: b11(db, "HEAD_ASPECTS"), aspects };
 }
 
 function signSheets(db: AstroDb): Record<string, WheelSheet> {
@@ -290,6 +341,8 @@ export function buildFreeResult(args: {
   answers: Answers;
   nickname: string;
   birthYear: number;
+  /** 표현 변형을 고르는 출생정보 해시 열쇠(variants.ts birthKeyOf). 없으면 원래 문장(A12 1번)만 */
+  birthKey?: string;
   /** 현지 출생일 'YYYY-MM-DD' — 키론 리턴(2026 전환점) 계산용. 없으면 키론은 빠진다 */
   birthDate?: string;
   now?: Date;
@@ -348,7 +401,9 @@ export function buildFreeResult(args: {
     elements: elementTexts(db, chart.elements, dominant),
     wheelSheets: { planets, signs: signSheets(db), lines: lineSheets(db, chart) },
     wheelTips: [1, 2, 3].map((i) => text(db, "A15", `FIX_WHEEL_TIP_${i}`, "text")).filter(Boolean),
+    planetReading: planetReading(db, chart),
     character: {
+      summary: fillSummary(b11(db, "SUM_TYPE"), { 태양별자리: sunSign, 닉네임: nickname, 유형문장: charRow.type_line, 역량: character.competency, 방식: character.style }),
       name: SHOW_CHARACTER ? character.name : null,
       typeLine: charRow.type_line,
       competency: character.competency,
@@ -375,10 +430,12 @@ export function buildFreeResult(args: {
     sunSignIndex: SIGNS.indexOf(sunSign as (typeof SIGNS)[number]),
     softTone: soft,
     year2026: {
-      intro: tryFill(q2?.[match ? "intro_match" : "intro_differ"], nick) ?? "",
+      summary: fillSummary(b11(db, "SUM_2026"), nick),
+      quarterHead: b11(db, "HEAD_2026_Q"),
+      intro: (q2 && tryFill(args.birthKey ? a12Variant(db, q2, match ? "intro_match" : "intro_differ", args.birthKey) : q2[match ? "intro_match" : "intro_differ"], nick)) ?? "",
       turningPoints: tps.map((t) => tryFill(t, nick)).filter((x): x is string => !!x),
       quarters,
-      closing: tryFill(q2?.closing, nick) ?? "",
+      closing: (q2 && tryFill(args.birthKey ? a12Variant(db, q2, "closing", args.birthKey) : q2.closing, nick)) ?? "",
     },
     care: soft
       ? { note: q2?.care_note ?? "", card: text(db, "A15", "FIX_CARE_CARD", "text").replace(/\s*→\s*\[.*\]\s*$/, "") }

@@ -16,18 +16,19 @@ import type { FreeResult, WheelSheet } from "@/lib/report/freeResult";
 const SOWELLA_URL = "https://app.ssolwellnesshouse.com/chat";
 const SESSION_URL = "https://app.ssolwellnesshouse.com/session-reserve";
 
-function Section({ no, title, free, children }: { no: number; title: string; free: boolean; children: React.ReactNode }) {
+// '무료'/'유료' 뱃지는 쓰지 않는다(2026-10-09, 디자인가이드 2장). free는 구조 표시용으로만 남긴다.
+export function Section({ no, title, children }: { no: number; title: string; free?: boolean; children: React.ReactNode }) {
   return (
-    <section className="flex flex-col gap-3" aria-labelledby={`sec-${no}`}>
-      <h2 id={`sec-${no}`} className="flex items-center gap-2 text-lg font-bold text-cream">
-        {title}
-        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${free ? "bg-cream/15 text-cream" : "bg-gold text-navy"}`}>
-          {free ? "무료" : "유료"}
-        </span>
-      </h2>
+    <section className="flex flex-col gap-3" aria-labelledby={`sec-${no}`} id={`section-${no}`}>
+      <h2 id={`sec-${no}`} className="text-lg font-bold text-cream">{title}</h2>
       {children}
     </section>
   );
+}
+
+/** 섹션 2~7의 굵은 한 줄 요약(B11 SUM_*, 700·남색·본문보다 한 단계 크게) */
+export function Summary({ text }: { text: string | null | undefined }) {
+  return text ? <p className="text-[17px] font-bold leading-relaxed text-navy">{text}</p> : null;
 }
 
 /** 긴 글은 크림 상자 위 남색 글자(어두운 배경 위 흰 긴 글 금지, 디자인가이드 2장). */
@@ -185,13 +186,43 @@ export default function FreeResultView({
             ))}
           </Card>
         )}
+        {/* 나의 행성 읽기·행성끼리의 관계 — 소제목은 카드 라벨보다 크게(18px vs 15px), 외행성 꼬리표 없음(마스터스펙 6-1-1) */}
+        <Card>
+          <h3 className="text-lg font-bold">{result.planetReading.head}</h3>
+          {result.planetReading.planets.map((p) => (
+            <div key={p.key} className="flex flex-col gap-1 border-t border-navy/10 pt-3 first-of-type:border-0">
+              <p className="text-[15px] font-bold">{p.title}</p>
+              {(p.shortLine || p.text) && (
+                <p>
+                  {p.shortLine && <span className="font-bold">{p.shortLine} </span>}
+                  {p.text}
+                </p>
+              )}
+              {p.houseLine && <p className="text-navy/80">{p.houseLine}</p>}
+            </div>
+          ))}
+          {result.planetReading.aspects.length > 0 && (
+            <>
+              <h3 className="mt-3 text-lg font-bold">{result.planetReading.aspectsHead}</h3>
+              {result.planetReading.aspects.map((a) => (
+                <div key={a.title} className="flex flex-col gap-1 border-t border-navy/10 pt-3">
+                  <p className="text-[15px] font-bold">
+                    {a.title} <small className="font-normal text-navy/60">{a.sub}</small>
+                  </p>
+                  <p>
+                    <span className="font-bold">{a.lineMeaning} </span>
+                    {a.text}
+                  </p>
+                </div>
+              ))}
+            </>
+          )}
+        </Card>
       </Section>
 
       <Section no={2} title={character.name ? "별이 본 나의 캐릭터" : "별이 본 나의 유형"} free>
-        <p className="text-base font-bold text-cream">
-          {result.sunSign} · 별이 본 {nickname}님은 {character.name ?? character.typeLine}({character.competency} × {character.style})입니다.
-        </p>
         <Card>
+          <Summary text={character.name ? `${result.sunSign} · 별이 본 ${nickname}님은 ${character.name}(${character.competency} × ${character.style})입니다.` : character.summary} />
           {character.intro && <p>{character.intro}</p>}
           <p>{character.why}</p>
           {character.competencyLine && <p>• {character.competency} — {character.competencyLine}</p>}
@@ -231,11 +262,15 @@ export default function FreeResultView({
 
       <Section no={3} title={`2026년, ${nickname}님의 한 해는 이랬어요`} free>
         <Card>
+          <Summary text={year2026.summary} />
           {year2026.intro && <p>{year2026.intro}</p>}
           <p className="font-bold">• 올해의 전환점</p>
           {year2026.turningPoints.map((t) => (
             <p key={t}>{t}</p>
           ))}
+          {/* 마무리 문장은 표 위에 — 표 아래에는 접힌 근거만(마스터스펙 6-1-1) */}
+          {year2026.quarterHead && <p className="font-bold">{year2026.quarterHead}</p>}
+          {year2026.closing && <p>{year2026.closing}</p>}
         </Card>
         <table className="w-full overflow-hidden rounded-2xl bg-cream text-left text-sm text-navy">
           <thead>
@@ -253,7 +288,6 @@ export default function FreeResultView({
             ))}
           </tbody>
         </table>
-        {year2026.closing && <Card><p>{year2026.closing}</p></Card>}
         {/* 접힌 근거는 섹션 맨 끝, 행마다 따로(디자인가이드 6장) */}
         <div className="flex flex-col gap-1">
           <p className="text-sm text-cream/80">▸ 왜 그럴까 — 하늘에서 일어난 일</p>

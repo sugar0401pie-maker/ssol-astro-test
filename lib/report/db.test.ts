@@ -173,8 +173,12 @@ test("C등급: 하우스 없이, 전환점은 C등급판, 휠 시트에 하우�
   assert.ok(r.addTimeNote && !r.addTimeNote.includes("→"));
   assert.ok(r.year2026.turningPoints.every((t) => !t.includes("{{") && !t.includes("하우스")));
   assert.ok(Object.values(r.wheelSheets.planets).every((s) => !s!.title.includes("하우스")));
-  assert.equal(r.wheelSheets.planets.mars?.partial, true);
-  assert.equal(r.wheelSheets.planets.sun?.partial, false);
+  // 2026-10-09부터 모든 행성 설명 무료(전체), C등급은 하우스 문장 없음
+  assert.equal(r.wheelSheets.planets.mars?.partial, false);
+  assert.ok(r.wheelSheets.planets.mars!.lines.length >= 2 && r.wheelSheets.planets.mars!.lines.every((l) => !l.includes("하우스 ·")));
+  assert.equal(r.planetReading.planets.length, 8);
+  assert.ok(r.planetReading.planets.every((p) => p.houseLine === null && p.text));
+  assert.ok(r.planetReading.aspects.length > 0 && r.planetReading.aspects.length <= 3);
 });
 
 test("후보 선택 카드(B6)", () => {

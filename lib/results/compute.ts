@@ -7,6 +7,7 @@ import { placeFromCityId } from "@/lib/astro/cityData";
 import { parseBirthRequest } from "@/lib/astro/validate";
 import { ASTRO_DB } from "@/lib/report/dbData";
 import { buildFreeResult, candidateCards, tieOptions, type FreeResult } from "@/lib/report/freeResult";
+import { birthKeyOf } from "@/lib/report/variants";
 import calibration from "@/data/astro/calibration.json";
 
 const ref = calibration as CalibrationTable;
@@ -60,6 +61,6 @@ export function computeFree(input: BirthInput, answers: Answers, nickname: strin
   return {
     kind: "result",
     birth: { ...birth, resolved: birth.resolved },
-    result: buildFreeResult({ db: ASTRO_DB, chart, longitudes, character, answers, nickname, birthYear: input.year, birthDate: birth.stored.local.slice(0, 10) }),
+    result: buildFreeResult({ db: ASTRO_DB, chart, longitudes, character, answers, nickname, birthYear: input.year, birthDate: birth.stored.local.slice(0, 10), birthKey: birthKeyOf(input) }),
   };
 }

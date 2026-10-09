@@ -1,6 +1,6 @@
 @AGENTS.md
 
-# CLAUDE.md — 쏠 점성술 하우스 (ssol-astro-test)
+# CLAUDE.md — 쏠 아스트로 하우스(구 쏠 점성술 하우스, ssol-astro-test)
 
 출생차트 기반 자기성찰 웰니스 테스트. 사이트 주소 `astro.ssolwellnesshouse.com`.
 스펙 원본: `docs/spec/` (개발 패키지 v2.2, 2026-10-08 — 바람 판정 v3·해석 DB v1.2). **이 패키지가 기획서(Claude Docs)보다 우선한다.**
