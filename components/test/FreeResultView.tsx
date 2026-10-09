@@ -10,6 +10,7 @@ import { getRealSession } from "@/lib/supabase/browser";
 import BirthChartWheel from "@/components/chart/BirthChartWheel";
 import ElementBars from "@/components/chart/ElementBars";
 import ActionRow from "@/components/share/ActionRow";
+import { WhyList } from "@/components/results/PaidReportView";
 import type { WheelSelection } from "@/components/chart/labels";
 import type { FreeResult, WheelSheet } from "@/lib/report/freeResult";
 
@@ -288,6 +289,8 @@ export default function FreeResultView({
           {year2026.turningPoints.map((t) => (
             <p key={t}>{t}</p>
           ))}
+          {/* 해석 DB v1.3 RULE_ORDER: 전환점 뒤에 단어 × 고민 영역(A12d) */}
+          {year2026.areaLine && <p>{year2026.areaLine}</p>}
           {/* 마무리 문장은 표 위에 — 표 아래에는 접힌 근거만(마스터스펙 6-1-1) */}
           {year2026.quarterHead && <p className="font-bold">{year2026.quarterHead}</p>}
           {year2026.closing && <p>{year2026.closing}</p>}
@@ -308,26 +311,8 @@ export default function FreeResultView({
             ))}
           </tbody>
         </table>
-        {/* 접힌 근거는 섹션 맨 끝, 행마다 따로(디자인가이드 6장) */}
-        <div className="flex flex-col gap-1">
-          <p className="text-sm text-cream/80">▸ 왜 그럴까 — 하늘에서 일어난 일</p>
-          {year2026.quarters.map((q) => (
-            <details key={q.label} className="rounded-xl border border-cream/20 px-3 py-2 text-sm text-cream">
-              <summary className="cursor-pointer">{q.label}</summary>
-              {q.reasons.length === 0 ? (
-                <p className="mt-1 text-cream/70">—</p>
-              ) : (
-                <ul className="mt-1 flex flex-col gap-1.5 text-cream/90">
-                  {q.reasons.map((r) => (
-                    <li key={r.title + r.when}>
-                      {r.title}({r.when}){r.meaning ? ` — ${r.meaning}` : ""}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </details>
-          ))}
-        </div>
+        {/* 접힌 근거는 섹션 맨 끝(프로토타입 whyList '▸ 하늘에서 일어난 일') */}
+        <WhyList head="▸ 하늘에서 일어난 일" groups={year2026.quarters.map((q) => ({ label: q.label, items: q.reasons }))} />
       </Section>
 
       {/* 무료 구간 끝: [SNS 공유하기] + [저장하기](마스터스펙 6-1 화면 9) */}

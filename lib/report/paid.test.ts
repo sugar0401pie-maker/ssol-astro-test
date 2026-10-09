@@ -17,7 +17,7 @@ import { fillSystemPrompt, partUserMessage, processPartOutput, splitSections } f
 import { SYSTEM_PROMPT_TEMPLATE } from "./systemPrompt.ts";
 import { compileC1, type C1Row } from "./validate.ts";
 
-const db: AstroDb = JSON.parse(readFileSync(new URL("../../data/astro/db/astro_db_v1.2.json", import.meta.url), "utf8"));
+const db: AstroDb = JSON.parse(readFileSync(new URL("../../data/astro/db/astro_db_v1.3.json", import.meta.url), "utf8"));
 const ref: CalibrationTable = JSON.parse(readFileSync(new URL("../../data/astro/calibration.json", import.meta.url), "utf8"));
 const c1 = compileC1(db.dbs.C1.rows as unknown as C1Row[]);
 const NOW = new Date("2026-10-07T03:00:00Z");

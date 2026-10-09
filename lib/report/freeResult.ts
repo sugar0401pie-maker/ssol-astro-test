@@ -2,18 +2,19 @@
 // 유료 섹션(4~7)은 제목만 보낸다 — 본문을 브라우저에 보내고 블러로 가리면 결제 없이 볼 수 있기 때문.
 // 출생차트의 모든 행성·하우스·각도 설명은 무료(2026-10-09 결정): 휠 탭 시트 전체 + 본문 '나의 행성 읽기'·'행성끼리의 관계'.
 // DB 문장의 토큰을 못 채우면 그 문장은 빼고 보여준다(fail safe) — 빈칸·괄호가 화면에 나가지 않게.
-import { isSoftTone, type Answers, type Q2Word } from "../astro/answers.ts";
+import { DOMAIN_MAP, isSoftTone, type Answers, type Q2Word } from "../astro/answers.ts";
 import type { CharacterResult } from "../astro/character.ts";
 import { SHOW_CHARACTER, characterLabel } from "./characterDisplay.ts";
 import { CHARACTER_GRID, ELEMENTS, SIGNS, STYLES, STYLE_BY_ELEMENT, elementOf, type Element, type PointKey } from "../astro/constants.ts";
 import type { Accuracy, Longitudes, NatalChart } from "../astro/natal.ts";
 import {
-  buildTimeline, clipIntervals, groupRows, periodFilter, scoreInWindow, turningPoints, type ScoredEvent, type TimelineEvent,
+  buildTimeline, periodFilter, scoreInWindow, turningPoints, type ScoredEvent, type TimelineEvent,
 } from "../astro/timeline.ts";
 import { POINT_ID, SIGN_ID, ELEMENT_ID, aspectGroup, findRow, pad2, row, tryFill, type AstroDb } from "./db.ts";
-import { formatDate, formatRanges, QUARTER_LABELS } from "./format.ts";
-import { a12Variant, b11, fillSummary } from "./variants.ts";
-import { POINT_KO, eventLabel } from "./labels.ts";
+import { formatDate, QUARTER_LABELS } from "./format.ts";
+import { a12Variant, b11, fillSummary, hashPick } from "./variants.ts";
+import { pickTheme, themeScores, themeTable } from "./theme2026.ts";
+import { POINT_KO } from "./labels.ts";
 
 export const PAID_SECTION_TITLES = [
   { no: 4, title: "연말까지 조심하면 좋을 것" },
@@ -83,6 +84,10 @@ export interface FreeResult {
     /** 분기 표 소제목(B11 HEAD_2026_Q) */
     quarterHead: string;
     intro: string;
+    /** A12d(단어 × 고민 영역) — 전환점 뒤 */
+    areaLine: string;
+    /** 2026 하늘 주제(A12t) */
+    theme: string;
     turningPoints: string[];
     quarters: Array<{ label: string; cell: string; reasons: Array<{ title: string; when: string; meaning: string }> }>;
     closing: string;
@@ -287,55 +292,70 @@ export function a18For(e: TimelineEvent, ascSign: string | null, birthYear: numb
   return null;
 }
 
+/** 프로토타입(render2026)의 별자리 이동 전환점: 이 넷만, 우선순위 기본값 */
+const TP_INGRESS: Record<string, [string, number]> = {
+  "uranus|쌍둥이자리": ["URANUS_GEMINI", 60],
+  "saturn|양자리": ["SATURN_ARIES", 55],
+  "neptune|양자리": ["NEPTUNE_ARIES", 40],
+  "jupiter|사자자리": ["JUPITER_LEO", 45],
+};
+
 /**
- * 올해의 전환점 문단. 개인 이벤트(리턴·마일스톤·상승궁 별자리 진입·출생 행성 위 일식)를 먼저,
- * 공통 이벤트(별자리 이동)는 합쳐서 두 개가 될 때까지만 더한다(샘플의 '전환점 두 번' 결을 따름, 최대 3개).
- * 같은 행성이 같은 별자리에 역행으로 다시 들어오는 건 첫 번째만. 하나도 없으면 TP_QUIET_YEAR.
+ * 올해의 전환점 문단(2026-10-09 프로토타입 render2026 그대로): 토성 리턴(100, 45세 전후로 1·2), 키론 리턴(95),
+ * 상승궁 별자리로 들어오는 천왕성·토성(90), 그 밖의 네 가지 별자리 이동(기본값 + 고민 영역 하우스면 +30).
+ * 우선순위 상위 2개 + 나머지 중 70 이상 1개, 날짜순. 하나도 없으면 TP_QUIET_YEAR.
+ * 프로토타입에 없는 나이 마일스톤(목성 리턴 80·천왕성 충 85·해왕성 사각 85)도 A18 행이 있어 같은 규칙에 넣었다
+ * (마스터스펙 6-2 '나이 마일스톤 포함' — Claude 판단, owner 검토 가능).
  */
-export function turningPointTexts(db: AstroDb, events: TimelineEvent[], chart: NatalChart, birthYear: number): string[] {
-  const w = { start: "2026-01-01", end: "2026-12-31" };
+export function turningPointTexts(db: AstroDb, events: TimelineEvent[], chart: NatalChart, birthYear: number, opts: { birthDate?: string; domainHouses?: number[] } = {}): string[] {
   const ascSign = chart.planets.asc?.sign ?? null;
-  const seen = new Set<string>();
-  const personal: Array<{ e: TimelineEvent; id: string }> = [];
-  const common: Array<{ e: TimelineEvent; id: string }> = [];
-  const candidates = [...turningPoints(events, w), ...events.filter((e) => e.kind === "eclipse" && clipIntervals(e.intervals, w).length)];
-  for (const e of candidates) {
-    const m = a18For(e, ascSign, birthYear);
-    if (!m || !row(db, "A18", m.id)) continue;
-    const key = e.kind === "ingress" ? `${e.planet}:${e.sign}` : m.id;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    (m.personal ? personal : common).push({ e, id: m.id });
+  const timed = !!ascSign;
+  const houseArea = (h: number) => `${text(db, "A16", `TERM_H${pad2(h)}`, "nickname")}(${h}하우스)`;
+  const ageAt = (date: string) => {
+    if (!opts.birthDate) return Number(date.slice(0, 4)) - birthYear;
+    const [by, bm, bd] = opts.birthDate.split("-").map(Number);
+    const [y, m, d] = date.split("-").map(Number);
+    return y - by - (m < bm || (m === bm && d < bd) ? 1 : 0);
+  };
+  const tps: Array<{ pri: number; date: string; text: string | null }> = [];
+  const in2026 = (d?: string) => !!d && d.startsWith("2026") && d !== "2026-01-01";
+  for (const e of events) {
+    if (e.kind === "transit" && e.milestone) {
+      const date = e.intervals.find((iv) => in2026(iv.exact))?.exact;
+      if (!date) continue;
+      const m = e.milestone;
+      const [id, pri] =
+        m === "saturn_return" ? [ageAt(date) < 45 ? "TP_SATURN_RETURN_1" : "TP_SATURN_RETURN_2", 100] : m === "jupiter_return" ? ["TP_JUPITER_RETURN", 80] : m === "uranus_opposition" ? ["TP_URANUS_OPPOSITION", 85] : ["TP_NEPTUNE_SQUARE", 85];
+      tps.push({ pri: pri as number, date, text: tryFill(text(db, "A18", id as string, "text"), { 날짜: formatDate(date) }) });
+    } else if (e.kind === "chiron_return") {
+      const date = e.intervals.find((iv) => iv.exact?.startsWith("2026"))?.exact;
+      if (date) tps.push({ pri: 95, date, text: tryFill(text(db, "A18", "TP_CHIRON_RETURN", "text"), { 날짜: formatDate(date) }) });
+    }
   }
-  const chosen = [...personal.slice(0, 3)];
-  for (const c of common) if (chosen.length < Math.min(3, Math.max(2, personal.length))) chosen.push(c);
-  chosen.sort((a, b) => ((a.e.intervals[0].exact ?? a.e.intervals[0].from) < (b.e.intervals[0].exact ?? b.e.intervals[0].from) ? -1 : 1));
-  const lines = chosen
-    .map(({ e, id }) => {
-      const date = e.intervals[0].exact ?? e.intervals[0].from;
-      const values: Record<string, string> = { 날짜: formatDate(date) };
-      if (e.kind === "ingress") {
-        values["별자리"] = e.sign;
-        if (e.house) values["하우스영역"] = text(db, "A16", `TERM_H${pad2(e.house)}`, "nickname");
-        values["행성"] = POINT_KO[e.planet];
-      }
-      if (e.kind === "eclipse" && e.contact) values["행성"] = POINT_KO[e.contact.target];
-      return tryFill(text(db, "A18", id, "text"), values);
-    })
-    .filter((x): x is string => !!x);
-  return lines.length ? lines : [text(db, "A18", "TP_QUIET_YEAR", "text")].filter(Boolean);
+  const seen = new Set<string>();
+  for (const e of events
+    .filter((x): x is Extract<TimelineEvent, { kind: "ingress" }> => x.kind === "ingress" && x.intervals[0].from.startsWith("2026"))
+    .sort((a, b) => (a.intervals[0].from < b.intervals[0].from ? -1 : 1))) {
+    const key = `${e.planet}|${e.sign}`;
+    if (!TP_INGRESS[key] || seen.has(key)) continue;
+    seen.add(key);
+    const date = e.intervals[0].from;
+    let id: string;
+    let pri: number;
+    if (timed && (e.planet === "uranus" || e.planet === "saturn") && e.sign === ascSign) {
+      id = `TP_${e.planet === "uranus" ? "URANUS" : "SATURN"}_INTO_ASC_SIGN`;
+      pri = 90;
+    } else {
+      id = `TP_${TP_INGRESS[key][0]}_${timed ? "H" : "C"}`;
+      pri = TP_INGRESS[key][1] + (timed && e.house && (opts.domainHouses ?? []).includes(e.house) ? 30 : 0);
+    }
+    tps.push({ pri, date, text: tryFill(text(db, "A18", id, "text"), { 날짜: formatDate(date), 별자리: e.sign, 하우스영역: e.house ? houseArea(e.house) : "", 행성: POINT_KO[e.planet] }) });
+  }
+  const ok = tps.filter((t) => t.text).sort((a, b) => b.pri - a.pri);
+  const pick = [...ok.slice(0, 2), ...ok.slice(2).filter((t) => t.pri >= 70).slice(0, 1)].sort((a, b) => (a.date < b.date ? -1 : 1));
+  return pick.length ? pick.map((t) => t.text!) : [text(db, "A18", "TP_QUIET_YEAR", "text")].filter(Boolean);
 }
 
-function reasonFor(db: AstroDb, s: ScoredEvent): { title: string; when: string; meaning: string } {
-  const e = s.event;
-  const id = a8Id(e);
-  const a8 = id ? row(db, "A8", id) : null;
-  const termId =
-    e.kind === "retrograde" ? "TERM_RX" : e.kind === "ingress" ? "TERM_INGRESS" : e.kind === "eclipse" ? (e.eclipse === "solar" ? "TERM_SOLAR_ECLIPSE" : "TERM_LUNAR_ECLIPSE") : null;
-  const meaning = a8?.meaning_line ?? (termId ? text(db, "A16", termId, "meaning_line") : "");
-  const when = s.intervalsInWindow.length === 1 && s.intervalsInWindow[0].exact ? formatDate(s.intervalsInWindow[0].exact) : formatRanges(s.intervalsInWindow);
-  return { title: a8?.title ?? eventLabel(e), when, meaning };
-}
 
 export function buildFreeResult(args: {
   db: AstroDb;
@@ -357,27 +377,57 @@ export function buildFreeResult(args: {
   const w = { start: "2026-01-01", end: "2026-12-31" };
   const events = buildTimeline(longitudes, w, undefined, { birthDate: args.birthDate });
 
-  // 2026 분기별 표: 분기마다 A8 문장이 있는 상위 이벤트 2개. 끝난 분기는 과거형(table_past), 지금·앞 분기는 table_future.
+  // 2026 분기별 표(프로토타입 render2026): 1~3분기는 그 분기에 정확한 날이 있는 느린 행성 트랜짓 중 점수 1위의 A8 table_past
+  // (없으면 A11 SKY_05), 4분기는 지금 지나고 있는 분기라 '연말까지' 섹션으로 잇는 문장. 접힌 근거는 1~3분기: 상위 4개 + 그 분기 별자리 이동.
   const scored = scoreInWindow(events.filter((e) => periodFilter("year2026", e) || e.kind === "eclipse"), w, answers.q1);
-  const quarters = groupRows(scored, w, "quarter").map((r) => {
-    const past = r.window.end < today;
-    const cells = r.events
-      .map((s) => a8Id(s.event))
-      .filter((id): id is string => !!id && !!row(db, "A8", id))
-      .filter((id, i, arr) => arr.indexOf(id) === i)
-      .slice(0, 2)
-      .map((id) => text(db, "A8", id, past ? "table_past" : "table_future"));
-    return {
-      label: QUARTER_LABELS[r.index - 1],
-      cell: cells.join(" ") || "—",
-      reasons: r.events.slice(0, 3).map((s) => reasonFor(db, s)),
-    };
+  const slowScored = scoreInWindow(
+    events.filter((e) => e.kind === "transit" && ["jupiter", "saturn", "uranus", "neptune", "pluto"].includes(e.transit) && (e.milestone === null || e.milestone === "saturn_return")),
+    w,
+    answers.q1,
+  );
+  const exactOf = (s: ScoredEvent) => s.event.intervals.find((iv) => iv.exact && iv.exact.startsWith("2026") && iv.exact !== "2026-01-01")?.exact ?? null;
+  const qOf = (d: string) => Math.floor((Number(d.slice(5, 7)) - 1) / 3) + 1;
+  const quarters = [1, 2, 3, 4].map((qn) => {
+    const qEnd = ["2026-03-31", "2026-06-30", "2026-09-30", "2026-12-31"][qn - 1];
+    const list = slowScored.filter((s) => {
+      const d = exactOf(s);
+      return d && qOf(d) === qn;
+    });
+    if (qn === 4 && today <= qEnd) {
+      return { label: QUARTER_LABELS[3], cell: "지금 지나고 있는 시기예요. 아래 ‘연말까지 조심하면 좋을 것’에서 이어집니다.", reasons: [] };
+    }
+    const top = list[0];
+    const id = top ? a8Id(top.event) : null;
+    const cell = (id && text(db, "A8", id, "table_past")) || text(db, "A11", "SKY_05", "common_line") || "—";
+    const reasons = list.slice(0, 4).map((s) => {
+      const d = exactOf(s)!;
+      const e = s.event as Extract<TimelineEvent, { kind: "transit" }>;
+      const a8 = a8Id(e) ? row(db, "A8", a8Id(e)!) : null;
+      return { iso: d, title: e.milestone === "saturn_return" ? "토성 리턴" : `${POINT_KO[e.transit]}-${POINT_KO[e.target]} ${e.aspect}`, when: formatDate(d), meaning: a8?.meaning_line ?? "" };
+    });
+    for (const e of events) {
+      if (e.kind !== "ingress" || !e.intervals[0].from.startsWith("2026") || qOf(e.intervals[0].from) !== qn) continue;
+      const d = e.intervals[0].from;
+      reasons.push({ iso: d, title: `${POINT_KO[e.planet]} ${e.sign}${e.house ? `(${e.house}하우스)` : ""} 이동`, when: formatDate(d), meaning: text(db, "A16", "TERM_INGRESS", "meaning_line") });
+    }
+    reasons.sort((a, b) => (a.iso < b.iso ? -1 : 1));
+    return { label: QUARTER_LABELS[qn - 1], cell, reasons: reasons.map(({ title, when, meaning }) => ({ title, when, meaning })) };
   });
 
-  const tps = turningPointTexts(db, events, chart, birthYear);
+  const tps = turningPointTexts(db, events, chart, birthYear, { birthDate: args.birthDate, domainHouses: DOMAIN_MAP[answers.q1].houses });
   const q2 = row(db, "A12", `Q2_${pad2(["버텨", "배움", "변화", "멈춤", "성취", "이별", "고생", "그만하자", "시작", "설렘"].indexOf(answers.q2) + 1)}`);
   const hasTp = turningPoints(events, w).length > 0;
   const match = q2Matches(answers.q2, scored.slice(0, 5), db, hasTp);
+  // 해석 DB v1.3: 2026 하늘 주제(A12t 규칙) → 첫 문단 A12c(단어 × 주제), 전환점 뒤에 A12d(단어 × 고민 영역). 칸 안 표현은 출생정보 해시로 하나.
+  const themes = themeTable(db);
+  const picked = pickTheme(themeScores(events, longitudes), answers.q2, themes);
+  const pick3 = (table: "A12c" | "A12d", match: (r: Record<string, string>) => boolean, salt: string) => {
+    const rows = (db.dbs[table]?.rows ?? []).filter(match).sort((a, b) => Number(a.variant) - Number(b.variant));
+    if (!rows.length) return null;
+    return rows[args.birthKey ? hashPick(args.birthKey, rows.length, salt) : 0].text;
+  };
+  const themeIntro = pick3("A12c", (r) => r.word === answers.q2 && r.theme === themes[picked.theme]?.name, `A12c${answers.q2}${picked.theme}`);
+  const areaLine = pick3("A12d", (r) => r.word === answers.q2 && r.area === answers.q1, `A12d${answers.q2}${answers.q1}`);
 
   const dominant = (Object.keys(STYLE_BY_ELEMENT) as Element[]).find((e) => STYLE_BY_ELEMENT[e] === character.style)!;
   const sunSign = chart.planets.sun!.sign;
@@ -436,7 +486,11 @@ export function buildFreeResult(args: {
     year2026: {
       summary: fillSummary(b11(db, "SUM_2026"), nick),
       quarterHead: b11(db, "HEAD_2026_Q"),
-      intro: (q2 && tryFill(args.birthKey ? a12Variant(db, q2, match ? "intro_match" : "intro_differ", args.birthKey) : q2[match ? "intro_match" : "intro_differ"], nick)) ?? "",
+      // A12/A12b intro_match·intro_differ는 주제 문장이 없을 때 쓰는 대체 문장(A12t RULE_ORDER)
+      intro:
+        themeIntro ?? (q2 && tryFill(args.birthKey ? a12Variant(db, q2, match ? "intro_match" : "intro_differ", args.birthKey) : q2[match ? "intro_match" : "intro_differ"], nick)) ?? "",
+      areaLine: areaLine ?? "",
+      theme: picked.theme,
       turningPoints: tps.map((t) => tryFill(t, nick)).filter((x): x is string => !!x),
       quarters,
       closing: (q2 && tryFill(args.birthKey ? a12Variant(db, q2, "closing", args.birthKey) : q2.closing, nick)) ?? "",

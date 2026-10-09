@@ -1,4 +1,4 @@
-// 해석 DB(data/astro/db/astro_db_v1.2.json, owner·상담사 작성, 검수 전 DRAFT) 조회와 문장 틀 채우기.
+// 해석 DB(data/astro/db/astro_db_v1.3.json, owner·상담사 작성, 검수 전 DRAFT) 조회와 문장 틀 채우기.
 // 원칙: 계산은 엔진, 문장은 DB, AI는 잇기만(05_DB목록). 무료 결과는 이 DB 문장만으로 만든다.
 // DB 문장은 고치지 않고 그대로 쓴다 — 바꿀 일이 있으면 엑셀(검수본)을 고친 뒤 JSON을 다시 받는다.
 // 이 파일은 순수 함수만 둔다(DB 객체를 인자로 받음) — 서버는 lib/report/dbData.ts로 한 번 읽어 넘긴다.

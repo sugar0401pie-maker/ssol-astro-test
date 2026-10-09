@@ -14,7 +14,7 @@ import { ELEMENT_ID, POINT_ID, SIGN_ID, fillTemplate, firstSentence, pad2, row, 
 import { c1Hits, compileC1, type C1Row } from "./validate.ts";
 import { buildFreeResult, candidateCards } from "./freeResult.ts";
 
-const db: AstroDb = JSON.parse(readFileSync(new URL("../../data/astro/db/astro_db_v1.2.json", import.meta.url), "utf8"));
+const db: AstroDb = JSON.parse(readFileSync(new URL("../../data/astro/db/astro_db_v1.3.json", import.meta.url), "utf8"));
 const ref: CalibrationTable = JSON.parse(readFileSync(new URL("../../data/astro/calibration.json", import.meta.url), "utf8"));
 const has = (t: string, id: string) => assert.ok(row(db, t, id), `${t} ${id} 없음`);
 
@@ -74,7 +74,7 @@ test("DB: 화면 문장이 C1 금지어 사전과 숫자 규칙을 통과한다(
   assert.equal(rules.length, db.dbs.C1.rows.length);
   const fails: string[] = [];
   for (const [name, t] of Object.entries(db.dbs)) {
-    if (name === "C1" || name === "C2" || name === "B11") continue; // B11은 문장 틀·데이터(validate_text.py SKIP_FILES)
+    if (name === "C1" || name === "C2" || name === "B11" || name === "A12t") continue; // B11은 문장 틀·데이터(validate_text.py SKIP_FILES), A12t는 주제 분류 규칙(점수 숫자 — 화면에 안 나감)
     for (const r of t.rows) {
       for (const [k, v] of Object.entries(r)) {
         if (SKIP_KEYS.has(k) || /(_theory|^p\d+_id$)/.test(k) || typeof v !== "string" || !v) continue;
@@ -141,15 +141,20 @@ test("샘플: 휠 각도 선마다 탭 시트(B3)와 처음 안내 말풍선 3�
   assert.equal(r.wheelTips.length, 3);
 });
 
-test("샘플: 2026 회고 — '변화'는 하늘과 맞는 도입문, 전환점은 토성 리턴·천왕성 상승궁 진입 두 개(샘플과 같음)", () => {
+test("샘플: 2026 회고 — v1.3 주제는 무게·책임(토성 리턴 100), '변화'는 엇갈림 문장(A12c), 고민 영역 문장(A12d), 전환점 두 개", () => {
   const r = sample();
-  assert.equal(r.year2026.intro, row(db, "A12", "Q2_03")!.intro_match);
+  assert.equal(r.year2026.theme, "WEIGHT");
+  const a12c = db.dbs.A12c.rows.filter((x) => x.word === "변화" && x.theme === "무게·책임").map((x) => x.text);
+  assert.ok(a12c.includes(r.year2026.intro));
+  assert.ok(db.dbs.A12c.rows.find((x) => x.text === r.year2026.intro)!.fit === "엇갈림");
+  assert.ok(db.dbs.A12d.rows.filter((x) => x.word === "변화" && x.area === "직업·커리어").some((x) => x.text === r.year2026.areaLine));
   assert.equal(r.year2026.turningPoints.length, 2);
   assert.ok(r.year2026.turningPoints[0].startsWith("2월 7일에는 토성이 태어날 때의 자리로 처음 돌아오는"));
   assert.ok(r.year2026.turningPoints[1].startsWith("4월 26일에는 변화의 별 천왕성이 상승궁 별자리인 쌍둥이자리에"));
   // 1분기 표에는 토성 리턴 과거형 문장, 지금 지나는 4분기는 미래형
   assert.ok(r.year2026.quarters[0].cell.includes(row(db, "A8", "TR_SATURN_RETURN")!.table_past));
-  assert.ok(!r.year2026.quarters[3].cell.includes("거예요") || r.year2026.quarters[3].cell === "—");
+  // 지금 지나는 4분기는 '연말까지' 섹션으로 잇는 문장(프로토타입)
+  assert.ok(r.year2026.quarters[3].cell.startsWith("지금 지나고 있는 시기예요."));
   assert.equal(r.year2026.quarters[0].reasons[0].title.length > 0, true);
   assert.equal(r.care, null);
   // 유료 본문은 담지 않는다
