@@ -113,7 +113,7 @@ export default function BirthChartWheel({
     <div className={className}>
       <svg
         viewBox={`0 0 ${SIZE} ${SIZE}`}
-        className="mx-auto block h-auto w-[calc(100%-32px)] max-w-[360px] select-none"
+        className="mx-auto block h-auto w-full max-w-[360px] select-none"
         role="group"
         aria-label="출생차트 휠. 같은 정보는 아래 표에서 글로 볼 수 있어요."
       >

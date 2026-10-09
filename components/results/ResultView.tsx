@@ -77,18 +77,14 @@ export default function ResultView({ id }: { id: string }) {
         resultId={id}
         // C등급: 시간을 알게 됐으면 테스트를 다시(새 결과로 저장된다)
         onAddTime={() => router.push("/test")}
-        paidContent={
-          data.paid ? (
-            report ? (
-              <PaidReportView report={report} />
-            ) : (
-              <p className="rounded-2xl border border-gold px-4 py-6 text-center text-sm leading-relaxed text-cream">
-                {waitedTooLong
-                  ? "리포트를 만드는 데 시간이 걸리고 있어요. 잠시 뒤 새로고침해 주세요."
-                  : "결제가 확인됐어요. 연말부터 앞으로 5년까지, 전체 리포트를 쓰고 있어요(20~60초)."}
-              </p>
-            )
-          ) : undefined
+        paidContent={data.paid && report ? <PaidReportView report={report} /> : undefined}
+        // 결제 후 리포트를 쓰는 동안에도 유료 섹션 제목·첫 문장 자리를 그대로 두고, 완성되면 같은 자리에서 채운다.
+        paidPending={
+          data.paid && !report
+            ? waitedTooLong
+              ? "리포트를 만드는 데 시간이 걸리고 있어요. 잠시 뒤 새로고침해 주세요."
+              : "결제가 확인됐어요. 연말부터 앞으로 5년까지, 전체 리포트를 쓰고 있어요(20~60초)."
+            : undefined
         }
       />
     </div>

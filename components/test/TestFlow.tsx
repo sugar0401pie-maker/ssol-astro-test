@@ -5,8 +5,9 @@ import Link from "next/link";
 // (후보가 갈리면) 유형 후보 선택 → 저장 동의 → 저장(로그인했으면 계정, 아니면 비회원 익명) → 무료 결과 + 비회원이면 저장 권유.
 // '로그인·가입 후 결과'는 스펙의 초안(비로그인 처리 방식은 owner 결정 대기) — 바뀌면 afterReady만 고치면 된다.
 // 화면 문구는 스펙 확정본 그대로. 아직 없는 것: 인트로(디저트 테스트와 동일 화면), 역량 동점 확인 화면, 결제.
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Q1_OPTIONS, Q2_OPTIONS, Q3_OPTIONS, Q_LABELS, type Answers } from "@/lib/astro/answers";
+import { prevStep } from "./steps";
 import { KOREA_REGIONS } from "@/lib/astro/places";
 import type { FreeResult } from "@/lib/report/freeResult";
 import { getRealSession } from "@/lib/supabase/browser";
@@ -16,7 +17,7 @@ import CitySearch, { type PickedCity } from "./CitySearch";
 import ConsentStep from "./ConsentStep";
 import FreeResultView from "./FreeResultView";
 
-type Step = "welcome" | "experience" | "firstTime" | "birth" | "q1" | "q2" | "q3" | "loading" | "candidates" | "tie" | "consent" | "result";
+import type { Step } from "./steps";
 
 // (예전 흐름) 결과 전에 카카오·네이버 로그인을 다녀올 때 진행 상태를 이 탭에만(sessionStorage) 담아 뒀다.
 // 지금은 결과를 먼저 보여 주고 로그인은 결과 화면에서 권하므로 새로 담지 않고, 남아 있던 값만 이어 받아 저장 후 지운다.
@@ -183,25 +184,39 @@ export default function TestFlow() {
     }
   }
 
+  // 차트 미리 계산(6-1 화면 5 '차트 계산은 이 동안 백그라운드에서'): 출생 정보 화면을 넘기는 순간 계산을 시작해 두고,
+  // 질문 3개를 마치면 그 답을 쓴다. 후보·동점 판정은 출생 정보로만 정해져서(질문 답과 무관) 임시 답으로 미리 물어도 결과가 같다.
+  // 출생 정보가 바뀌었으면(키가 다르면) 쓰지 않고 새로 묻는다.
+  const prefetch = useRef<{ key: string; promise: Promise<{ ok: boolean; data: Record<string, unknown> }> } | null>(null);
+  const birthKey = () => JSON.stringify(requestBody({ q1: Q1_OPTIONS[0], q2: Q2_OPTIONS[0], q3: Q3_OPTIONS[0] } as Answers, null, null).birth);
+  const postResult = (body: unknown) =>
+    fetch("/api/result", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }).then(async (res) => ({
+      ok: res.ok,
+      data: (await res.json()) as Record<string, unknown>,
+    }));
+  function startPrefetch() {
+    const key = birthKey();
+    if (prefetch.current?.key === key) return;
+    const promise = postResult(requestBody({ q1: Q1_OPTIONS[0], q2: Q2_OPTIONS[0], q3: Q3_OPTIONS[0] } as Answers, null, null));
+    promise.catch(() => {}); // 실패하면 질문을 마친 뒤 다시 묻는다
+    prefetch.current = { key, promise };
+  }
+
   async function fetchResult(a: Answers, chosen?: string, cp: string | null = competencyPick) {
     setStep("loading");
     setError(null);
     try {
-      const res = await fetch("/api/result", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(requestBody(a, chosen ?? null, cp)),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "계산 중 문제가 생겼어요.");
+      const cached = !chosen && !cp && prefetch.current?.key === birthKey() ? await prefetch.current.promise.catch(() => null) : null;
+      const { ok, data } = cached?.ok ? cached : await postResult(requestBody(a, chosen ?? null, cp));
+      if (!ok) throw new Error((data.error as string) ?? "계산 중 문제가 생겼어요.");
       if (data.candidates) {
-        setCandidates(data.candidates);
-        setCandidateIntro(data.candidateIntro ?? "");
+        setCandidates(data.candidates as Candidate[]);
+        setCandidateIntro((data.candidateIntro as string) ?? "");
         setStep("candidates");
       } else if (data.tie) {
         // 역량 동점 — 후보 시각은 정해졌으니 기억해 두고, 어느 쪽이 더 가까운지 고르게 한다.
         setPick(chosen ?? null);
-        setTie(data.tie);
+        setTie(data.tie as typeof tie);
         setStep("tie");
       } else {
         setPick(chosen ?? null);
@@ -223,6 +238,11 @@ export default function TestFlow() {
 
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 px-4 py-10">
+      {prevStep(step, firstTime) && (
+        <button type="button" className="self-start text-sm text-cream/80" onClick={() => setStep(prevStep(step, firstTime)!)}>
+          ← 이전
+        </button>
+      )}
       {step === "welcome" && (
         <form
           className="flex flex-col gap-6"
@@ -351,7 +371,7 @@ export default function TestFlow() {
           </fieldset>
 
           {copy.FIX_PRIVACY_NOTE && <p className="text-xs leading-relaxed text-cream/60">{copy.FIX_PRIVACY_NOTE}</p>}
-          <button className={btnPrimary} disabled={overseas && !city} onClick={() => setStep("q1")}>
+          <button className={btnPrimary} disabled={overseas && !city} onClick={() => { startPrefetch(); setStep("q1"); }}>
             다음
           </button>
         </div>
@@ -391,7 +411,7 @@ export default function TestFlow() {
 
       {step === "candidates" && (
         <div className="flex flex-col gap-5">
-          <Big>요즘의 나와 더 가까운 건?</Big>
+          <Big>더 나 같은 유형은?</Big>
           {candidateIntro && <p className="text-sm leading-relaxed text-cream/80">{candidateIntro}</p>}
           {candidates.map((c) => (
             <button
@@ -408,7 +428,7 @@ export default function TestFlow() {
 
       {step === "tie" && tie && (
         <div className="flex flex-col gap-5">
-          <Big>요즘의 나와 더 가까운 건?</Big>
+          <Big>요즘 더 가까운 쪽은?</Big>
           {tie.intro && <p className="text-sm leading-relaxed text-cream/80">{tie.intro}</p>}
           {tie.options.map((o) => (
             <button

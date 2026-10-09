@@ -38,15 +38,33 @@ export default function PaidReportView({ report }: { report: PaidReport }) {
             {s.title}
             <span className="shrink-0 rounded-full bg-gold px-2 py-0.5 text-[11px] font-medium text-navy">유료</span>
           </h2>
-          {s.paragraphs.length > 0 && (
-            <Card>
-              {/* AI가 쓴 '흐름 한눈에' 줄은 아래 단계 칩으로 대신 보여 준다(같은 내용이 두 번 나오지 않게). */}
-              {s.paragraphs.filter((p) => !p.startsWith(FLOW_HEAD)).map((p, i) => (
-                <p key={i} className={i === 0 ? "font-bold" : ""}>{p}</p>
-              ))}
-            </Card>
-          )}
-          {s.flow && s.flow.length > 0 && <FlowSteps steps={s.flow} />}
+          {/* 5번 섹션 순서(디자인가이드 3장): 키워드(두괄식 첫 문단) → 흐름 한눈에 → 솔직한 판정 → 놓아줄 것·키울 것.
+              AI가 쓴 '흐름 한눈에' 줄은 단계 칩으로 대신 보여 준다(같은 내용이 두 번 나오지 않게). */}
+          {(() => {
+            const ps = s.paragraphs.filter((p) => !p.startsWith(FLOW_HEAD));
+            const hasFlow = !!s.flow && s.flow.length > 0;
+            const head = hasFlow ? ps.slice(0, 1) : ps;
+            const rest = hasFlow ? ps.slice(1) : [];
+            return (
+              <>
+                {head.length > 0 && (
+                  <Card>
+                    {head.map((p, i) => (
+                      <p key={i} className={i === 0 ? "font-bold" : ""}>{p}</p>
+                    ))}
+                  </Card>
+                )}
+                {hasFlow && <FlowSteps steps={s.flow!} />}
+                {rest.length > 0 && (
+                  <Card>
+                    {rest.map((p, i) => (
+                      <p key={i}>{p}</p>
+                    ))}
+                  </Card>
+                )}
+              </>
+            );
+          })()}
           {s.stars && s.stars.length > 0 && <FiveYearStars stars={s.stars} />}
           {s.commonSky && s.commonSky.length > 0 && (
             <details className="rounded-2xl border border-cream/20 px-4 py-3 text-sm text-cream">
@@ -112,7 +130,7 @@ export default function PaidReportView({ report }: { report: PaidReport }) {
                     <tr key={r.label} className="border-b border-navy/10 align-top last:border-0">
                       <td className="whitespace-nowrap px-3 py-2 font-medium">{r.label}</td>
                       {r.cells.map((c, i) => (
-                        <td key={i} className="px-3 py-2">{c}</td>
+                        <td key={i} className="whitespace-pre-line px-3 py-2">{c}</td>
                       ))}
                     </tr>
                   ))}

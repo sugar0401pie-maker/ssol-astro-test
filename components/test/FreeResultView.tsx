@@ -98,6 +98,7 @@ export default function FreeResultView({
   resultId,
   paidContent,
   onAddTime,
+  paidPending,
 }: {
   result: FreeResult;
   nickname: string;
@@ -108,6 +109,8 @@ export default function FreeResultView({
   paidContent?: React.ReactNode;
   /** C등급: '태어난 시간 추가하기'를 누르면(주면 버튼이 생긴다) */
   onAddTime?: () => void;
+  /** 결제는 끝났고 리포트를 쓰는 중 — 유료 섹션 제목·첫 문장·블러 자리를 그대로 두고 안내만 바꾼다(디자인가이드 2장 '같은 자리에서 채워진다') */
+  paidPending?: string;
 }) {
   const [selected, setSelected] = useState<WheelSelection | null>(null);
   // 결제 전: 유료 섹션의 두괄식 첫 문장(서버가 DB 뼈대에서 한 문장씩만 보냄). 못 받아 오면 제목만.
@@ -115,9 +118,10 @@ export default function FreeResultView({
   // 결제 상자가 화면에 보이면 하단 고정 바를 숨긴다(같은 버튼이 두 번 보이지 않게).
   const paywallRef = useRef<HTMLDivElement>(null);
   const [paywallVisible, setPaywallVisible] = useState(false);
-  const unpaid = !paidContent && !!resultId;
+  const unpaid = !paidContent && !paidPending && !!resultId;
+  const wantPreview = !paidContent && !!resultId;
   useEffect(() => {
-    if (!unpaid) return;
+    if (!wantPreview) return;
     let alive = true;
     void getRealSession().then(async (session) => {
       const res = await fetch(`/api/results/${resultId}/preview`, { headers: apiHeaders(session) });
@@ -128,7 +132,7 @@ export default function FreeResultView({
     return () => {
       alive = false;
     };
-  }, [unpaid, resultId]);
+  }, [wantPreview, resultId]);
   useEffect(() => {
     const el = paywallRef.current;
     if (!el || typeof IntersectionObserver === "undefined") return;
@@ -193,7 +197,7 @@ export default function FreeResultView({
         <table className="w-full overflow-hidden rounded-2xl bg-cream text-left text-sm text-navy">
           <thead>
             <tr className="border-b border-navy/10">
-              <th className="px-3 py-2 font-medium">카드</th>
+              <th className="px-3 py-2 font-medium">구분</th>
               <th className="px-3 py-2 font-medium">별자리 · 하우스</th>
             </tr>
           </thead>
@@ -271,10 +275,13 @@ export default function FreeResultView({
             <Section key={s.no} no={s.no} title={s.title.replace("{닉네임}", nickname)} free={false}>
               {/* 제목과 두괄식 첫 문장만 선명하게, 본문 자리는 블러(디자인가이드 2장). 본문은 결제 후 서버가 만든다. */}
               {preview[s.no] && <p className="rounded-2xl bg-cream px-4 pt-4 text-[15px] font-bold leading-relaxed text-navy">{preview[s.no]}</p>}
-              <div aria-hidden className="h-24 rounded-2xl bg-cream/80 blur-sm" />
+              <div aria-hidden className={`h-24 rounded-2xl bg-cream/80 blur-sm ${paidPending ? "animate-pulse motion-reduce:animate-none" : ""}`} />
             </Section>
           ))}
 
+          {paidPending ? (
+            <p role="status" className="rounded-2xl border border-gold px-4 py-4 text-center text-sm leading-relaxed text-cream">{paidPending}</p>
+          ) : (
           <div ref={paywallRef} className="rounded-2xl border border-gold px-4 py-4 text-center text-cream">
             <p className="text-sm leading-relaxed text-cream/90">{result.paywallBox}</p>
             {resultId ? (
@@ -285,6 +292,7 @@ export default function FreeResultView({
               <p className="mt-3 text-xs text-cream/70">결과를 저장하면 전체 리포트를 볼 수 있어요.</p>
             )}
           </div>
+          )}
         </>
       )}
 

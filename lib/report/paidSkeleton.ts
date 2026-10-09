@@ -213,7 +213,8 @@ export function buildPaidSkeleton(args: {
     const edge = edgeLines(db, y);
     const level = [short, edge ? `(${edge.badge})` : "", y.movementLabel ? `· ${y.movementLabel}` : ""].filter(Boolean).join(" ");
     const jhY = jupiterHouseIn(events, y.year, longitudes.asc);
-    const theme = jhY ? t(db, "A9", `JUP_H${pad2(jhY)}`, "keyword") : "";
+    // 그 해의 한 줄(디자인가이드 7장 '작은 별에도 그 해의 한 줄'): 목성이 지나는 하우스 키워드, 하우스를 모르면(C등급) 그 해 바람 판정 문장.
+    const theme = jhY ? t(db, "A9", `JUP_H${pad2(jhY)}`, "keyword") : short !== WISH_LEVEL_DISPLAY[y.level] ? short : "";
     stars.push({
       year: y.year, level: y.level, display: WISH_LEVEL_DISPLAY[y.level], edgeBadge: edge?.badge ?? null,
       movement: y.movementLabel, firstOpen: y.year === wish.firstOpenYear, theme,
@@ -222,7 +223,8 @@ export function buildPaidSkeleton(args: {
     const rs = periods.fiveYears.all.filter((s) => clipIntervals(s.event.intervals, w).length).slice(0, 3);
     return {
       label: `${y.year}년`,
-      cells: [level, theme || "—"],
+      // 모바일 2열(마스터스펙 6-4 '펼친 상태는 2열'): 연도 | 바람 판정·움직임 + 그 해의 한 줄
+      cells: [theme && theme !== short ? `${level}\n${theme}` : level],
       reasons: rs.map((s) => reason(db, { ...s, intervalsInWindow: clipIntervals(s.event.intervals, w) })),
     };
   });
@@ -254,7 +256,7 @@ export function buildPaidSkeleton(args: {
   const sections: PaidSection[] = [
     { no: 4, title: "연말까지 조심하면 좋을 것", paragraphs: p4, table: { columns: ["시기", "무엇을 조심할까"], rows: tableRows(db, eoy, "month", "careful") } },
     { no: 5, title: "2027년을 맞는 마음가짐", paragraphs: p5, table: { columns: ["시기", "마음가짐"], rows: tableRows(db, periods.year2027, "quarter", "future") }, flow: flowSteps(events, eoy) },
-    { no: 6, title: `앞으로 5년, ${nickname}님의 삶은 이렇게 흘러갈 거예요`, paragraphs: p6, table: { columns: ["연도", "바람", "한 해의 테마"], rows: fiveRows }, stars, commonSky: commonSky(db) },
+    { no: 6, title: `앞으로 5년, ${nickname}님의 삶은 이렇게 흘러갈 거예요`, paragraphs: p6, table: { columns: ["연도", "바람과 한 해의 테마"], rows: fiveRows }, stars, commonSky: commonSky(db) },
     { no: 7, title: "별이 주는 질문과 웰니스 제안", paragraphs: p7, table: null },
   ];
   return {
