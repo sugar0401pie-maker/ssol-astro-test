@@ -27,6 +27,10 @@ export interface BirthChartWheelProps {
   selected?: WheelSelection | null;
   /** C등급일 때 "시간 추가" 버튼을 보여 줄지 — 주면 버튼이 생긴다. */
   onAddTime?: () => void;
+  /** 처음인 사용자 안내 말풍선이 가리키는 층(바깥 고리 = 별자리, 동그라미 = 행성, 선 = 관계)을 반짝여 표시 */
+  highlight?: "signs" | "planets" | "lines" | null;
+  /** 휠 바로 아래(범례·표 위)에 붙일 안내 말풍선 */
+  tip?: React.ReactNode;
   className?: string;
 }
 
@@ -80,7 +84,7 @@ const isSame = (a: WheelSelection | null | undefined, b: WheelSelection) =>
   a != null && a.kind === b.kind && a.key === b.key;
 
 export default function BirthChartWheel({
-  chart, characterFace, characterName, centerSign, onSelect, selected, onAddTime, className,
+  chart, characterFace, characterName, centerSign, onSelect, selected, onAddTime, highlight, tip, className,
 }: BirthChartWheelProps) {
   const [showAllLines, setShowAllLines] = useState(false);
   const clipId = useId();
@@ -389,7 +393,21 @@ export default function BirthChartWheel({
         ) : (
           <circle cx={C} cy={C} r={10} fill={NAVY} stroke={GOLD} strokeOpacity={0.6} strokeWidth={0.75} aria-hidden="true" />
         )}
+
+        {/* 처음 안내 말풍선이 가리키는 층. 장식이라 누르기를 막지 않는다('동작 줄이기'면 반짝이지 않음 — astro-ring). */}
+        {highlight && (
+          <g aria-hidden="true" pointerEvents="none" className="astro-ring">
+            {highlight === "signs" && (
+              <circle cx={C} cy={C} r={(R_OUT + R_ZODIAC_IN) / 2} fill="none" stroke={GOLD} strokeOpacity={0.35} strokeWidth={R_OUT - R_ZODIAC_IN} />
+            )}
+            {highlight === "planets" && (
+              <circle cx={C} cy={C} r={(R_PLANET + R_PLANET_OUTER) / 2 + planetShift} fill="none" stroke={GOLD} strokeOpacity={0.3} strokeWidth={R_PLANET_OUTER - R_PLANET + 30} />
+            )}
+            {highlight === "lines" && <circle cx={C} cy={C} r={R_INNER} fill={GOLD} fillOpacity={0.22} stroke={GOLD} strokeWidth={2} />}
+          </g>
+        )}
       </svg>
+      {tip && <div className="mt-3">{tip}</div>}
 
       {totalLines > 0 && (
         <div className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 px-4 text-xs text-cream/80">

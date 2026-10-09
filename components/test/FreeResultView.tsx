@@ -55,14 +55,19 @@ function Sheet({ sheet }: { sheet: WheelSheet }) {
 const TIPS_SEEN_KEY = "astro_wheel_tips_seen";
 
 /** 처음인 사용자: 휠 첫 진입 때 3단계 안내(바깥 고리 = 별자리 → 동그라미 = 행성 → 선 = 관계). 한 번 닫으면 다시 안 띄운다. */
-function WheelTips({ tips }: { tips: string[] }) {
-  const [i, setI] = useState(() => {
-    try {
-      return localStorage.getItem(TIPS_SEEN_KEY) ? -1 : 0;
-    } catch {
-      return 0;
-    }
-  });
+// 말풍선 단계별로 휠에서 반짝일 층(디자인가이드 4장: 바깥 고리 = 별자리, 동그라미 = 행성, 선 = 관계)
+const TIP_TARGETS = ["signs", "planets", "lines"] as const;
+const tipTarget = (i: number) => (i >= 0 && i < TIP_TARGETS.length ? TIP_TARGETS[i] : null);
+
+function initialTipIndex(): number {
+  try {
+    return localStorage.getItem(TIPS_SEEN_KEY) ? -1 : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function WheelTips({ tips, i, setI }: { tips: string[]; i: number; setI: (i: number) => void }) {
   if (i < 0 || i >= tips.length) return null;
   const close = () => {
     setI(-1);
@@ -113,6 +118,7 @@ export default function FreeResultView({
   paidPending?: string;
 }) {
   const [selected, setSelected] = useState<WheelSelection | null>(null);
+  const [tipIndex, setTipIndex] = useState(() => (firstTime ? initialTipIndex() : -1));
   // 결제 전: 유료 섹션의 두괄식 첫 문장(서버가 DB 뼈대에서 한 문장씩만 보냄). 못 받아 오면 제목만.
   const [preview, setPreview] = useState<Record<number, string>>({});
   // 결제 상자가 화면에 보이면 하단 고정 바를 숨긴다(같은 버튼이 두 번 보이지 않게).
@@ -160,9 +166,10 @@ export default function FreeResultView({
           onSelect={setSelected}
           selected={selected}
           onAddTime={onAddTime}
+          highlight={(result.wheelTips?.length ?? 0) > tipIndex ? tipTarget(tipIndex) : null}
+          tip={firstTime ? <WheelTips tips={result.wheelTips ?? []} i={tipIndex} setI={setTipIndex} /> : null}
           className="mx-auto"
         />
-        {firstTime && <WheelTips tips={result.wheelTips ?? []} />}
         {sheet && <Sheet sheet={sheet} />}
         <ElementBars elements={chart.elements} />
         {(result.elements.strong || result.elements.weak.length > 0) && (
