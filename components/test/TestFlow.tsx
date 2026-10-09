@@ -15,6 +15,7 @@ import SaveSuggestion from "@/components/results/SaveSuggestion";
 import { apiHeaders } from "@/lib/guest/client";
 import CitySearch, { type PickedCity } from "./CitySearch";
 import ConsentStep from "./ConsentStep";
+import { allConsented, CONSENT_ITEMS, CONSENT_LINES, type ConsentItemId } from "@/lib/results/consent";
 import FreeResultView from "./FreeResultView";
 
 import type { Step } from "./steps";
@@ -107,6 +108,9 @@ export default function TestFlow() {
   const [overseas, setOverseas] = useState(restored?.overseas ?? false);
   const [city, setCity] = useState<PickedCity | null>(restored?.city ?? null);
   const [answers, setAnswers] = useState<Partial<Answers>>(restored?.answers ?? {});
+  // 생년월일 화면의 필수 동의 3가지(개인정보처리방침·약관·저장). 셋 다 체크해야 다음으로 넘어간다(owner 결정 2026-10-09).
+  const [consents, setConsents] = useState<Partial<Record<ConsentItemId, boolean>>>({});
+  const consented = allConsented(consents);
   // 캐릭터 후보를 고른 경우 그 대표 시각 — 저장 요청에도 그대로 보낸다.
   const [pick, setPick] = useState<string | null>(restored?.pick ?? null);
   const [saving, setSaving] = useState(false);
@@ -153,9 +157,11 @@ export default function TestFlow() {
     nickname: name,
   });
 
-  // 결과가 정해진 뒤: 바로 저장 동의로(owner 결정 2026-10-08 — 로그인 없이 먼저 보고, 저장은 결과 화면에서 권한다).
+  // 결과가 정해진 뒤: 생년월일 화면에서 이미 동의했으니 바로 저장하고 결과를 보여 준다(로그인 없이 먼저 보고, 저장은 결과 화면에서 권한다).
+  // 동의 화면은 저장이 실패했을 때 다시 시도하는 자리로만 남는다.
   async function afterReady() {
-    setStep("consent");
+    if (consented) await saveAndShow();
+    else setStep("consent");
   }
 
   async function saveAndShow() {
@@ -179,6 +185,7 @@ export default function TestFlow() {
       setStep("result");
     } catch (e) {
       setError(e instanceof Error ? e.message : "저장하지 못했어요.");
+      setStep("consent");
     } finally {
       setSaving(false);
     }
@@ -371,9 +378,52 @@ export default function TestFlow() {
           </fieldset>
 
           {copy.FIX_PRIVACY_NOTE && <p className="text-xs leading-relaxed text-cream/60">{copy.FIX_PRIVACY_NOTE}</p>}
-          <button className={btnPrimary} disabled={overseas && !city} onClick={() => { startPrefetch(); setStep("q1"); }}>
+
+          <fieldset className="flex flex-col gap-3 rounded-2xl border border-cream/30 px-4 py-4">
+            <legend className="px-1 text-sm text-cream/80">동의</legend>
+            <label className="flex items-start gap-2 text-sm font-bold text-cream">
+              <input
+                type="checkbox"
+                className="mt-1"
+                checked={consented}
+                onChange={(e) => setConsents(Object.fromEntries(CONSENT_ITEMS.map((c) => [c.id, e.target.checked])))}
+              />
+              모두 동의합니다.
+            </label>
+            {CONSENT_ITEMS.map((c) => (
+              <label key={c.id} className="flex items-start gap-2 text-sm leading-relaxed text-cream/90">
+                <input
+                  type="checkbox"
+                  className="mt-1"
+                  checked={consents[c.id] === true}
+                  onChange={(e) => setConsents((v) => ({ ...v, [c.id]: e.target.checked }))}
+                />
+                <span>
+                  {c.label}
+                  {c.link && (
+                    <>
+                      {" "}
+                      {/* 진행 중인 테스트를 잃지 않게 새 탭으로 */}
+                      <a href={c.link.href} target="_blank" rel="noreferrer" className="underline">{c.link.text}</a>
+                    </>
+                  )}
+                </span>
+              </label>
+            ))}
+            <details className="text-xs leading-relaxed text-cream/70">
+              <summary className="cursor-pointer">저장되는 정보와 보관 기간 자세히</summary>
+              <ul className="mt-2 flex flex-col gap-1">
+                {CONSENT_LINES.map((l) => (
+                  <li key={l}>• {l}</li>
+                ))}
+              </ul>
+            </details>
+          </fieldset>
+
+          <button className={btnPrimary} disabled={(overseas && !city) || !consented} onClick={() => { startPrefetch(); setStep("q1"); }}>
             다음
           </button>
+          {!consented && <p className="-mt-3 text-center text-xs text-cream/70">세 가지 모두 동의해야 다음으로 넘어갈 수 있어요.</p>}
         </div>
       )}
 
