@@ -2,6 +2,7 @@
 // 그래도 실패하면 DB 문장만으로 보여준다(호출하는 쪽 책임). 정규식 기반의 최선 검사라 완전하지 않다 —
 // 실제 생성 로그에서 놓친 표현이 보이면 목록을 늘린다(쏘웰라 outputCheck.ts와 같은 원칙).
 import { SIGNS } from "../astro/constants.ts";
+import { josa, type JosaPair } from "./format.ts";
 
 export interface ValidationIssue {
   code:
@@ -150,13 +151,14 @@ export function splitSentences(text: string): string[] {
 export function validateReport(text: string, opts: ValidateOptions): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   const used = new Set<string>();
-  for (const m of text.matchAll(TOKEN_RE)) used.add(m[1].trim());
+  // 조사 토큰({{열리는해:은/는}}, 06 v3.1)은 이름만 본다
+  for (const m of text.matchAll(TOKEN_RE)) used.add(m[1].split(":")[0].trim());
 
   const withoutTokens = text.replace(TOKEN_RE, "");
   // 헤더 번호("### 4.")와 말머리 번호 목록("1. ")은 구조라 허용한다.
   const allowedHouses = new Set(opts.allowedHouses ?? []);
   const structural = withoutTokens
-    .replace(/^###\s*\d+\./gm, "")
+    .replace(/^###\s*\d+\..*$/gm, "") // 헤더 줄 전체(5번 제목에 '2027년'이 들어 있다)
     .replace(/^\s*\d+\.\s/gm, "")
     .replace(/(\d{1,2})\s?(하우스|H)/g, (m, n: string) => (allowedHouses.has(Number(n)) ? "" : m));
   const digit = structural.match(/.{0,10}[0-9０-９].{0,10}/);
@@ -202,11 +204,15 @@ export function validateReport(text: string, opts: ValidateOptions): ValidationI
   return issues;
 }
 
+/** 순서를 바꿔 쓴 조사 토큰("과/와", "는/은")도 받는다 */
+const JOSA_NORMAL: Record<string, JosaPair> = { "과/와": "와/과", "가/이": "이/가", "를/을": "을/를", "는/은": "은/는", "로/으로": "으로/로", "예요/이에요": "이에요/예요" };
+
 /** 출력의 토큰을 실제 값으로 바꾼다(검증 통과 후에만 호출). 모르는 토큰이 남아 있으면 예외. */
 export function substituteTokens(text: string, values: Record<string, string>): string {
-  return text.replace(TOKEN_RE, (_, name: string) => {
-    const v = values[name.trim()];
+  return text.replace(TOKEN_RE, (_, inner: string) => {
+    const [name, pair] = inner.split(":").map((x) => x.trim());
+    const v = values[name];
     if (v === undefined) throw new Error(`알 수 없는 토큰: ${name}`);
-    return v;
+    return pair ? josa(v, JOSA_NORMAL[pair] ?? (pair as JosaPair)) : v;
   });
 }

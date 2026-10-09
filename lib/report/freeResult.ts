@@ -90,6 +90,8 @@ export interface FreeResult {
   /** 부드러운 톤(Q2 그만하자·이별·고생)일 때 결과 하단 카드 */
   care: { note: string; card: string } | null;
   paywallBox: string;
+  /** 결제 팝업 문구(B11 PAY_POPUP, "안내 · 덧붙임 · [버튼]") */
+  payPopup: string;
   disclaimer: string;
   paidSections: typeof PAID_SECTION_TITLES;
 }
@@ -441,6 +443,7 @@ export function buildFreeResult(args: {
       ? { note: q2?.care_note ?? "", card: text(db, "A15", "FIX_CARE_CARD", "text").replace(/\s*→\s*\[.*\]\s*$/, "") }
       : null,
     paywallBox: text(db, "A15", "FIX_PAYWALL_BOX", "text").replace(/\s*→\s*\[.*\]\s*$/, ""),
+    payPopup: b11(db, "PAY_POPUP"),
     disclaimer: text(db, "A15", "FIX_DISCLAIMER", "text"),
     paidSections: PAID_SECTION_TITLES,
   };

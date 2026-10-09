@@ -97,6 +97,13 @@ function WheelTips({ tips, i, setI }: { tips: string[]; i: number; setI: (i: num
   );
 }
 
+/** B11 PAY_POPUP "안내 · 덧붙임 · [버튼]" → 조각 */
+function splitPayPopup(text: string): { message: string; sub: string; button: string } {
+  const button = text.match(/\[([^\]]+)\]/)?.[1] ?? "";
+  const parts = text.replace(/\s*·?\s*\[[^\]]+\]\s*$/, "").split(" · ").map((x) => x.trim()).filter(Boolean);
+  return { message: parts[0] ?? "", sub: parts.slice(1).join(" · "), button };
+}
+
 export default function FreeResultView({
   result,
   nickname,
@@ -121,10 +128,10 @@ export default function FreeResultView({
   const [selected, setSelected] = useState<WheelSelection | null>(null);
   const [tipIndex, setTipIndex] = useState(() => (firstTime ? initialTipIndex() : -1));
   // 결제 전: 유료 섹션의 두괄식 첫 문장(서버가 DB 뼈대에서 한 문장씩만 보냄). 못 받아 오면 제목만.
-  const [preview, setPreview] = useState<Record<number, string>>({});
-  // 결제 상자가 화면에 보이면 하단 고정 바를 숨긴다(같은 버튼이 두 번 보이지 않게).
-  const paywallRef = useRef<HTMLDivElement>(null);
-  const [paywallVisible, setPaywallVisible] = useState(false);
+  const [preview, setPreview] = useState<Record<number, { first: string; lines: string[] }>>({});
+  // 결제 팝업(2026-10-09): 잠긴 섹션이 화면에 있을 때만 화면 아래에 따라다니는 팝업 하나. 별도 하단 바 없음.
+  const lockedRef = useRef<HTMLDivElement>(null);
+  const [lockedVisible, setLockedVisible] = useState(false);
   const unpaid = !paidContent && !paidPending && !!resultId;
   const wantPreview = !paidContent && !!resultId;
   useEffect(() => {
@@ -133,21 +140,22 @@ export default function FreeResultView({
     void getRealSession().then(async (session) => {
       const res = await fetch(`/api/results/${resultId}/preview`, { headers: apiHeaders(session) });
       if (!res.ok || !alive) return;
-      const data = (await res.json()) as { sections: Array<{ no: number; first: string }> };
-      setPreview(Object.fromEntries(data.sections.map((x) => [x.no, x.first])));
+      const data = (await res.json()) as { sections: Array<{ no: number; first: string; lines?: string[] }> };
+      setPreview(Object.fromEntries(data.sections.map((x) => [x.no, { first: x.first, lines: x.lines ?? [] }])));
     }).catch(() => {});
     return () => {
       alive = false;
     };
   }, [wantPreview, resultId]);
   useEffect(() => {
-    const el = paywallRef.current;
+    const el = lockedRef.current;
     if (!el || typeof IntersectionObserver === "undefined") return;
-    const io = new IntersectionObserver(([e]) => setPaywallVisible(e.isIntersecting));
+    const io = new IntersectionObserver(([e]) => setLockedVisible(e.isIntersecting));
     io.observe(el);
     return () => io.disconnect();
   }, [unpaid]);
   const { chart, character, year2026 } = result;
+  const popup = splitPayPopup(result.payPopup ?? "");
   const sheet = !selected
     ? null
     : selected.kind === "planet"
@@ -157,7 +165,7 @@ export default function FreeResultView({
         : result.wheelSheets.signs[selected.key];
 
   return (
-    <div className={`flex flex-col gap-10 ${unpaid ? "pb-20" : ""}`}>
+    <div className={`flex flex-col gap-10 ${unpaid ? "pb-40" : ""}`}>
       <Section no={1} title={`${nickname}님이 태어난 순간의 하늘`} free>
         <p className="text-xs text-cream/70">정확도 {result.accuracy} · {result.gradeNote}</p>
         {result.addTimeNote && <p className="rounded-xl border border-cream/30 px-3 py-2 text-xs text-cream/80">{result.addTimeNote}</p>}
@@ -311,30 +319,27 @@ export default function FreeResultView({
       </Section>
 
       {paidContent ?? (
-        <>
-          {result.paidSections.map((s) => (
-            <Section key={s.no} no={s.no} title={s.title.replace("{닉네임}", nickname)} free={false}>
-              {/* 제목과 두괄식 첫 문장만 선명하게, 본문 자리는 블러(디자인가이드 2장). 본문은 결제 후 서버가 만든다. */}
-              {preview[s.no] && <p className="rounded-2xl bg-cream px-4 pt-4 text-[15px] font-bold leading-relaxed text-navy">{preview[s.no]}</p>}
-              <div aria-hidden className={`h-24 rounded-2xl bg-cream/80 blur-sm ${paidPending ? "animate-pulse motion-reduce:animate-none" : ""}`} />
-            </Section>
-          ))}
-
+        <div ref={lockedRef} className="flex flex-col gap-10">
+          {result.paidSections.map((s) => {
+            const pv = preview[s.no];
+            return (
+              <Section key={s.no} no={s.no} title={s.title.replace("{닉네임}", nickname)} free={false}>
+                {/* 제목과 굵은 요약, 본문 앞 2줄만 선명하게, 나머지는 블러(2026-10-09 페이월). 본문은 결제 후 서버가 만든다. */}
+                <div className="relative overflow-hidden rounded-2xl bg-cream px-4 py-4 text-[15px] leading-relaxed text-navy">
+                  {pv?.first && <p className="font-bold">{pv.first}</p>}
+                  {pv && pv.lines.length > 0 && <p className="mt-2">{pv.lines.join(" ")}</p>}
+                  <div aria-hidden className={`mt-2 h-20 rounded-xl bg-navy/10 blur-sm ${paidPending ? "animate-pulse motion-reduce:animate-none" : ""}`} />
+                  <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-b from-transparent to-cream" />
+                </div>
+              </Section>
+            );
+          })}
           {paidPending ? (
             <p role="status" className="rounded-2xl border border-gold px-4 py-4 text-center text-sm leading-relaxed text-cream">{paidPending}</p>
           ) : (
-          <div ref={paywallRef} className="rounded-2xl border border-gold px-4 py-4 text-center text-cream">
-            <p className="text-sm leading-relaxed text-cream/90">{result.paywallBox}</p>
-            {resultId ? (
-              <Link href={`/checkout/${resultId}`} className="mt-3 block w-full rounded-full bg-gold px-6 py-3 font-bold text-navy">
-                전체 리포트 보기
-              </Link>
-            ) : (
-              <p className="mt-3 text-xs text-cream/70">결과를 저장하면 전체 리포트를 볼 수 있어요.</p>
-            )}
-          </div>
+            !resultId && <p className="text-center text-xs text-cream/70">결과를 저장하면 전체 리포트를 볼 수 있어요.</p>
           )}
-        </>
+        </div>
       )}
 
       {result.care && (
@@ -359,12 +364,16 @@ export default function FreeResultView({
       />
 
       <p className="text-xs leading-relaxed text-cream/70">{result.disclaimer}</p>
-      {unpaid && !paywallVisible && (
-        // 하단 고정 바(디자인가이드 2장 페이월). 가짜 카운트다운·'지금만 할인' 같은 말은 쓰지 않는다.
-        <div className="fixed inset-x-0 bottom-0 z-20 border-t border-gold/40 bg-midnight/95 px-4 py-3 backdrop-blur">
-          <Link href={`/checkout/${resultId}`} className="mx-auto block w-full max-w-md rounded-full bg-gold px-6 py-3 text-center font-bold text-navy">
-            전체 리포트 보기 · {REPORT_PRICE.toLocaleString("ko-KR")}원
-          </Link>
+      {unpaid && lockedVisible && (
+        // 결제 팝업 하나(마스터스펙 6-1-1): 잠긴 섹션이 보일 때만, 화면 높이 30% 이하. 가짜 카운트다운·'지금만 할인' 없음.
+        <div className="fixed inset-x-0 bottom-3 z-20 px-4">
+          <div className="mx-auto flex max-h-[30vh] w-full max-w-md flex-col gap-2 rounded-2xl border border-gold bg-midnight/95 px-4 py-3 text-center text-cream shadow-lg backdrop-blur">
+            {popup.message && <p className="text-sm font-bold">{popup.message}</p>}
+            {popup.sub && <p className="text-xs text-cream/80">{popup.sub}</p>}
+            <Link href={`/checkout/${resultId}`} className="block w-full rounded-full bg-gold px-6 py-3 font-bold text-navy">
+              {popup.button || `${REPORT_PRICE.toLocaleString("ko-KR")}원 결제하기`}
+            </Link>
+          </div>
         </div>
       )}
       {result.dbDraft && <p className="text-[10px] text-cream/40">해석 {result.dbVersion} · 상담사 검수 전 초안</p>}

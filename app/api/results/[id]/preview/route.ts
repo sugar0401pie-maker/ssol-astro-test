@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { wishContextOf } from "@/lib/astro/wish";
 import { ASTRO_DB } from "@/lib/report/dbData";
 import { prepareSkeleton, previewLines } from "@/lib/report/prepare";
+import { birthKeyOf } from "@/lib/report/variants";
 import { computeFree } from "@/lib/results/compute";
 import { getResult, isUuid } from "@/lib/results/store";
 
@@ -26,6 +27,7 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/results/[id]
       wishContext: wishContextOf(c.birth.stored, c.birth.accuracy),
       answers: row.answers,
       nickname: row.nickname,
+      birthKey: birthKeyOf(row.birth_input),
       now: new Date(),
     });
     return NextResponse.json({ sections: previewLines(skeleton) });

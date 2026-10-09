@@ -7,9 +7,9 @@ import OpenAI from "openai";
 import { CHARACTER_GRID } from "@/lib/astro/constants";
 import type { Answers } from "@/lib/astro/answers";
 import type { WishContext } from "@/lib/astro/wish";
-import { PARTS, fillSystemPrompt, partUserMessage, processPartOutput, type PartId } from "./aiPrompt";
+import { PARTS, fillSystemPrompt, partUserMessage, processPartOutput, type PartId, type SectionNo } from "./aiPrompt";
 import { findRow, type AstroDb } from "./db";
-import type { PaidSection } from "./paidSkeleton";
+import { judgementSentence, type Block, type PaidSection } from "./paidSkeleton";
 import { prepareSkeleton, type Resolved } from "./prepare";
 import { buildReportInput } from "./reportInput";
 import { compileC1, type C1Row } from "./validate";
@@ -44,27 +44,36 @@ async function callModel(system: string, user: string): Promise<string> {
   return text;
 }
 
-export async function generatePaidReport(args: { db: AstroDb; resolved: Resolved; wishContext: WishContext; answers: Answers; nickname: string; now?: Date }): Promise<PaidReport> {
+export async function generatePaidReport(args: { db: AstroDb; resolved: Resolved; wishContext: WishContext; answers: Answers; nickname: string; birthKey?: string; now?: Date }): Promise<PaidReport> {
   const { db, resolved, answers, nickname } = args;
   const now = args.now ?? new Date();
   const { chart, character } = resolved;
   const { periods, wish, skeleton } = prepareSkeleton({ ...args, now });
   const typeLine = findRow(db, "A5", (r) => r.character === character.name)?.type_line ?? "";
-  const flow = skeleton.sections.find((s) => s.no === 5)?.flow ?? [];
-  const built = buildReportInput({ nickname, chart, character, answers, periods, wish, typeLine, flow });
+  const flow = skeleton.sections.find((s) => s.no === 5)?.body.filter((b): b is Extract<Block, { t: "step" }> => b.t === "step").map((b) => b.label) ?? [];
+  const built = buildReportInput({ nickname, chart, character, answers, periods, wish, typeLine, flow, bridgeBasis27: skeleton.bridgeBasis27, desiredYear: skeleton.desiredYear });
   const c1 = compileC1(db.dbs.C1.rows as unknown as C1Row[]);
+  const summaries = Object.fromEntries(skeleton.sections.map((s) => [s.no, s.summary]));
+  const bridgeOf = (no: 5 | 6) => skeleton.sections.find((s) => s.no === no)?.body.find((b) => b.t === "bridge")?.text ?? null;
+  const ctx = {
+    summaries,
+    wish: answers.q3,
+    judgements: { 5: judgementSentence(skeleton, 5), 6: judgementSentence(skeleton, 6) },
+    fallbackBridges: { 5: bridgeOf(5), 6: bridgeOf(6) },
+  };
 
   const runPart = async (part: PartId) => {
     const dbSentences = PARTS[part].sections.flatMap((n) => skeleton.dbSentences[n]);
     built.input.db_sentences = dbSentences;
     const system = fillSystemPrompt(built, dbSentences);
-    const user = partUserMessage(built, part);
+    const user = partUserMessage(built, part, summaries);
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
-        const out = processPartOutput(await callModel(system, user), part, built, c1, CHARACTER_NAMES);
-        if (out.ok) return out.sections;
+        const out = processPartOutput(await callModel(system, user), part, built, c1, CHARACTER_NAMES, ctx);
+        // 잇기만 규칙에 안 맞으면: 첫 번째는 다시 만들고, 두 번째는 B12 대체 문장을 끼운 채 쓴다(06 v3.1).
+        if (out.ok && (out.bridgeFailed.length === 0 || attempt === 1)) return out.sections;
         // 실패 사유는 코드만 남긴다(문장·개인정보는 로그에 남기지 않음).
-        console.warn(`리포트 파트 ${part} 검증 실패(${attempt + 1}회):`, out.issues.filter((i) => i.severity !== "경고").map((i) => i.code).join(","));
+        console.warn(`리포트 파트 ${part} 검증 실패(${attempt + 1}회):`, out.ok ? `bridge:${out.bridgeFailed.join(",")}` : out.issues.filter((i) => i.severity !== "경고").map((i) => i.code).join(","));
       } catch (e) {
         console.warn(`리포트 파트 ${part} 생성 실패(${attempt + 1}회):`, e instanceof Error ? e.name : "unknown");
       }
@@ -73,9 +82,9 @@ export async function generatePaidReport(args: { db: AstroDb; resolved: Resolved
   };
 
   const [a, b, c] = await Promise.all((["A", "B", "C"] as PartId[]).map(runPart));
-  const ai: Partial<Record<4 | 5 | 6 | 7, string[]>> = { ...(a ?? {}), ...(b ?? {}), ...(c ?? {}) };
+  const ai: Partial<Record<SectionNo, Block[]>> = { ...(a ?? {}), ...(b ?? {}), ...(c ?? {}) };
   return {
-    sections: skeleton.sections.map((s) => (ai[s.no]?.length ? { ...s, paragraphs: ai[s.no]!, source: "ai" as const } : { ...s, source: "db" as const })),
+    sections: skeleton.sections.map((s) => (ai[s.no]?.length ? { ...s, body: ai[s.no]!, source: "ai" as const } : { ...s, source: "db" as const })),
     questions: skeleton.questions,
     practices: skeleton.practices,
     closing: skeleton.closing,

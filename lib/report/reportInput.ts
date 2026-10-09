@@ -78,8 +78,11 @@ export function buildReportInput(args: {
   wish: WishResult;
   /** A5 type_line — 캐릭터 이름 대신 쓰는 유형 한 줄 */
   typeLine: string;
-  /** 2027 '흐름 한눈에' 단계(flowSteps, 뼈대와 같은 값) */
+  /** 2027 흐름 단계 이름(뼈대 flowStages와 같은 값, 예: "1~4월 — 정하지 말고 준비") */
   flow?: string[];
+  /** 바람과 흐름 잇기 {{흐름근거}}(2027)·{{바라던해}}(5년) 값 — 뼈대에서 */
+  bridgeBasis27?: string;
+  desiredYear?: number | null;
 }): BuiltReportInput {
   const { nickname, chart, character, answers, periods, wish } = args;
   const tokens: Record<string, TokenInfo> = {};
@@ -138,6 +141,9 @@ export function buildReportInput(args: {
     tokens[name] = { value: formatYear(y), meaning: name === "열리는해" ? "바라는 것이 열리는 해" : "바라는 것에 가장 가까워지는 해" };
     return `{{${name}}}`;
   };
+  // 바람과 흐름 잇기(06 v3.1): 서버가 고른 사건 구절·바라던 해
+  if (args.bridgeBasis27) tokens["흐름근거"] = { value: args.bridgeBasis27, meaning: "2027년에 바람을 돕는 가장 큰 사건을 월과 함께 쓴 '-는' 구절(뒤에 '무렵' 등을 붙여 씀)" };
+  if (args.desiredYear) tokens["바라던해"] = { value: formatYear(args.desiredYear), meaning: "5년 안의 첫 활짝 열리는 해, 없으면 바람에 가장 가까워지는 해" };
   if (headwind_years.length) tokens["역풍해"] = { value: tokens[headwind_years[0]].value, meaning: "첫 역풍 해" };
 
   const input: ReportInput = {
@@ -160,7 +166,7 @@ export function buildReportInput(args: {
     temperament: wish.temperament,
     flow_2027: (args.flow ?? []).map((text, i) => {
       const name = `흐름${i + 1}`;
-      tokens[name] = { value: text, meaning: "2027년 흐름의 한 단계(시기 + 단계 이름)" };
+      tokens[name] = { value: text, meaning: "2027년 흐름의 한 단계(시기 — 단계 이름), '• 2027년 흐름' 불릿 문단 첫머리에 그대로" };
       return `{{${name}}}`;
     }),
     wish_reason,

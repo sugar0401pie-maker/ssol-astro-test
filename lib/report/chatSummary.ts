@@ -9,6 +9,7 @@ import type { Answers } from "../astro/answers.ts";
 import { EDGE_LABEL, WISH_LEVEL_DISPLAY, type WishResult } from "../astro/wish.ts";
 import { findRow, type AstroDb } from "./db.ts";
 import type { FreeResult } from "./freeResult.ts";
+import { blockText, type Block } from "./paidSkeleton.ts";
 
 export const CHAT_SUMMARY_MAX = 6000;
 
@@ -23,7 +24,7 @@ export function redactSigns(text: string): string {
 }
 
 export interface PaidPartsForChat {
-  sections: Array<{ no: number; title: string; paragraphs: string[] }>;
+  sections: Array<{ no: number; title: string; summary: string | null; body: Block[]; tail: Block[] }>;
   questions: { headline: string; items: string[] };
   practices: Array<{ title: string; how: string }>;
 }
@@ -64,7 +65,8 @@ export function buildChatSummary(args: {
   if (paid) {
     for (const s of paid.sections) {
       if (s.no === 7) continue; // 질문·제안은 8번으로 따로
-      if (s.paragraphs.length) lines.push(`[${s.no}. ${s.title}] ${one(s.paragraphs)}`);
+      const paras = [s.summary ?? "", ...[...s.body, ...s.tail].filter((b) => b.t !== "head" && b.t !== "sub").map(blockText)].filter(Boolean);
+      if (paras.length) lines.push(`[${s.no}. ${s.title}] ${one(paras)}`);
     }
     const q = paid.questions.items.length ? `별이 주는 질문: ${paid.questions.headline ? `${paid.questions.headline} ` : ""}${paid.questions.items.join(" / ")}.` : null;
     const p = paid.practices.length ? `작은 실천: ${paid.practices.map((x) => `${x.title} — ${x.how}`).join(" / ")}.` : null;
