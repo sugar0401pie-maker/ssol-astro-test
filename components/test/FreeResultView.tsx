@@ -22,6 +22,9 @@ import type { PointKey } from "@/lib/astro/constants";
 import type { FreeResult, WheelSheet } from "@/lib/report/freeResult";
 
 const SESSION_URL = "https://app.ssolwellnesshouse.com/session-reserve";
+/** 3장 웰니스 상담 기본 안내(부드러운 톤이 아닐 때) — Claude 초안, owner 검토 가능. 공포·재촉 표현 없이 */
+const WELLNESS_SESSION_NOTE =
+  "별 리포트로 돌아본 한 해를 사람과 함께 천천히 이야기해 보고 싶다면, 쏠 웰니스 하우스의 웰니스 상담을 이용해 보세요. {닉네임}님의 지금 마음을 함께 살펴보고, 나에게 맞는 속도를 찾는 시간이 될 거예요.";
 const SIGN_NAMES = ["양자리", "황소자리", "쌍둥이자리", "게자리", "사자자리", "처녀자리", "천칭자리", "전갈자리", "사수자리", "염소자리", "물병자리", "물고기자리"];
 const ELEM_ORDER = ["불", "흙", "공기", "물"] as const;
 const ELEM_SHADE: Record<string, string> = { 불: "#013566", 흙: "#2B5486", 공기: "#5878A3", 물: "#8AA0C2" };
@@ -524,20 +527,24 @@ export default function FreeResultView({
             </div>
           </Section>
 
-          {result.care && (
-            // 2026 한 단어가 '그만하자·이별·고생'이면 함께 보여준다(진행은 막지 않음, 마스터스펙 4장)
-            <div className="care">
-              {result.care.note && <p>{result.care.note}</p>}
-              <p>{result.care.card}</p>
-              <div className="flex flex-wrap gap-2">
-                <SowellaButton label="쏘웰라와 이야기 나누기" className="btn ghost small-btn" resultId={resultId} page={3} keepLabel />
-                {/* owner 2026-10-10: 프로토타입에 없지만 유지 */}
-                <a className="btn ghost small-btn" href={SESSION_URL}>
-                  웰니스 상담 알아보기
-                </a>
-              </div>
+          {/* 웰니스 상담 안내(owner 2026-10-10: 모든 사람에게 3장에서). 2026 한 단어가 '그만하자·이별·고생'이면
+              그 톤에 맞춘 해석 DB 문장(A12 care_note + A15 FIX_CARE_CARD), 아니면 기본 안내(Claude 초안 — owner 검토 가능). 진행은 막지 않는다. */}
+          <div className="care">
+            {result.care ? (
+              <>
+                {result.care.note && <p>{result.care.note}</p>}
+                <p>{result.care.card}</p>
+              </>
+            ) : (
+              <p>{WELLNESS_SESSION_NOTE.replace("{닉네임}", nickname)}</p>
+            )}
+            <div className="flex flex-wrap gap-2">
+              <a className="btn ghost small-btn" href={SESSION_URL}>
+                웰니스 상담 알아보기
+              </a>
+              <SowellaButton label="쏘웰라와 이야기 나누기" className="btn ghost small-btn" resultId={resultId} page={3} keepLabel />
             </div>
-          )}
+          </div>
 
             {/* 무료 구간 끝: [SNS 공유하기] + [저장하기] */}
             <ActionRow share={share} copy={result.saveCopy} resultId={resultId ?? null} prefill={savePrefill} />
