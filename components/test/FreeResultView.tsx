@@ -555,7 +555,7 @@ export default function FreeResultView({
                   <h2 className="rsec-title" id={`sec-${page}-t`} tabIndex={-1}>
                     <span>{titles[page - 1]}</span>
                   </h2>
-                  <PageArt page={page} signIndex={result.sunSignIndex} />
+                  <PageArt page={page} signIndex={result.sunSignIndex} locked />
                   <div className="box">
                     {preview[page]?.first && <p className="lead summary">{preview[page].first}</p>}
                     {!!preview[page]?.lines.length && (

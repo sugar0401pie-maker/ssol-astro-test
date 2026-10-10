@@ -353,3 +353,5 @@ h3.sub-h{font-size:18px;font-weight:700;color:var(--navy);margin:22px 0 4px;font
 /* Tailwind 기본값(목록 점 없음)이 프로토타입의 '왜 그럴까' 목록 점을 지우지 않게 */
 details.why ul{list-style:disc}
 .guide-art.small{max-width:140px;margin:0 auto 14px;border-radius:16px}
+/* 받은 결과 그림이 정사각형(1080×1080)이라 그림이 있으면 1:1로 — 4:5로 자르면 캐릭터 양옆이 잘린다 */
+.page-art.has-img{aspect-ratio:1/1}
