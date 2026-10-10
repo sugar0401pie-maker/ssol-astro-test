@@ -73,13 +73,17 @@ export async function saveResult(args: {
   return data.id as string;
 }
 
-export async function listResults(owner: Owner): Promise<Array<Pick<StoredResult, "id" | "created_at" | "nickname" | "character" | "sun_sign" | "accuracy"> & { consent_version?: string }>> {
+export async function listResults(
+  owner: Owner,
+): Promise<Array<Pick<StoredResult, "id" | "created_at" | "nickname" | "character" | "sun_sign" | "accuracy"> & { consent_version?: string; last_page?: number | null }>> {
   // consent_version: 같은 약관 버전에 이미 동의한 계정은 다음 테스트에서 동의를 체크된 상태로 보여 준다(패키지 v3)
-  const { data, error } = await byOwner(createAdminClient().from(TABLE).select("id, created_at, nickname, character, sun_sign, accuracy, consent_version"), owner)
-    .order("created_at", { ascending: false })
-    .limit(50);
+  // last_page: 마지막으로 보던 장(마이그레이션 20261010000000 전이면 칸이 없어 빼고 다시 읽는다 — 42703)
+  const base = "id, created_at, nickname, character, sun_sign, accuracy, consent_version";
+  const q = (cols: string) => byOwner(createAdminClient().from(TABLE).select(cols), owner).order("created_at", { ascending: false }).limit(50);
+  let { data, error } = await q(`${base}, last_page`);
+  if (error?.code === "42703") ({ data, error } = await q(base));
   if (error) throw new Error(`결과 목록 실패: ${error.code}`);
-  return data ?? [];
+  return (data ?? []) as unknown as Awaited<ReturnType<typeof listResults>>;
 }
 
 const RESULT_COLS = "id, created_at, nickname, first_time, birth_input, answers, character, sun_sign, accuracy";
@@ -239,6 +243,18 @@ export async function saveReport(resultId: string, report: unknown | null): Prom
     .update(report ? { report, report_status: "ready" } : { report_status: "failed" })
     .eq("id", resultId);
   if (error) throw new Error(`리포트 저장 실패: ${error.code}`);
+}
+
+/** 마지막으로 보던 장 저장(주인 확인). 칸이 없으면(마이그레이션 전) 조용히 넘어간다 — 이 기기 기억이 대신한다. */
+export async function saveLastPage(owner: Owner, id: string, page: number): Promise<void> {
+  const { error } = await byOwner(createAdminClient().from(TABLE).update({ last_page: page }), owner).eq("id", id);
+  if (error && error.code !== "42703") throw new Error(`마지막 장 저장 실패: ${error.code}`);
+}
+
+/** 쓰는 중인 리포트(다 쓴 파트까지)를 저장 — 아직 생성 중일 때만(끝난 리포트를 덮지 않게). 실패해도 던지지 않는다. */
+export async function savePartialReport(resultId: string, report: unknown): Promise<void> {
+  const { error } = await createAdminClient().from(TABLE).update({ report }).eq("id", resultId).eq("report_status", "generating");
+  if (error) console.warn(`리포트 중간 저장 실패: ${error.code}`);
 }
 
 /** 쏘웰라 채팅용 요약 갱신(리포트가 생기면 본문·제안까지). 실패해도 던지지 않는다 — 부가 기능. */

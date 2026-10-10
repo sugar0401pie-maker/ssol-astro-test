@@ -8,7 +8,8 @@ import SowellaButton from "@/components/results/SowellaButton";
 import PageArt from "@/components/results/PageArt";
 import { RESULT_PAGES, rememberPage } from "@/lib/results/lastPage";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
 import { REPORT_PRICE } from "@/lib/billing/pricing";
 import { apiHeaders } from "@/lib/guest/client";
 import { getRealSession } from "@/lib/supabase/browser";
@@ -21,9 +22,8 @@ import { WhyList } from "@/components/results/PaidReportView";
 import type { PointKey } from "@/lib/astro/constants";
 import type { FreeResult, WheelSheet } from "@/lib/report/freeResult";
 
+const noopSubscribe = () => () => {};
 const SESSION_URL = "https://app.ssolwellnesshouse.com/session-reserve";
-/** [다음 이야기 ›] 버튼의 짧은 주제 이름(owner 2026-10-10: 긴 섹션 제목 대신 한 줄로) */
-const NAV_TITLES = ["태어난 순간의 하늘", "별이 본 나의 유형", "2026년 돌아보기", "연말까지 조심할 것", "2027년 마음가짐", "앞으로 5년", "별이 주는 질문"];
 /** 3장 웰니스 상담 기본 안내(부드러운 톤이 아닐 때) — Claude 초안, owner 검토 가능. 공포·재촉 표현 없이 */
 const WELLNESS_SESSION_NOTE =
   "별 리포트로 돌아본 한 해를 사람과 함께 천천히 이야기해 보고 싶다면, 쏠 웰니스 하우스의 웰니스 상담을 이용해 보세요. {닉네임}님의 지금 마음을 함께 살펴보고, 나에게 맞는 속도를 찾는 시간이 될 거예요.";
@@ -94,6 +94,7 @@ export default function FreeResultView({
   resultId,
   paidSection,
   initialPage,
+  onRetrySave,
   tempBanner,
   onAddTime,
   paidPending,
@@ -109,6 +110,8 @@ export default function FreeResultView({
   paidSection?: (no: number) => React.ReactNode;
   /** 임시 계정으로 결제한 사람: 4~7장 맨 위 보관 안내(프로토타입 .temp-banner) */
   tempBanner?: (page: number) => React.ReactNode;
+  /** 저장이 실패한 결과를 다시 저장해 보기(성공하면 true) — 테스트 흐름에서만 */
+  onRetrySave?: () => Promise<boolean>;
   /** 처음 열 페이지(1~7, 패키지 v3 웹툰식 결과) */
   initialPage?: number;
   /** B·C등급 '태어난 시간 추가하기' */
@@ -127,7 +130,6 @@ export default function FreeResultView({
   const [switching, setSwitching] = useState(false);
   // 결제 전: 유료 섹션의 굵은 요약 + 본문 첫 두 문장(서버가 DB 뼈대에서 그만큼만 보냄) + 흐린 자리용 B13 가짜 문장
   const [preview, setPreview] = useState<Record<number, { first: string; lines: string[]; dummy: string[] }>>({});
-  const unpaid = !paidSection && !paidPending && !!resultId;
   // 로그인하지 않은(임시 계정) 사람에게만 결제 팝업 아래 B11 PAY_TEMP_NOTE
   const [loggedIn, setLoggedIn] = useState(true);
   useEffect(() => {
@@ -153,7 +155,18 @@ export default function FreeResultView({
   // 웹툰식 주제별 페이지(패키지 v3): 한 번에 한 주제만. 페이지마다 주소(/results/{id}/{n})와 '마지막으로 보던 페이지'를 남겨
   // 결제하고 돌아오거나 [내 결과 보기]로 들어와도 그 페이지로 연다.
   const rootRef = useRef<HTMLDivElement>(null);
+  // portal은 브라우저에서만(서버에서 그린 화면과 어긋나지 않게)
+  const mounted = useSyncExternalStore(noopSubscribe, () => true, () => false);
   const [page, setPage] = useState(() => Math.min(Math.max(1, initialPage ?? 1), RESULT_PAGES));
+  useEffect(() => {
+    if (!resultId) return;
+    const t = setTimeout(() => {
+      void getRealSession()
+        .then((session) => fetch(`/api/results/${resultId}`, { method: "PATCH", headers: apiHeaders(session, { "content-type": "application/json" }), body: JSON.stringify({ lastPage: page }) }))
+        .catch(() => {});
+    }, 1000);
+    return () => clearTimeout(t);
+  }, [resultId, page]);
   useEffect(() => {
     if (!resultId) return;
     rememberPage(resultId, page);
@@ -245,7 +258,7 @@ export default function FreeResultView({
         </div>
       </div>
 
-      <div key={page} className={`rpage${lockedPage && unpaid ? " has-locked" : ""}`}>
+      <div key={page} className={`rpage${lockedPage && !paidPending ? " has-locked" : ""}`}>
         {page >= 4 && tempBanner?.(page)}
         {page === 1 && (
           <>
@@ -550,16 +563,15 @@ export default function FreeResultView({
           </div>
 
             {/* 무료 구간 끝: [SNS 공유하기] + [저장하기] */}
-            <ActionRow share={share} copy={result.saveCopy} resultId={resultId ?? null} prefill={savePrefill} />
+            <ActionRow share={share} copy={result.saveCopy} resultId={resultId ?? null} prefill={savePrefill} onRetrySave={onRetrySave} />
           </>
         )}
 
         {/* ===== 4~7. 결제 후 전체, 결제 전에는 굵은 요약 + 첫 두 문장만, 아래는 흐린 가짜 문장(B13) ===== */}
         {page >= 4 && (
           <>
-            {paidSection ? (
-              paidSection(page)
-            ) : (
+            {/* 결제 후: 그 장의 섹션(쓰는 중이면 아직 없는 섹션은 null → 아래 잠긴 자리 + 안내) */}
+            {(paidSection && paidSection(page)) || (
               <div className="locked-zone" id="locked-zone">
                 <section className="rsec paid locked" id={`sec-${page}`} aria-labelledby={`sec-${page}-t`}>
                   <h2 className="rsec-title" id={`sec-${page}-t`} tabIndex={-1}>
@@ -593,7 +605,7 @@ export default function FreeResultView({
             {/* 4~7번 페이지마다 [SNS 공유하기][저장하기] — 결제 전이면 B11 SHARE_NOTE_LOCKED */}
             <div className="page-share">
               {!paidSection && <p className="share-note">{result.shareNoteLocked || "결제하지 않더라도 지금까지의 결과를 공유할 수 있어요."}</p>}
-              <ActionRow share={share} copy={result.saveCopy} resultId={resultId ?? null} prefill={savePrefill} />
+              <ActionRow share={share} copy={result.saveCopy} resultId={resultId ?? null} prefill={savePrefill} onRetrySave={onRetrySave} />
             </div>
           </>
         )}
@@ -607,8 +619,7 @@ export default function FreeResultView({
           )}
           {next ? (
             <button type="button" className="btn next" onClick={() => go(next)}>
-              <small>다음 이야기 ›</small>
-              <span className="nx-title">{NAV_TITLES[next - 1]}</span>
+              다음 이야기 ›
             </button>
           ) : (
             <button type="button" className="btn ghost next" onClick={() => go(1)}>
@@ -627,7 +638,11 @@ export default function FreeResultView({
 
       </div>
 
-      {unpaid && page >= 4 && (
+      {/* 결제 카드(owner 2026-10-10: 4~7장 블러 위에 늘 따라다니게) — 결과가 아직 저장되지 않았어도 보이고, 그땐 버튼 대신 안내 */}
+      {/* 결제 카드: body에 바로 붙인다(portal) — 화면 상자(.screen)의 애니메이션이 position:fixed를 페이지 아래로 밀어내서
+          카드가 화면에 안 보이던 문제(owner 2026-10-10 '스크롤하면서 따라다니게') */}
+      {mounted && !paidSection && !paidPending && page >= 4 &&
+        createPortal(
         // 결제 카드 하나(패키지 v3): 4~7장을 볼 때만. 가짜 카운트다운·'지금만 할인' 없음. 결제 후 이 페이지로 돌아온다(마지막 페이지 기억).
         <div className="paybar pay-float" role="region" aria-label="결제 안내">
           <div className="pf-in">
@@ -636,13 +651,30 @@ export default function FreeResultView({
               {popup.sub && <p className="pp-s">{popup.sub}</p>}
               {!loggedIn && result.tempPay?.note && <p className="pp-temp">{result.tempPay.note}</p>}
             </div>
-            <Link href={`/checkout/${resultId}?page=${page}`} className="btn block">
-              {popup.button || `${REPORT_PRICE.toLocaleString("ko-KR")}원 결제하기`}
-            </Link>
+            {resultId ? (
+              <Link href={`/checkout/${resultId}?page=${page}`} className="btn block">
+                {popup.button || `${REPORT_PRICE.toLocaleString("ko-KR")}원 결제하기`}
+              </Link>
+            ) : (
+              <>
+                {/* 결과가 아직 저장되지 않음: 누르면 먼저 저장을 다시 해 본다(저장돼야 결제할 수 있음) */}
+                <button
+                  type="button"
+                  className="btn block"
+                  disabled={!onRetrySave}
+                  onClick={async () => {
+                    if (onRetrySave && !(await onRetrySave())) setToast("결과를 저장하지 못했어요. 잠시 뒤 다시 눌러 주세요.");
+                  }}
+                >
+                  {popup.button || `${REPORT_PRICE.toLocaleString("ko-KR")}원 결제하기`}
+                </button>
+                <p className="pp-temp">결제하려면 먼저 결과를 저장해야 해요. 버튼을 누르면 저장부터 해 볼게요.</p>
+              </>
+            )}
           </div>
-        </div>
-      )}
-
+        </div>,
+          document.body,
+        )}
       <BottomSheet open={!!sheet} onClose={() => setSheetKey(null)} labelledBy="sheet-title">
         {sheet && <SheetBody sheet={sheet} />}
       </BottomSheet>

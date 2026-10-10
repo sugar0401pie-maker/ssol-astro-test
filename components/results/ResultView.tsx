@@ -60,6 +60,8 @@ export default function ResultView({ id, page }: { id: string; page?: number }) 
         const d = await res.json();
         if (stop) return;
         if (d.status === "ready") return setReport(d.report);
+        // 쓰는 중: 다 쓴 섹션부터 보여 주고 계속 기다린다
+        if (d.report) setReport(d.report);
       } catch {
         /* 다음 차례에 다시 */
       }
@@ -101,10 +103,15 @@ export default function ResultView({ id, page }: { id: string; page?: number }) 
         initialPage={page ?? lastPage(id)}
         // 임시 계정으로 결제했으면 4~7장 맨 위에 보관(가입) 안내(프로토타입 .temp-banner)
         tempBanner={data.guest && !session && data.paid ? (n) => <TempPayBanner banner={data.result.tempPay.banner} loginBig={data.result.tempPay.loginBigPaid} resultId={id} page={n} /> : undefined}
-        paidSection={data.paid && report ? (no) => <PaidReportView report={report} signIndex={data.result.sunSignIndex} resultId={id} only={no} /> : undefined}
+        // 쓰는 중(partial)이면 아직 없는 섹션은 null → 잠긴 자리 + '쓰고 있어요' 안내
+        paidSection={
+          data.paid && report
+            ? (no) => (report.sections.some((s) => s.no === no) ? <PaidReportView report={report} signIndex={data.result.sunSignIndex} resultId={id} only={no} /> : null)
+            : undefined
+        }
         // 결제 후 리포트를 쓰는 동안에도 유료 섹션 제목·첫 문장 자리를 그대로 두고, 완성되면 같은 자리에서 채운다.
         paidPending={
-          data.paid && !report
+          data.paid && (!report || report.partial)
             ? waitedTooLong
               ? `${b14(copy, "ERR_AI_SLOW", "title", "", data.nickname)} ${b14(copy, "ERR_AI_SLOW", "body", "리포트를 만드는 데 시간이 걸리고 있어요. 잠시 뒤 새로고침해 주세요.", data.nickname)}`.trim()
               : `${b14(copy, "EMPTY_REPORT_GEN", "title", "", data.nickname)} ${b14(copy, "EMPTY_REPORT_GEN", "body", "결제가 확인됐어요. 연말부터 앞으로 5년까지, 전체 리포트를 쓰고 있어요(20~60초).", data.nickname)}`.trim()

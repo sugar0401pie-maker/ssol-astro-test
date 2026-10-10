@@ -8,6 +8,7 @@ import type { Block, WhyGroup } from "@/lib/report/paidSkeleton";
 import FiveYearStars from "./FiveYearStars";
 import SowellaButton from "./SowellaButton";
 import PageArt from "./PageArt";
+import { b14, useCopy } from "@/lib/copy/useCopy";
 import { SOWELLA_USE_URL } from "@/lib/results/consent";
 
 
@@ -78,6 +79,7 @@ export function WhyList({ groups, head = "▸ 왜 그럴까 — 하늘에서 일
 
 /** 패키지 v3 웹툰식 결과: only = 지금 페이지의 섹션 번호(4~7)만 그린다 */
 export default function PaidReportView({ report, signIndex, resultId, only }: { report: PaidReport; signIndex?: number; resultId?: string; only?: number }) {
+  const copy = useCopy();
   return (
     <div className="locked-zone">
       {report.sections.filter((s) => only === undefined || s.no === only).map((s) => (
@@ -88,6 +90,12 @@ export default function PaidReportView({ report, signIndex, resultId, only }: { 
           <PageArt page={s.no} signIndex={signIndex} />
           <div className="box">
             {s.summary && <p className="lead summary">{s.summary}</p>}
+            {/* 맞춤 문장(AI)을 쓰지 못해 미리 준비한 DB 문장으로 채운 섹션(B14 ERR_AI_FALLBACK) */}
+            {s.source === "db" && (
+              <p className="muted" style={{ fontSize: ".82rem" }}>
+                {b14(copy, "ERR_AI_FALLBACK", "alt", "맞춤 문장 대신 미리 준비한 문장으로 보여 드리고 있어요. 계산 결과는 그대로예요.")}
+              </p>
+            )}
             <div className="locked-body">
               {[...s.body, ...s.tail].map((b, i) => (
                 <BlockView key={i} b={b} />

@@ -30,7 +30,7 @@ body{margin:0;min-height:100%;color:var(--cream);font-family:var(--f-body);font-
 @keyframes twinkle{from{opacity:.25}to{opacity:.6}}
 .app{position:relative;z-index:1;max-width:480px;margin:0 auto;padding:0 16px;min-height:100vh;min-height:100dvh;
   background:linear-gradient(180deg,var(--midnight) 0%,#08244d 45%,var(--navy) 100%)}
-.screen{display:none;min-height:100vh;min-height:calc(100dvh - env(safe-area-inset-top));padding:28px 0 32px;animation:fadeIn .45s ease both}
+.screen{display:none;min-height:100vh;min-height:calc(100dvh - env(safe-area-inset-top));padding:28px 0 32px;animation:fadeIn .45s ease backwards}
 #scr-result{padding-bottom:calc(96px + env(safe-area-inset-bottom))}
 .screen.on{display:block}
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
@@ -319,7 +319,7 @@ h3.sub-h{font-size:18px;font-weight:700;color:var(--navy);margin:22px 0 4px;font
 .guest-note{font-size:.76rem;opacity:.7;text-align:center;margin:6px 0 0;line-height:1.5}
 
 /* 웹툰식 주제별 페이지(패키지 v3, 2026-10-10) — 한 주제 = 그림 + 결과 내용, 다 읽으면 [다음 이야기] */
-.rpage{display:block;animation:pgin .35s ease both}
+.rpage{display:block;animation:pgin .35s ease backwards}
 @media (prefers-reduced-motion: reduce){.rpage{animation:none}}
 @keyframes pgin{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 .rpage.has-locked{padding-bottom:190px}
@@ -359,8 +359,8 @@ details.why ul{list-style:disc}
    04·05 화면의 '작게'(.small)도 같은 크기로 */
 .guide-art,.guide-art.small{width:calc(100% + 32px);max-width:none;margin:4px -16px 20px;border-radius:0;box-shadow:none}
 .page-art{margin:4px -16px 18px;border-radius:0;border-left:0;border-right:0}
-/* owner 2026-10-10: '다음 이야기 ›'는 작게, 다음 주제 이름은 크게(위아래 두 줄) */
-.pg-nav .next{flex-direction:column;gap:2px}
-.pg-nav .next small{font-size:.74rem;font-weight:400;opacity:.8;margin:0}
-.pg-nav .next .nx-title{font-size:1rem;font-weight:700;line-height:1.35}
-.pg-nav .next .nx-title{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+/* owner 2026-10-10: [다음 이야기 ›]만 한 줄로(다음 주제 이름 없음) */
+/* 인터넷 끊김 안내(B14 ERR_NETWORK) */
+.net-notice{position:fixed;left:0;right:0;top:0;z-index:60;display:flex;flex-direction:column;gap:2px;padding:10px 16px;background:#FFD7A8;color:#013566;font-size:.86rem;line-height:1.5;text-align:center}
+/* 화면 등장 애니메이션은 끝난 뒤 남지 않게(backwards) — 'both'로 남아 있으면 안쪽의 position:fixed(토스트·시트·결제 카드)가
+   화면이 아니라 이 상자를 기준으로 붙어 페이지 아래로 밀려났다(2026-10-10 수정) */

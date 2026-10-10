@@ -26,6 +26,8 @@ export interface PaidReport {
   closing: string;
   model: string;
   generatedAt: string;
+  /** 아직 쓰는 중인 리포트(다 쓴 파트의 섹션만 들어 있음, B14 EMPTY_REPORT_GEN '다 쓴 부분부터 차례로') */
+  partial?: boolean;
 }
 
 
@@ -44,7 +46,17 @@ async function callModel(system: string, user: string): Promise<string> {
   return text;
 }
 
-export async function generatePaidReport(args: { db: AstroDb; resolved: Resolved; wishContext: WishContext; answers: Answers; nickname: string; birthKey?: string; now?: Date }): Promise<PaidReport> {
+export async function generatePaidReport(args: {
+  db: AstroDb;
+  resolved: Resolved;
+  wishContext: WishContext;
+  answers: Answers;
+  nickname: string;
+  birthKey?: string;
+  now?: Date;
+  /** 파트 하나가 끝날 때마다 그때까지의 리포트(partial)로 부른다 — 화면이 다 쓴 섹션부터 보여 준다 */
+  onPart?: (partial: PaidReport) => Promise<void>;
+}): Promise<PaidReport> {
   const { db, resolved, answers, nickname } = args;
   const now = args.now ?? new Date();
   const { chart, character } = resolved;
@@ -81,14 +93,36 @@ export async function generatePaidReport(args: { db: AstroDb; resolved: Resolved
     return null; // DB 뼈대로
   };
 
-  const [a, b, c] = await Promise.all((["A", "B", "C"] as PartId[]).map(runPart));
-  const ai: Partial<Record<SectionNo, Block[]>> = { ...(a ?? {}), ...(b ?? {}), ...(c ?? {}) };
-  return {
-    sections: skeleton.sections.map((s) => (ai[s.no]?.length ? { ...s, body: ai[s.no]!, source: "ai" as const } : { ...s, source: "db" as const })),
+  const ai: Partial<Record<SectionNo, Block[]>> = {};
+  const done = new Set<SectionNo>();
+  let anyAi = false;
+  const assemble = (partial: boolean): PaidReport => ({
+    sections: skeleton.sections
+      .filter((s) => !partial || done.has(s.no as SectionNo))
+      .map((s) => (ai[s.no as SectionNo]?.length ? { ...s, body: ai[s.no as SectionNo]!, source: "ai" as const } : { ...s, source: "db" as const })),
     questions: skeleton.questions,
     practices: skeleton.practices,
     closing: skeleton.closing,
-    model: [a, b, c].some(Boolean) ? REPORT_MODEL : "db-only",
+    model: anyAi ? REPORT_MODEL : "db-only",
     generatedAt: now.toISOString(),
-  };
+    ...(partial ? { partial: true } : {}),
+  });
+  // 파트 저장은 한 번에 하나씩(늦게 끝난 저장이 앞선 내용을 덮지 않게)
+  let saving: Promise<void> = Promise.resolve();
+  await Promise.all(
+    (["A", "B", "C"] as PartId[]).map(async (part) => {
+      const out = await runPart(part);
+      if (out) {
+        Object.assign(ai, out);
+        anyAi = true;
+      }
+      for (const n of PARTS[part].sections) done.add(n);
+      if (args.onPart && done.size < skeleton.sections.length) {
+        const snapshot = assemble(true);
+        saving = saving.then(() => args.onPart!(snapshot)).catch(() => {});
+      }
+    }),
+  );
+  await saving;
+  return assemble(false);
 }

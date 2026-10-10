@@ -1,7 +1,7 @@
 import { resolveOwner } from "@/lib/results/owner";
 import { NextRequest, NextResponse } from "next/server";
 import { computeFree } from "@/lib/results/compute";
-import { deleteResult, getPayState, getResult, isUuid, updateResultPick } from "@/lib/results/store";
+import { deleteResult, getPayState, getResult, isUuid, saveLastPage, updateResultPick } from "@/lib/results/store";
 import { chatSummaryFor } from "@/lib/results/chatSummary";
 import { CHARACTER_GRID, type Competency } from "@/lib/astro/constants";
 
@@ -53,6 +53,18 @@ export async function PATCH(req: NextRequest, ctx: RouteContext<"/api/results/[i
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "요청 형식이 올바르지 않아요." }, { status: 400 });
+  }
+  // 마지막으로 보던 장(1~7)만 저장하는 요청 — 결제 여부와 관계없이
+  if (body && "lastPage" in body) {
+    const page = Number(body.lastPage);
+    if (!Number.isInteger(page) || page < 1 || page > 7) return NextResponse.json({ error: "페이지 번호를 확인해 주세요." }, { status: 400 });
+    try {
+      await saveLastPage(owner, id, page);
+      return NextResponse.json({ ok: true });
+    } catch (e) {
+      console.error(e instanceof Error ? e.message : "마지막 장 저장 실패");
+      return NextResponse.json({ error: "저장하지 못했어요." }, { status: 500 });
+    }
   }
   const pick = body?.competencyPick;
   if (typeof pick !== "string" || !Object.keys(CHARACTER_GRID).includes(pick)) return NextResponse.json({ error: "고른 유형을 다시 확인해 주세요." }, { status: 400 });

@@ -20,7 +20,9 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/results/[id]
     if (s.reportStatus === "ready" && s.report) return NextResponse.json({ status: "ready", report: s.report });
     // 없음·실패·오래 멈춘 생성 → 다시 시작(이미 진행 중이면 runReportGeneration이 알아서 건너뜀)
     after(() => runReportGeneration(id));
-    return NextResponse.json({ status: "generating" });
+    // 쓰는 중이면 다 쓴 섹션까지(partial) 함께 보낸다 — 결제한 본인에게만
+    const partial = s.reportStatus === "generating" && (s.report as { partial?: boolean } | null)?.partial ? s.report : undefined;
+    return NextResponse.json({ status: "generating", ...(partial ? { report: partial } : {}) });
   } catch (e) {
     console.error(e instanceof Error ? e.message : "리포트 조회 실패");
     return NextResponse.json({ error: "리포트를 불러오지 못했어요." }, { status: 500 });

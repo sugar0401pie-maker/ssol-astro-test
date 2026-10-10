@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { apiHeaders, getGuestToken } from "@/lib/guest/client";
 import { b11, useCopy } from "@/lib/copy/useCopy";
-import { lastPage } from "@/lib/results/lastPage";
+import { clampPage, lastPage } from "@/lib/results/lastPage";
 import { useRealSession } from "./useSession";
 
 export default function LatestResult() {
@@ -24,9 +24,10 @@ export default function LatestResult() {
     }
     void fetch("/api/results", { headers: apiHeaders(session), cache: "no-store" })
       .then((r) => (r.ok ? r.json() : { results: [] }))
-      .then((d: { results?: Array<{ id: string }> }) => {
+      .then((d: { results?: Array<{ id: string; last_page?: number | null }> }) => {
         const first = d.results?.[0];
-        if (first) router.replace(`/results/${first.id}/${lastPage(first.id)}`);
+        // 계정에 기억한 장(다른 기기에서 보던 곳) → 이 기기 기억 → 1장
+        if (first) router.replace(`/results/${first.id}/${first.last_page ? clampPage(first.last_page) : lastPage(first.id)}`);
         else setNone(true);
       })
       .catch(() => setNone(true));

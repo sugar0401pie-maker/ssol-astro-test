@@ -7,7 +7,7 @@ import { wishContextOf } from "@/lib/astro/wish";
 import { birthKeyOf } from "@/lib/report/variants";
 import { computeFree } from "./compute";
 import { chatSummaryFor } from "./chatSummary";
-import { claimReportGeneration, getResultForReport, saveChatSummary, saveReport } from "./store";
+import { claimReportGeneration, getResultForReport, saveChatSummary, savePartialReport, saveReport } from "./store";
 
 export async function runReportGeneration(resultId: string): Promise<void> {
   if (!(await claimReportGeneration(resultId))) return; // 이미 만드는 중이거나 끝남
@@ -16,7 +16,7 @@ export async function runReportGeneration(resultId: string): Promise<void> {
     if (!row) throw new Error("결과 없음");
     const c = computeFree(row.birth_input, row.answers, row.nickname);
     if (c.kind !== "result") throw new Error("결과를 다시 계산하지 못함");
-    const report = await generatePaidReport({ db: ASTRO_DB, resolved: c.birth.resolved, wishContext: wishContextOf(c.birth.stored, c.birth.accuracy), answers: row.answers, nickname: row.nickname, birthKey: birthKeyOf(row.birth_input) });
+    const report = await generatePaidReport({ db: ASTRO_DB, resolved: c.birth.resolved, wishContext: wishContextOf(c.birth.stored, c.birth.accuracy), answers: row.answers, nickname: row.nickname, birthKey: birthKeyOf(row.birth_input), onPart: (partial) => savePartialReport(resultId, partial) });
     await saveReport(resultId, report);
     // 쏘웰라 채팅이 참고할 요약을 리포트 본문·제안까지 넣어 다시 만든다.
     await saveChatSummary(resultId, chatSummaryFor(c, row.answers, report));

@@ -51,8 +51,9 @@ export default function Intro() {
         <p className="sr-only">밤하늘 아래 별자리 친구들이 모여 있는 일러스트</p>
         <div className="intro-overlay">
           <div className="logo-row">
-            <svg width="22" height="14" viewBox="0 0 22 14" aria-hidden="true">
-              <path d="M1 9c3-5 6-5 9 0s6 5 11 0" fill="none" stroke="#CBB27A" strokeWidth="2" strokeLinecap="round" />
+            {/* 쏠 웰니스 하우스 물결 로고(owner 2026-10-10 전달 이미지를 배경 없이 벡터로 옮김, public/logo-wave.svg와 같은 모양) */}
+            <svg width="38" height="10" viewBox="188 510 878 234" aria-hidden="true">
+              <path fill="#FDF6E9" d="M188 673C290 668 362 600 367 510H451C460 610 530 668 615 668C700 668 775 610 784 510H868C873 600 964 668 1066 673V744C960 744 870 705 826 641C780 705 700 744 615 744C530 744 450 705 407 641C365 705 290 744 188 744Z" />
             </svg>
             SSOL WELLNESS HOUSE
           </div>

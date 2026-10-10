@@ -290,6 +290,25 @@ export default function TestFlow() {
     }
   }
 
+  /** 결과 화면에서 저장을 다시 해 보기(처음 저장이 실패했을 때) — 화면은 그대로, 성공하면 결과 id만 생긴다 */
+  async function retrySave(): Promise<boolean> {
+    try {
+      const session = await getRealSession();
+      const res = await fetch("/api/results", {
+        method: "POST",
+        headers: apiHeaders(session, { "content-type": "application/json" }),
+        body: JSON.stringify({ ...requestBody(answers as Answers, pick), consent: true, firstTime: firstTime === true }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.id) return false;
+      setSavedId(data.id);
+      setSaveNote(null);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   // 차트 미리 계산(6-1 화면 5 '차트 계산은 이 동안 백그라운드에서'): 출생 정보 화면을 넘기는 순간 시작해 두고,
   // 질문을 마치면 그 답을 쓴다. 후보 판정은 출생 정보로만 정해져서 임시 답으로 미리 물어도 결과가 같다.
   const prefetch = useRef<{ key: string; promise: Promise<{ ok: boolean; data: Record<string, unknown> }> } | null>(null);
@@ -752,6 +771,7 @@ export default function TestFlow() {
             firstTime={firstTime === true}
             resultId={savedId}
             onResult={setResult}
+            onRetrySave={retrySave}
             savePrefill={{ birthDate: year && month && day ? `${year}-${pad(month)}-${pad(day)}` : undefined, nickname: name }}
             onAddTime={() => {
               // B·C등급: 입력한 날짜·장소는 그대로 두고 시간만 다시 넣는 화면으로(새 결과로 저장된다)

@@ -35,7 +35,10 @@ export default function ActionRow({
   copy,
   resultId,
   prefill,
+  onRetrySave,
 }: {
+  /** 결과 저장이 실패했을 때 [저장하기]로 다시 저장해 보기(테스트 흐름에서만) */
+  onRetrySave?: () => Promise<boolean>;
   share: ShareProps;
   copy: SaveCopy;
   /** 저장된 결과 id(저장이 실패했으면 null) */
@@ -57,6 +60,8 @@ export default function ActionRow({
 
   async function save(e: React.MouseEvent<HTMLButtonElement>) {
     if (!resultId) {
+      // 저장이 실패한 결과: 한 번 더 저장해 본다(B14 ERR_SAVE '잠시 뒤 [저장하기]를 한 번 더')
+      if (onRetrySave && (await onRetrySave())) return;
       setToast(b14(copyB14, "ERR_SAVE", "alt", "결과를 저장하지 못했어요. 잠시 뒤 다시 시도해 주세요."));
       return;
     }
