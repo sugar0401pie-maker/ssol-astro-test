@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { apiHeaders, getGuestToken } from "@/lib/guest/client";
 import { signOut } from "@/lib/supabase/authClient";
 import { useRealSession } from "./useSession";
+import { b11, useCopy } from "@/lib/copy/useCopy";
 
 interface Row {
   id: string;
@@ -24,6 +25,7 @@ const dateKo = (iso: string) => {
 
 export default function ResultsList() {
   const session = useRealSession();
+  const copy = useCopy();
   const router = useRouter();
   // 로그인 안 했고 이 기기에 비회원 결과도 없으면 로그인 화면(/login, 별도 페이지 — owner 2026-10-10)으로.
   const needLogin = session === null && !getGuestToken(false);
@@ -62,12 +64,20 @@ export default function ResultsList() {
       <h1 className="text-xl font-bold text-cream">내 결과</h1>
       {session === null && (
         <p className="rounded-2xl border border-gold px-4 py-3 text-sm leading-relaxed text-cream/90">
-          로그인하지 않고 이 기기에 저장한 결과예요. 결과를 열어 &lsquo;로그인하고 저장하기&rsquo;를 누르면 계정에 보관돼요(저장하지 않으면 30일 뒤 지워져요).
+          로그인하지 않고 이 기기에 저장한 결과예요. 결과를 열어 [저장하기]를 누르고 로그인하면 계정에 보관돼요(저장하지 않으면 30일 뒤 지워져요).
         </p>
       )}
       {error && <p className="rounded-xl bg-cream px-3 py-2 text-sm text-navy">{error}</p>}
       {rows === null && !error && <p className="text-cream/70">불러오는 중…</p>}
-      {rows?.length === 0 && <p className="text-cream/80">아직 저장한 결과가 없어요.</p>}
+      {rows?.length === 0 && (
+        // B11 MYRESULT_NONE + [테스트 하기](프로토타입 openMyResult)
+        <>
+          <p className="text-cream/80">{b11(copy, "MYRESULT_NONE", "아직 저장된 결과가 없어요. 테스트를 먼저 해 볼까요?")}</p>
+          <Link href="/test" className="btn block">
+            테스트 하기
+          </Link>
+        </>
+      )}
       <ul className="flex flex-col gap-2">
         {rows?.map((r) => (
           <li key={r.id} className="flex items-center justify-between gap-3 rounded-2xl border border-cream/30 px-4 py-3 text-cream">

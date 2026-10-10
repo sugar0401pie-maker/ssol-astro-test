@@ -17,7 +17,8 @@ export const GUIDE_ART = {
   "08": "망원경으로 하늘을 보는 안내 캐릭터",
 } as const satisfies Record<GuideArtId, string>;
 
-export default function GuideArt({ id }: { id: GuideArtId }) {
+/** small: 마스터스펙 6-1 표 — 출생 정보(04)·질문(05) 화면은 '화면 위쪽 작게' */
+export default function GuideArt({ id, small = false }: { id: GuideArtId; small?: boolean }) {
   // 화면을 열 때마다 그 화면 그림 중 한 장을 무작위로(owner 2026-10-10). 고르는 건 브라우저에서만 —
   // 서버에서 미리 그린 화면과 달라져 깨지지 않게, 그리고 파일을 먼저 불러 확인한 뒤에만 그린다(깨진 그림 아이콘 방지).
   const [src, setSrc] = useState<string | null>(null);
@@ -34,5 +35,5 @@ export default function GuideArt({ id }: { id: GuideArtId }) {
   }, [id]);
   if (!src) return null;
   // eslint-disable-next-line @next/next/no-img-element -- 미리 불러 확인한 정적 파일
-  return <img src={src} alt={GUIDE_ART[id]} className="guide-art" />;
+  return <img src={src} alt={GUIDE_ART[id]} className={small ? "guide-art small" : "guide-art"} />;
 }

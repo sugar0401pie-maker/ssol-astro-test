@@ -5,6 +5,7 @@
 // 가입은 이 화면 안에서 끝난다(2026-10-08 owner 요청) — 쏘웰라 가입 화면과 같은 절차·같은 저장 칸:
 // 이름·닉네임·생년월일 → 이메일 인증번호 → 휴대전화·주소(선택) → 비밀번호(8자·대문자·특수문자) → 약관 동의 → 가입 완료.
 import { useEffect, useRef, useState } from "react";
+import { b11, useCopy } from "@/lib/copy/useCopy";
 import { openAddressSearch } from "@/lib/address/daumPostcode";
 import { isPasswordValid, passwordChecks } from "@/lib/auth/password";
 import { PRIVACY_URL, SENSITIVE_URL, TERMS_URL } from "@/lib/results/consent";
@@ -14,9 +15,10 @@ import {
   verifySignupOtp,
 } from "@/lib/supabase/authClient";
 
-const field = "w-full rounded-xl bg-cream px-3 py-3 text-base text-navy";
-const primary = "w-full rounded-full bg-gold px-6 py-3 font-bold text-navy disabled:opacity-40";
-const linkBtn = "text-sm text-cream/80 underline";
+// 프로토타입 입력칸·버튼 모양(input[type=text]·.btn block·.linkish)을 그대로 쓴다
+const field = "auth-input";
+const primary = "btn block";
+const linkBtn = "linkish";
 
 type Mode = "signin" | "signup" | "reset";
 
@@ -48,7 +50,10 @@ export default function AuthStep({
   art,
   initialError,
   start = false,
+  onBack,
 }: {
+  /** [결과로 돌아가기](프로토타입 #btn-login-back — 저장·쏘웰라·결제 후 가입에서 들어온 로그인 화면) */
+  onBack?: () => void;
   /** 테스트를 시작하는 로그인 화면(패키지 v3 2_login): 버튼이 "~로 시작하기", 카카오는 "5초만에 빠르게 카카오로 시작하기" */
   start?: boolean;
   /** 처음부터 보여 줄 오류(카카오·네이버 로그인에서 돌아왔는데 실패한 경우 그 이유) */
@@ -70,6 +75,7 @@ export default function AuthStep({
   prefill?: { birthDate?: string; nickname?: string };
 }) {
   const [mode, setMode] = useState<Mode>(initialMode);
+  const copy = useCopy();
   // 프로토타입 #scr-login: [카카오로 계속하기][네이버로 계속하기][이메일로 계속하기] — 이메일 칸은 누른 뒤에 연다
   const [emailOpen, setEmailOpen] = useState(false);
   const [error, setError] = useState<string | null>(initialError ?? null);
@@ -111,10 +117,10 @@ export default function AuthStep({
 
   return (
     <div className="flex flex-col gap-5">
-      <h1 className="big">
+      <h1 className="big" tabIndex={-1}>
         {mode === "signup" ? "계정 만들기" : mode === "reset" ? "비밀번호 찾기" : title ?? "결과를 저장하고 보려면 로그인해 주세요."}
       </h1>
-      <p className="small">{mode === "signin" && subtitle ? subtitle : "쏠 웰니스 하우스(쏘웰라·디저트 테스트)와 같은 계정이에요. 한 번 가입하면 모든 곳에서 쓸 수 있어요."}</p>
+      <p className="small">{mode !== "signin" ? "쏠 웰니스 하우스(쏘웰라·디저트 테스트)와 같은 계정이에요. 한 번 가입하면 모든 곳에서 쓸 수 있어요." : subtitle ?? "한 번 로그인하면 결과를 다시 보거나 나중에 태어난 시간을 추가할 수 있어요."}</p>
       {mode === "signin" && art}
       {!configured && <p className="err">설정 오류로 로그인을 사용할 수 없어요. 잠시 후 다시 시도해 주세요.</p>}
 
@@ -124,7 +130,7 @@ export default function AuthStep({
             <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
               <path fill="#191919" d="M12 3C6.48 3 2 6.58 2 11c0 2.85 1.86 5.35 4.67 6.77l-.95 3.48c-.08.3.26.54.52.37l4.15-2.75c.53.07 1.07.11 1.61.11 5.52 0 10-3.58 10-8S17.52 3 12 3z" />
             </svg>
-            {mode === "signup" ? "회원가입 없이 10초만에 카카오로 로그인하기" : start ? "5초만에 빠르게 카카오로 시작하기" : "카카오로 계속하기"}
+            {mode === "signup" ? "회원가입 없이 10초만에 카카오로 로그인하기" : start ? b11(copy, "LOGIN_KAKAO_START", "5초만에 빠르게 카카오로 시작하기") : "카카오로 계속하기"}
           </button>
           <button className="btn block naver" type="button" disabled={!configured} onClick={() => oauth("naver")}>
             <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
@@ -145,7 +151,6 @@ export default function AuthStep({
           {error}
         </p>
       )}
-      {mode === "signin" && belowButtons}
       {mode === "signin" && emailOpen && <SignInForm configured={configured} error={error} setError={setError} onForgot={() => go("reset")} />}
       {mode === "signup" && (
         <SignUpForm
@@ -192,6 +197,14 @@ export default function AuthStep({
           </button>
         )}
       </p>
+      {mode === "signin" && belowButtons}
+      {mode === "signin" && onBack && (
+        <div className="footer-ctrl" style={{ justifyContent: "center" }}>
+          <button type="button" className="linkish" onClick={onBack}>
+            결과로 돌아가기
+          </button>
+        </div>
+      )}
     </div>
   );
 }

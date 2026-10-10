@@ -38,6 +38,9 @@ export default function PageArt({ page, signIndex }: { page: number; signIndex?:
       ) : (
         <div className="ph" aria-hidden="true">
           <b>{label}</b>
+          그림 자리 · {PAGE_ART[page]?.[0]}.png
+          <br />
+          (4:5, 1080×1350)
         </div>
       )}
     </figure>

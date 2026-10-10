@@ -5,7 +5,9 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import AuthStep from "@/components/auth/AuthStep";
 import { apiHeaders } from "@/lib/guest/client";
-import SaveSuggestion from "./SaveSuggestion";
+import TempPayBanner from "./TempPayBanner";
+import Toast, { useToast } from "@/components/ui/Toast";
+import { takeFlash } from "@/lib/ui/flash";
 import { useRouter } from "next/navigation";
 import FreeResultView from "@/components/test/FreeResultView";
 import type { FreeResult } from "@/lib/report/freeResult";
@@ -23,6 +25,14 @@ export default function ResultView({ id, page }: { id: string; page?: number }) 
   const [notFound, setNotFound] = useState(false);
   const [report, setReport] = useState<PaidReport | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // 로그인하고 돌아왔을 때 등 앞 화면이 남긴 안내(프로토타입 backToResult의 toast)
+  const [toast, setToast] = useToast();
+  const loaded = !!data;
+  useEffect(() => {
+    if (!loaded) return;
+    const m = takeFlash();
+    if (m) setToast(m);
+  }, [loaded, setToast]);
 
   useEffect(() => {
     if (session === undefined) return;
@@ -80,9 +90,6 @@ export default function ResultView({ id, page }: { id: string; page?: number }) 
   if (!data) return <p className="text-center text-cream/70">불러오는 중…</p>;
   return (
     <div className="flex flex-col gap-6">
-      <Link href="/results" className="text-sm text-cream/80 underline">← 내 결과</Link>
-      {/* 비회원: 저장은 [저장하기] 버튼이 맡는다. 결제한 비회원에게만 보관(가입) 카드를 함께 보여 준다(쏘웰라 이용권은 계정이 있어야 씀). */}
-      {data.guest && !session && data.paid && <SaveSuggestion resultId={id} paid tempPay={data.result.tempPay} onSaved={() => location.reload()} />}
       <FreeResultView
         result={data.result}
         nickname={data.nickname}
@@ -92,6 +99,8 @@ export default function ResultView({ id, page }: { id: string; page?: number }) 
         onAddTime={() => router.push("/test")}
         // 주소에 페이지가 없으면(/results/{id} — 결제 후 돌아올 때 등) 이 기기에 기억한 마지막 페이지로 연다
         initialPage={page ?? lastPage(id)}
+        // 임시 계정으로 결제했으면 4~7장 맨 위에 보관(가입) 안내(프로토타입 .temp-banner)
+        tempBanner={data.guest && !session && data.paid ? (n) => <TempPayBanner banner={data.result.tempPay.banner} loginBig={data.result.tempPay.loginBigPaid} resultId={id} page={n} /> : undefined}
         paidSection={data.paid && report ? (no) => <PaidReportView report={report} signIndex={data.result.sunSignIndex} resultId={id} only={no} /> : undefined}
         // 결제 후 리포트를 쓰는 동안에도 유료 섹션 제목·첫 문장 자리를 그대로 두고, 완성되면 같은 자리에서 채운다.
         paidPending={
@@ -102,6 +111,14 @@ export default function ResultView({ id, page }: { id: string; page?: number }) 
             : undefined
         }
       />
+      {/* 프로토타입 결과 화면 .footer-ctrl: 처음부터 다시(첫 화면으로) */}
+      <div className="footer-ctrl">
+        <span />
+        <Link href="/" className="linkish">
+          처음부터 다시
+        </Link>
+      </div>
+      <Toast msg={toast} />
     </div>
   );
 }

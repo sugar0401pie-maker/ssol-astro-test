@@ -89,6 +89,7 @@ export default function FreeResultView({
   resultId,
   paidSection,
   initialPage,
+  tempBanner,
   onAddTime,
   paidPending,
   savePrefill,
@@ -101,6 +102,8 @@ export default function FreeResultView({
   resultId?: string | null;
   /** 결제 후 유료 섹션(4~7) 하나를 그리는 함수(있으면 잠긴 미리보기 대신 보여 준다) */
   paidSection?: (no: number) => React.ReactNode;
+  /** 임시 계정으로 결제한 사람: 4~7장 맨 위 보관 안내(프로토타입 .temp-banner) */
+  tempBanner?: (page: number) => React.ReactNode;
   /** 처음 열 페이지(1~7, 패키지 v3 웹툰식 결과) */
   initialPage?: number;
   /** B·C등급 '태어난 시간 추가하기' */
@@ -213,6 +216,13 @@ export default function FreeResultView({
     ...[4, 5, 6, 7].map((no) => (result.paidSections.find((x) => x.no === no)?.title ?? "").replace("{닉네임}", nickname)),
   ];
   const lockedPage = page >= 4 && !paidSection;
+  // 고지문(마스터스펙 8-1)은 장마다 — 프로토타입 마지막 장처럼 본문 바로 뒤, 공유·이동 버튼 앞
+  const disclaimer = (
+    <>
+      <p className="disclaimer">{result.disclaimer}</p>
+      {result.dbDraft && <p className="mt-2 text-[10px] text-cream/40">해석 {result.dbVersion} · 상담사 검수 전 초안</p>}
+    </>
+  );
   const next = page < RESULT_PAGES ? page + 1 : null;
 
   return (
@@ -233,6 +243,7 @@ export default function FreeResultView({
       </div>
 
       <div key={page} className={`rpage${lockedPage && unpaid ? " has-locked" : ""}`}>
+        {page >= 4 && tempBanner?.(page)}
         {page === 1 && (
           <>
           <header className="res-head">
@@ -519,7 +530,7 @@ export default function FreeResultView({
               {result.care.note && <p>{result.care.note}</p>}
               <p>{result.care.card}</p>
               <div className="flex flex-wrap gap-2">
-                <SowellaButton label="쏘웰라와 이야기 나누기" className="btn ghost small-btn" resultId={resultId} page={3} />
+                <SowellaButton label="쏘웰라와 이야기 나누기" className="btn ghost small-btn" resultId={resultId} page={3} keepLabel />
                 {/* owner 2026-10-10: 프로토타입에 없지만 유지 */}
                 <a className="btn ghost small-btn" href={SESSION_URL}>
                   웰니스 상담 알아보기
@@ -568,6 +579,7 @@ export default function FreeResultView({
                 {!resultId && <p className="hint text-center">결과를 저장하면 전체 리포트를 볼 수 있어요.</p>}
               </div>
             )}
+            {disclaimer}
             {/* 4~7번 페이지마다 [SNS 공유하기][저장하기] — 결제 전이면 B11 SHARE_NOTE_LOCKED */}
             <div className="page-share">
               {!paidSection && <p className="share-note">{result.shareNoteLocked || "결제하지 않더라도 지금까지의 결과를 공유할 수 있어요."}</p>}
@@ -576,6 +588,7 @@ export default function FreeResultView({
           </>
         )}
 
+        {page <= 3 && disclaimer}
         <div className="pg-nav">
           {page > 1 && (
             <button type="button" className="btn ghost prev" onClick={() => go(page - 1)}>
@@ -601,8 +614,6 @@ export default function FreeResultView({
           </p>
         )}
 
-        <p className="disclaimer">{result.disclaimer}</p>
-        {result.dbDraft && <p className="mt-2 text-[10px] text-cream/40">해석 {result.dbVersion} · 상담사 검수 전 초안</p>}
       </div>
 
       {unpaid && page >= 4 && (
@@ -614,7 +625,7 @@ export default function FreeResultView({
               {popup.sub && <p className="pp-s">{popup.sub}</p>}
               {!loggedIn && result.tempPay?.note && <p className="pp-temp">{result.tempPay.note}</p>}
             </div>
-            <Link href={`/checkout/${resultId}`} className="btn block">
+            <Link href={`/checkout/${resultId}?page=${page}`} className="btn block">
               {popup.button || `${REPORT_PRICE.toLocaleString("ko-KR")}원 결제하기`}
             </Link>
           </div>

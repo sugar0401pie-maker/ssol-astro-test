@@ -19,7 +19,7 @@ interface Order {
 
 type Widget = Awaited<ReturnType<typeof import("@tosspayments/payment-widget-sdk")["loadPaymentWidget"]>>;
 
-export default function CheckoutPage({ resultId }: { resultId: string }) {
+export default function CheckoutPage({ resultId, page }: { resultId: string; page: number }) {
   const router = useRouter();
   const session = useRealSession();
   const [order, setOrder] = useState<Order | null>(null);
@@ -37,12 +37,12 @@ export default function CheckoutPage({ resultId }: { resultId: string }) {
     })
       .then(async (res) => {
         const d = await res.json();
-        if (res.status === 409 && d.paid) router.replace(`/results/${resultId}`);
+        if (res.status === 409 && d.paid) router.replace(`/results/${resultId}/${page}`);
         else if (!res.ok) setError(d.error ?? "주문을 만들지 못했어요.");
         else setOrder(d);
       })
       .catch(() => setError("주문을 만들지 못했어요."));
-  }, [session, resultId, router]);
+  }, [session, resultId, router, page]);
 
   useEffect(() => {
     if (!order || !TOSS_CLIENT_KEY) return;
@@ -67,8 +67,8 @@ export default function CheckoutPage({ resultId }: { resultId: string }) {
       await widgetRef.current.requestPayment({
         orderId: order.orderId,
         orderName: order.orderName,
-        successUrl: `${window.location.origin}/checkout/success`,
-        failUrl: `${window.location.origin}/checkout/fail?resultId=${resultId}`,
+        successUrl: `${window.location.origin}/checkout/success?page=${page}`,
+        failUrl: `${window.location.origin}/checkout/fail?resultId=${resultId}&page=${page}`,
       });
     } catch {
       setError("결제창을 열지 못했어요. 잠시 후 다시 시도해 주세요.");
@@ -79,7 +79,7 @@ export default function CheckoutPage({ resultId }: { resultId: string }) {
 
   return (
     <div className="flex flex-col gap-5">
-      <Link href={`/results/${resultId}`} className="text-sm text-cream/80 underline">← 결과로 돌아가기</Link>
+      <Link href={`/results/${resultId}/${page}`} className="text-sm text-cream/80 underline">← 결과로 돌아가기</Link>
       <h1 className="text-xl font-bold text-cream">전체 리포트 결제</h1>
       {order && (
         <div className="rounded-2xl border border-gold px-4 py-3 text-cream">

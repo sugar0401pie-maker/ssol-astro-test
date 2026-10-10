@@ -8,7 +8,8 @@ import { getRealSession } from "@/lib/supabase/browser";
 
 export const SOWELLA_CHAT_URL = "https://app.ssolwellnesshouse.com/chat";
 
-export default function SowellaButton({ label, className, resultId, page }: { label: string; className: string; resultId?: string | null; page?: number }) {
+/** keepLabel: 부드러운 톤 카드처럼 글자를 바꾸지 않고 로그인 화면으로만 보낸다(프로토타입 btn-care) */
+export default function SowellaButton({ label, className, resultId, page, keepLabel = false }: { label: string; className: string; resultId?: string | null; page?: number; keepLabel?: boolean }) {
   const copy = useCopy();
   const [loggedIn, setLoggedIn] = useState<boolean | null>(null);
   useEffect(() => {
@@ -16,12 +17,19 @@ export default function SowellaButton({ label, className, resultId, page }: { la
   }, []);
   if (loggedIn === false) {
     const back = resultId ? `/results/${resultId}/${page ?? 7}` : "/results/latest";
+    const href = `/login?for=sowella&next=${encodeURIComponent(back)}`;
+    if (keepLabel)
+      return (
+        <a href={href} className={className}>
+          {label}
+        </a>
+      );
     return (
       <>
         <p className="guest-note" style={{ textAlign: "left" }}>
           {b11(copy, "SOWELLA_GUEST_LOCK", "쏘웰라는 로그인한 계정에서만 이용할 수 있어요. 로그인하면 지금 결과가 그대로 옮겨져요.")}
         </p>
-        <a href={`/login?for=sowella&next=${encodeURIComponent(back)}`} className={className}>
+        <a href={href} className={className}>
           로그인하고 쏘웰라 시작하기
         </a>
       </>

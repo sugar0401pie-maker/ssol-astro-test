@@ -1,20 +1,18 @@
 "use client";
 
-// 토스 결제창에서 돌아온 화면. 받은 값을 서버에 넘겨 '진짜 승인됐는지' 확인받은 뒤 결과 화면으로 간다(리포트는 거기서 기다림).
+// 토스 결제창에서 돌아온 화면. 받은 값을 서버에 넘겨 '진짜 승인됐는지' 확인받은 뒤 결제를 누른 결과 페이지로 간다(리포트는 거기서 기다림).
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import SaveSuggestion from "@/components/results/SaveSuggestion";
 import { apiHeaders } from "@/lib/guest/client";
 import { getRealSession } from "@/lib/supabase/browser";
 import { b14, useCopy } from "@/lib/copy/useCopy";
+import { clampPage } from "@/lib/results/lastPage";
 
 export default function CheckoutSuccess() {
   const params = useSearchParams();
   const router = useRouter();
   const copy = useCopy();
   const [error, setError] = useState<string | null>(null);
-  // 비회원 결제: 결과로 가기 전에 가입을 권한다(owner 결정 — 결제 후에 실제로 가입). 건너뛸 수도 있다.
-  const [guestPaid, setGuestPaid] = useState<string | null>(null);
   const sent = useRef(false);
 
   useEffect(() => {
@@ -35,21 +33,11 @@ export default function CheckoutSuccess() {
         body: JSON.stringify({ paymentKey, orderId, amount: Number(amount) }),
       });
       const d = await res.json().catch(() => ({}));
-      if (res.ok && d.resultId && d.guest) setGuestPaid(d.resultId);
-      else if (res.ok && d.resultId) router.replace(`/results/${d.resultId}`);
+      // 결제를 누른 그 페이지로 바로(프로토타입 unlock — 비회원이면 그 페이지 맨 위에 보관 안내가 뜬다)
+      if (res.ok && d.resultId) router.replace(`/results/${d.resultId}/${clampPage(params.get("page"))}`);
       else setError(d.error ?? "결제를 확인하지 못했어요.");
     })();
   }, [params, router]);
-
-  if (guestPaid)
-    return (
-      <div className="flex flex-col gap-4 text-cream">
-        <SaveSuggestion resultId={guestPaid} paid onSaved={() => router.replace(`/results/${guestPaid}`)} />
-        <button type="button" className="text-center text-sm underline" onClick={() => router.replace(`/results/${guestPaid}`)}>
-          나중에 할게요 — 리포트 먼저 보기
-        </button>
-      </div>
-    );
 
   return (
     <div className="flex flex-col items-center gap-4 text-center text-cream">

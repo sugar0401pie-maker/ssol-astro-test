@@ -342,6 +342,14 @@ h3.sub-h{font-size:18px;font-weight:700;color:var(--navy);margin:22px 0 4px;font
 .page-art::after{content:"";position:absolute;inset:0;background:radial-gradient(1px 1px at 20% 30%,#fff8,transparent),radial-gradient(1px 1px at 70% 20%,#fff6,transparent),radial-gradient(1.5px 1.5px at 40% 75%,#fff5,transparent),radial-gradient(1px 1px at 85% 60%,#fff7,transparent);pointer-events:none}
 .pg-nav{display:flex;gap:10px;margin:26px 0 8px}
 .pg-nav .btn{flex:1;min-height:52px}
-.pg-nav .next{flex:2;flex-direction:column}
+.pg-nav .next{flex:2}
 .pg-nav .next small{display:block;font-size:.74rem;font-weight:400;opacity:.8;margin-top:2px}
 .pg-end-note{text-align:center;font-size:.82rem;color:var(--cream-55);margin:4px 0 0}
+
+/* 이메일 로그인·가입 입력칸(프로토타입에는 이메일 칸이 없어 input[type=text]와 같은 모양을 쓴다) */
+.auth-input{width:100%;min-height:50px;border-radius:14px;border:1.5px solid transparent;background:var(--cream);color:var(--navy);font:inherit;padding:10px 14px;appearance:none;-webkit-appearance:none}
+.auth-input:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+#btn-guest{font-size:.86rem;opacity:.85}
+/* Tailwind 기본값(목록 점 없음)이 프로토타입의 '왜 그럴까' 목록 점을 지우지 않게 */
+details.why ul{list-style:disc}
+.guide-art.small{max-width:140px;margin:0 auto 14px;border-radius:16px}

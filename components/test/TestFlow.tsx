@@ -18,6 +18,8 @@ import ConsentStep from "./ConsentStep";
 import { allConsented, CONSENT_ERROR, CONSENT_VERSION, consentItemsFor, type ConsentItemId } from "@/lib/results/consent";
 import FreeResultView from "./FreeResultView";
 import SiteFooter from "@/components/SiteFooter";
+import Toast, { useToast } from "@/components/ui/Toast";
+import { takeFlash } from "@/lib/ui/flash";
 
 // 새로고침해도 이 탭 안에서는 이어 가도록 진행 상태를 sessionStorage에 둔다(탭을 닫으면 사라짐, 결과 저장 뒤엔 결과 id만).
 const PROGRESS_KEY = "astro_test_progress_v2";
@@ -167,12 +169,16 @@ export default function TestFlow() {
   const [candidateGrade, setCandidateGrade] = useState<string>("B");
   // 결과 전 화면의 고정 문구(해석 DB A15). 못 받아 와도 화면은 그대로 진행한다.
   const copy = useCopy();
-  // 계산 화면 문구(B14 EMPTY_LOADING_1~3)를 차례로 바꿔 보여 준다
-  const [loadingIdx, setLoadingIdx] = useState(0);
+  // 앞 화면이 남긴 안내(프로토타입: '로그인 없이 시작했어요…' 토스트)
+  const [toast, setToast] = useToast();
   useEffect(() => {
-    if (step !== "loading") return;
-    const t = setInterval(() => setLoadingIdx((i) => (i + 1) % 3), 1500);
-    return () => clearInterval(t);
+    const m = takeFlash();
+    if (m) setToast(m);
+  }, [setToast]);
+  // 화면이 바뀌면 그 화면 제목으로 초점(프로토타입 show(): 화면 읽기 프로그램이 새 화면을 처음부터 읽게)
+  useEffect(() => {
+    const t = setTimeout(() => document.querySelector<HTMLElement>('section.screen.on [tabindex="-1"]')?.focus({ preventScroll: true }), 30);
+    return () => clearTimeout(t);
   }, [step]);
   const [result, setResult] = useState<FreeResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -224,12 +230,12 @@ export default function TestFlow() {
       trail.current = { stack: [prev], pos: 0 };
     }
   }
-  /** 처음부터 다시(프로토타입 restart): 입력을 모두 지우고 닉네임 화면으로 */
+  /** 처음부터 다시(프로토타입 restart): 입력을 모두 지우고 첫 화면(인트로)으로 */
   function restart() {
     storeProgress(null);
     // 모든 입력을 확실히 비우려고 화면을 새로 연다(프로토타입 restart와 같은 결과)
     // eslint-disable-next-line @next/next/no-location-assign-relative-destination
-    window.location.assign("/test");
+    window.location.assign("/");
   }
 
   const name = nickname.trim();
@@ -274,7 +280,7 @@ export default function TestFlow() {
       if (!res.ok || !data.result) throw new Error(data.error ?? "저장하지 못했어요.");
       setResult(data.result);
       setSavedId(data.id ?? null);
-      setSaveNote(data.saveError ? "결과를 저장하지 못했어요. 이 화면을 닫으면 다시 볼 수 없어요." : null);
+      setSaveNote(data.saveError ? `${b14(copy, "ERR_SAVE", "title", "저장하는 동안 별이 깜빡였어요")}. ${b14(copy, "ERR_SAVE", "body", "결과는 아직 화면에 있어요. 잠시 뒤 [저장하기]를 한 번 더 눌러 주세요.")}` : null);
       setStep("result");
     } catch (e) {
       setError(e instanceof Error ? e.message : "저장하지 못했어요.");
@@ -390,7 +396,7 @@ export default function TestFlow() {
       {step === "welcome" && (
         <section className="screen on" id="scr-welcome" aria-labelledby="welcome-big">
           <p className="eyebrow">Welcome</p>
-          <h1 className="big" id="welcome-big">쏠 아스트로 하우스에 오신 당신을 환영합니다.</h1>
+          <h1 className="big" id="welcome-big" tabIndex={-1}>쏠 아스트로 하우스에 오신 당신을 환영합니다.</h1>
           <p className="small">당신을 뭐라고 불러드리면 될까요?</p>
           <GuideArt id="02" />
           <label className="lbl sr-only" htmlFor="nickname">
@@ -421,7 +427,7 @@ export default function TestFlow() {
 
       {step === "experience" && (
         <section className="screen on" id="scr-exp" aria-labelledby="exp-big">
-          <h1 className="big" id="exp-big">
+          <h1 className="big" id="exp-big" tabIndex={-1}>
             {name}님, 오늘은 어떤 고민을 가져오셨나요? 그보다, 점성술은 오늘이 처음이신지요?
           </h1>
           <GuideArt id="03" />
@@ -439,7 +445,7 @@ export default function TestFlow() {
 
       {step === "firstTime" && (
         <section className="screen on" id="scr-first" aria-labelledby="first-big">
-          <h1 className="big" id="first-big">
+          <h1 className="big" id="first-big" tabIndex={-1}>
             오늘 당신의 태어난 날짜와 시간을 토대로 점성술에 따라 {name}님의 과거와 현재, 미래를 알아봅니다. 우리 쏠 하우스만의 특제 레시피로 {name}님의 주요
             고민에 맞는 웰니스 제안을 해드릴게요. 이제 한 번 해볼까요?
           </h1>
@@ -455,10 +461,10 @@ export default function TestFlow() {
 
       {step === "birth" && (
         <section className="screen on" id="scr-birth" aria-labelledby="birth-big">
-          <h1 className="big" id="birth-big">
+          <h1 className="big" id="birth-big" tabIndex={-1}>
             좋습니다. 먼저 {name}님의 생년월일과 태어난 시간, 태어난 곳을 알려주세요.
           </h1>
-          <GuideArt id="04" />
+          <GuideArt id="04" small />
           <fieldset className="field" id="fs-date">
             <legend>생년월일 (양력)</legend>
             <div className="row3">
@@ -647,10 +653,10 @@ export default function TestFlow() {
 
       {step === "questions" && (
         <section className="screen on" id="scr-q" aria-labelledby="q-big">
-          <h1 className="big" id="q-big">
+          <h1 className="big" id="q-big" tabIndex={-1}>
             {name}님에 대해서 딱 3가지 더 여쭤보겠습니다.
           </h1>
-          <GuideArt id="05" />
+          <GuideArt id="05" small />
           {QUESTIONS.map((q) => (
             <fieldset key={q.key} className="field q-block" id={`fs-${q.key}`}>
               <legend className="lbl">
@@ -696,10 +702,10 @@ export default function TestFlow() {
                 </g>
               </svg>
             </div>
-            <h1 className="big" id="loading-title">
+            <h1 className="big" id="loading-title" tabIndex={-1}>
               별의 위치를 계산하는 중…
             </h1>
-            <p className="small">{b14(copy, `EMPTY_LOADING_${loadingIdx + 1}`, "title", copy.FIX_LOADING ?? "", nickname)}</p>
+            <p className="small">{copy.FIX_LOADING ?? ""}</p>
             <GuideArt id="08" />
           </div>
         </section>
@@ -707,7 +713,7 @@ export default function TestFlow() {
 
       {step === "candidates" && (
         <section className="screen on" id="scr-cand" aria-labelledby="cand-big">
-          <h1 className="big" id="cand-big">
+          <h1 className="big" id="cand-big" tabIndex={-1}>
             더 나 같은 유형은?
           </h1>
           <p className="small">
@@ -758,6 +764,7 @@ export default function TestFlow() {
           <SiteFooter />
         </section>
       )}
+      <Toast msg={toast} />
     </main>
   );
 }
