@@ -44,8 +44,11 @@ export default function AuthStep({
   prefill,
   initialMode = "signin",
   oauthRedirect,
+  belowButtons,
 }: {
   onSignedIn: () => void;
+  /** 로그인 버튼 세 개 바로 아래에 둘 것(/login의 '로그인 없이 테스트하기') */
+  belowButtons?: React.ReactNode;
   /** 처음 보여 줄 화면(결제 후 가입 권유는 'signup') */
   initialMode?: "signin" | "signup";
   /** 카카오·네이버 로그인 뒤 돌아올 주소(없으면 지금 주소) */
@@ -109,13 +112,13 @@ export default function AuthStep({
             <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
               <path fill="#191919" d="M12 3C6.48 3 2 6.58 2 11c0 2.85 1.86 5.35 4.67 6.77l-.95 3.48c-.08.3.26.54.52.37l4.15-2.75c.53.07 1.07.11 1.61.11 5.52 0 10-3.58 10-8S17.52 3 12 3z" />
             </svg>
-            {mode === "signup" ? "회원가입 없이 10초만에 카카오로 로그인하기" : "카카오로 계속하기"}
+            {mode === "signup" ? "회원가입 없이 10초만에 카카오로 로그인하기" : "카카오로 로그인하기"}
           </button>
           <button className="btn block naver" type="button" disabled={!configured} onClick={() => oauth("naver")}>
             <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
               <path fill="#fff" d="M9.5 0v7.2L4.6 0H0v14h4.5V6.8L9.4 14H14V0z" />
             </svg>
-            네이버로 계속하기
+            {mode === "signup" ? "네이버로 계속하기" : "네이버로 로그인하기"}
           </button>
           {mode === "signin" && !emailOpen && (
             <button className="btn block ghost" type="button" onClick={() => setEmailOpen(true)}>
@@ -125,6 +128,7 @@ export default function AuthStep({
         </div>
       )}
 
+      {mode === "signin" && belowButtons}
       {mode === "signin" && emailOpen && <SignInForm configured={configured} error={error} setError={setError} onForgot={() => go("reset")} />}
       {mode === "signup" && (
         <SignUpForm

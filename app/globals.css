@@ -1,6 +1,9 @@
 @import "tailwindcss";
 /* 프로토타입 스타일(.btn .box .bul …) — components 층이라 요소에 직접 쓴 Tailwind 클래스가 이긴다 */
 @import "./proto.css" layer(components);
+/* 프로토타입의 .btn.block(가로 꽉 찬 버튼)은 이름이 Tailwind 'block'(display:block) 유틸리티와 겹친다.
+   유틸리티가 이기면 아이콘과 글자가 두 줄로 밀리므로, 층 밖에 두어 flex를 지킨다. */
+.btn.block { display: flex; }
 
 /* 디자인 토큰 — docs/spec/02_디자인가이드.md 1장. 값만 바꾸면 전체 화면에 퍼진다. */
 :root {

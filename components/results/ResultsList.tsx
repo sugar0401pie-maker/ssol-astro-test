@@ -3,7 +3,7 @@
 import Link from "next/link";
 // 내 결과 목록 — 본인 결과만(서버가 로그인 사용자로 거른다). 각 결과는 지울 수 있다(저장 동의 문구의 약속).
 import { useEffect, useState } from "react";
-import AuthStep from "@/components/auth/AuthStep";
+import { useRouter } from "next/navigation";
 import { apiHeaders, getGuestToken } from "@/lib/guest/client";
 import { signOut } from "@/lib/supabase/authClient";
 import { useRealSession } from "./useSession";
@@ -24,6 +24,12 @@ const dateKo = (iso: string) => {
 
 export default function ResultsList() {
   const session = useRealSession();
+  const router = useRouter();
+  // 로그인 안 했고 이 기기에 비회원 결과도 없으면 로그인 화면(/login, 별도 페이지 — owner 2026-10-10)으로.
+  const needLogin = session === null && !getGuestToken(false);
+  useEffect(() => {
+    if (needLogin) router.replace("/login?next=/results");
+  }, [needLogin, router]);
   const [rows, setRows] = useState<Row[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -49,7 +55,7 @@ export default function ResultsList() {
   }
 
   if (session === undefined) return <p className="text-center text-cream/70">확인하는 중…</p>;
-  if (session === null && !getGuestToken(false)) return <AuthStep title="내 결과를 보려면 로그인해 주세요." onSignedIn={() => {}} />;
+  if (needLogin) return <p className="text-center text-cream/70">로그인 화면으로 이동하는 중…</p>;
 
   return (
     <div className="flex flex-col gap-4">

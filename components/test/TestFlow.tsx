@@ -13,7 +13,7 @@ import { getRealSession } from "@/lib/supabase/browser";
 import { apiHeaders } from "@/lib/guest/client";
 import CitySearch, { type PickedCity } from "./CitySearch";
 import ConsentStep from "./ConsentStep";
-import { allConsented, CONSENT_ERROR, CONSENT_ITEMS, type ConsentItemId } from "@/lib/results/consent";
+import { allConsented, CONSENT_ERROR, consentItemsFor, type ConsentItemId } from "@/lib/results/consent";
 import FreeResultView from "./FreeResultView";
 import SiteFooter from "@/components/SiteFooter";
 
@@ -61,7 +61,8 @@ function initialStep(progress: SavedProgress | null): Step {
   const p: Progress = {
     nickname: progress.nickname,
     firstTime: progress.firstTime,
-    consented: allConsented(progress.consents ?? {}),
+    // 새로고침 복원용: 로그인 여부를 아직 모르므로 공통 두 가지만 본다(임시 계정 동의는 생년월일 화면에서 이미 받았다)
+    consented: allConsented(progress.consents ?? {}, false),
     answers: progress.answers as Progress["answers"],
   };
   return restorableStep(requested, p);
@@ -130,8 +131,14 @@ export default function TestFlow() {
   const [city, setCity] = useState<PickedCity | null>(restored?.city ?? null);
   const [answers, setAnswers] = useState<Partial<Answers>>(restored?.answers ?? {});
   const [consents, setConsents] = useState<Partial<Record<ConsentItemId, boolean>>>(restored?.consents ?? {});
-  const consented = allConsented(consents);
-  const someConsent = CONSENT_ITEMS.some((c) => consents[c.id]);
+  // 로그인하지 않은(익명·비회원) 사람에게만 '임시 계정 생성 및 결과 저장' 동의를 보인다(owner 2026-10-10). 확인 전엔 보이는 쪽(fail safe).
+  const [guest, setGuest] = useState(true);
+  useEffect(() => {
+    void getRealSession().then((s) => setGuest(!s));
+  }, []);
+  const consentItems = consentItemsFor(guest);
+  const consented = allConsented(consents, guest);
+  const someConsent = consentItems.some((c) => consents[c.id]);
   // 칸별 오류(프로토타입 .err)
   const [errs, setErrs] = useState<{ nick?: string; date?: string; time?: string; place?: string; agree?: string; q?: string }>({});
   // 유형 후보를 고른 경우 그 대표 시각 — 저장 요청에도 그대로 보낸다.
@@ -565,14 +572,14 @@ export default function TestFlow() {
                   id="agree-all"
                   checked={consented}
                   onChange={(e) => {
-                    setConsents(Object.fromEntries(CONSENT_ITEMS.map((c) => [c.id, e.target.checked])));
+                    setConsents(Object.fromEntries(consentItems.map((c) => [c.id, e.target.checked])));
                     if (e.target.checked) setErrs((x) => ({ ...x, agree: undefined }));
                   }}
                 />
                 모두 동의합니다
               </label>
             </div>
-            {CONSENT_ITEMS.map((c) => (
+            {consentItems.map((c) => (
               <div key={c.id} className={`agree-row${c.note || c.extraLink ? " col" : ""}`}>
                 <div className="flex w-full items-center justify-between gap-2">
                   <label className="check" htmlFor={`agree-${c.id}`}>
@@ -584,7 +591,7 @@ export default function TestFlow() {
                       onChange={(e) => {
                         const next = { ...consents, [c.id]: e.target.checked };
                         setConsents(next);
-                        if (allConsented(next)) setErrs((x) => ({ ...x, agree: undefined }));
+                        if (allConsented(next, guest)) setErrs((x) => ({ ...x, agree: undefined }));
                       }}
                     />
                     {c.label}

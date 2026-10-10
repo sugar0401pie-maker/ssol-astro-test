@@ -141,3 +141,18 @@ export async function signInWithOAuth(provider: "kakao" | "naver", redirectTo?: 
 export async function signOut(): Promise<void> {
   await getBrowserClient()?.auth.signOut();
 }
+
+/**
+ * '로그인 없이 테스트하기'(owner 결정 2026-10-10): Supabase 익명 로그인으로 임시 계정을 만든다.
+ * 이미 세션(익명이든 진짜든)이 있으면 새로 만들지 않는다. 실패해도(대시보드에서 익명 로그인이 꺼져 있는 등)
+ * 테스트는 그대로 진행한다 — 결과의 주인은 원래대로 이 기기의 비회원 열쇠(lib/guest/client.ts)가 맡기 때문.
+ * 익명 세션은 어디서도 로그인으로 치지 않는다(isRealSession, 쏘웰라 AuthGate와 같은 기준).
+ */
+export async function signInAnonymouslyIfNeeded(): Promise<AuthResult> {
+  const supabase = getBrowserClient();
+  if (!supabase) return { ok: false, error: "설정 오류" };
+  const { data } = await supabase.auth.getSession();
+  if (data.session) return { ok: true };
+  const { error } = await supabase.auth.signInAnonymously();
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
