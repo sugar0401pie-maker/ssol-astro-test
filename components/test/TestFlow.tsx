@@ -5,7 +5,7 @@
 // 질문 3개(한 화면) → 계산 중(최소 1.5초) → (후보가 갈리면) 유형 후보 선택 → 저장(로그인했으면 계정, 아니면 비회원 익명) → 결과.
 // 화면마다 주소가 있어(owner 2026-10-09) 휴대폰 뒤로 가기가 되고, 프로토타입 하단 줄의 빈 왼쪽 자리에 '← 이전'을 둔다.
 import { useEffect, useRef, useState } from "react";
-import { Q1_OPTIONS, Q2_OPTIONS, Q3_OPTIONS, type Answers } from "@/lib/astro/answers";
+import { Q1_OPTIONS, Q2_OPTIONS, Q3_OPTIONS, q2Label, type Answers } from "@/lib/astro/answers";
 import { isPage, pathOf, prevStep, restorableStep, stepFromPath, type Progress, type Step } from "./steps";
 import { KOREA_REGIONS } from "@/lib/astro/places";
 import type { FreeResult } from "@/lib/report/freeResult";
@@ -674,7 +674,7 @@ export default function TestFlow() {
                       checked={answers[q.key] === o}
                       onChange={() => setAnswers((a) => ({ ...a, [q.key]: o }))}
                     />
-                    <span>{o}</span>
+                    <span>{q.key === "q2" ? q2Label(o) : o}</span>
                   </label>
                 ))}
               </div>

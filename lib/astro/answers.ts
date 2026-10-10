@@ -9,6 +9,15 @@ export const Q3_ALL = ["안정", "도약", "회복", "사랑", "좋은 사람들
  *  Q2(2026 한 단어)에도 '시작'이 있어 서버는 늘 q2_word / q3_wish 칸으로 구분한다. */
 export const Q3_OPTIONS: readonly Q3Wish[] = Q3_ALL;
 
+/**
+ * 화면에 보이는 Q2 글자(owner 2026-10-10: '그만하자' → '그만'). 저장값·해석 DB 키는 그대로 '그만하자'라
+ * 예전 결과와 DB 문장 연결이 바뀌지 않는다 — 화면·AI 입력·쏘웰라 요약에서만 이 글자를 쓴다.
+ */
+export const Q2_LABELS: Readonly<Record<string, string>> = { 그만하자: "그만" };
+export function q2Label(word: string): string {
+  return Q2_LABELS[word] ?? word;
+}
+
 export type Q1Domain = (typeof Q1_OPTIONS)[number];
 export type Q2Word = (typeof Q2_OPTIONS)[number];
 export type Q3Wish = (typeof Q3_ALL)[number];

@@ -6,6 +6,7 @@
 // 형식은 쏘웰라가 디저트 심층 리포트에 쓰는 것과 같다 — 한 섹션이 한 줄 "[번호. 제목] 본문"(lib/rag/reportSelect.ts가
 // 지금 이야기와 관련 있는 섹션만 골라 넣는다. 기본으로 2번·8번을 넣으므로 핵심인 '바라는 것과 5년 흐름'을 2번에, '질문·제안'을 8번에 둔다).
 // 쏘웰라는 이 글을 진단·예측이 아닌 자기 성찰 참고 자료로만 쓴다(그쪽 lib/rag/prompt.ts 지침).
+import { q2Label } from "../astro/answers.ts";
 import type { Answers } from "../astro/answers.ts";
 import { EDGE_LABEL, WISH_LEVEL_DISPLAY, type WishResult } from "../astro/wish.ts";
 import { findRow, type AstroDb } from "./db.ts";
@@ -56,7 +57,7 @@ export function buildChatSummary(args: {
     ])}`,
   );
 
-  lines.push(`[3. 2026년 회고] ${one([`2026년을 한 단어로: ${answers.q2}.`, free.year2026.intro, ...free.year2026.turningPoints, free.year2026.closing])}`);
+  lines.push(`[3. 2026년 회고] ${one([`2026년을 한 단어로: ${q2Label(answers.q2)}.`, free.year2026.intro, ...free.year2026.turningPoints, free.year2026.closing])}`);
 
   if (paid) {
     for (const s of paid.sections) {

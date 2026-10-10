@@ -2,7 +2,7 @@
 // AI는 계산하지 않는다 — 판정·연도·근거는 여기서 정해져 넘어가고 AI는 바꾸지 않는다(5-3).
 // DB 문장(db_sentences)은 owner가 준비 중인 DB가 오면 채운다(지금은 빈 배열).
 import { SIGNS } from "../astro/constants.ts";
-import { isSoftTone, type Answers } from "../astro/answers.ts";
+import { isSoftTone, type Answers, q2Label } from "../astro/answers.ts";
 import type { CharacterResult } from "../astro/character.ts";
 import type { Accuracy, NatalChart } from "../astro/natal.ts";
 import type { PeriodKey, PeriodResult, ScoredEvent } from "../astro/timeline.ts";
@@ -155,7 +155,7 @@ export function buildReportInput(args: {
       element: (Object.entries(chart.elements).sort((a, b) => b[1] - a[1])[0] ?? ["", 0])[0],
     },
     character: { name: args.typeLine, competency: character.competency, style: character.style },
-    answers: { q1_domain: answers.q1, q2_word_2026: answers.q2, q3_wish_2027: answers.q3 },
+    answers: { q1_domain: answers.q1, q2_word_2026: q2Label(answers.q2), q3_wish_2027: answers.q3 },
     events_eoy: events("eoy", "E", false),
     events_2027: events("year2027", "T", false),
     events_5y: events("fiveYears", "F", true),

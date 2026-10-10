@@ -155,9 +155,11 @@ export default function FreeResultView({
   useEffect(() => {
     if (!resultId) return;
     rememberPage(resultId, page);
-    if (window.location.pathname.startsWith("/results/")) {
+    // 테스트 직후 결과(/test/result)도 저장이 끝나면 장마다 /results/{id}/{n} 주소로(owner 2026-10-10) — 새로고침·공유된 주소로 다시 열어도 그 장
+    const path = window.location.pathname;
+    if (path.startsWith("/results/") || path === "/test/result") {
       const url = `/results/${resultId}/${page}`;
-      if (window.location.pathname !== url) window.history.replaceState(null, "", url);
+      if (path !== url) window.history.replaceState(null, "", url);
     }
   }, [resultId, page]);
   function go(n: number) {
@@ -219,13 +221,9 @@ export default function FreeResultView({
     ...[4, 5, 6, 7].map((no) => (result.paidSections.find((x) => x.no === no)?.title ?? "").replace("{닉네임}", nickname)),
   ];
   const lockedPage = page >= 4 && !paidSection;
-  // 고지문(마스터스펙 8-1)은 장마다 — 프로토타입 마지막 장처럼 본문 바로 뒤, 공유·이동 버튼 앞
-  const disclaimer = (
-    <>
-      <p className="disclaimer">{result.disclaimer}</p>
-      {result.dbDraft && <p className="mt-2 text-[10px] text-cream/40">해석 {result.dbVersion} · 상담사 검수 전 초안</p>}
-    </>
-  );
+  // 고지문(마스터스펙 8-1 '결과 하단 고정 고지' — 안전 원칙상 없애지 않는다): owner 2026-10-10 요청으로 장마다 보이던 것을
+  // 프로토타입처럼 마지막 장(7장) 끝에만. '상담사 검수 전 초안' 표시는 owner 요청으로 숨김.
+  const disclaimer = page === RESULT_PAGES ? <p className="disclaimer">{result.disclaimer}</p> : null;
   const next = page < RESULT_PAGES ? page + 1 : null;
 
   return (
@@ -260,6 +258,8 @@ export default function FreeResultView({
 
             {/* ===== 1. 태어난 순간의 하늘 ===== */}
           <Section no={1} title={`${nickname}님이 태어난 순간의 하늘`} art={<PageArt page={1} signIndex={result.sunSignIndex} />}>
+            {/* 정확도 배지: owner 2026-10-10 A등급은 숨김(B·C는 차트의 한계를 알려야 해서 그대로) */}
+            {result.accuracy !== "A" && (
             <div className="grade" id="grade-badge">
               <b aria-label={`정확도 ${result.accuracy}등급`}>{result.accuracy}</b>
               <div>
@@ -268,6 +268,7 @@ export default function FreeResultView({
                 {result.gradeNote}
               </div>
             </div>
+            )}
             {result.addTimeNote && (
               <div className="grade" style={{ alignItems: "center" }}>
                 <div>{result.addTimeNote}</div>
@@ -604,7 +605,8 @@ export default function FreeResultView({
           )}
           {next ? (
             <button type="button" className="btn next" onClick={() => go(next)}>
-              다음 이야기 ›<small>{titles[next - 1]}</small>
+              <small>다음 이야기 ›</small>
+              <span className="nx-title">{titles[next - 1]}</span>
             </button>
           ) : (
             <button type="button" className="btn ghost next" onClick={() => go(1)}>

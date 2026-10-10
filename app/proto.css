@@ -359,3 +359,7 @@ details.why ul{list-style:disc}
    04·05 화면의 '작게'(.small)도 같은 크기로 */
 .guide-art,.guide-art.small{width:calc(100% + 32px);max-width:none;margin:4px -16px 20px;border-radius:0;box-shadow:none}
 .page-art{margin:4px -16px 18px;border-radius:0;border-left:0;border-right:0}
+/* owner 2026-10-10: '다음 이야기 ›'는 작게, 다음 주제 이름은 크게(위아래 두 줄) */
+.pg-nav .next{flex-direction:column;gap:2px}
+.pg-nav .next small{font-size:.74rem;font-weight:400;opacity:.8;margin:0}
+.pg-nav .next .nx-title{font-size:1rem;font-weight:700;line-height:1.35}
