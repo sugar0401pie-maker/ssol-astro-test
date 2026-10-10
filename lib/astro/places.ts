@@ -1,5 +1,5 @@
 // 한국 17개 시·도 대표 좌표(시청·도청 소재지 근사, docs/spec/04_데이터.json). 시간대는 Asia/Seoul.
-// 해외 도시는 GeoNames cities15000을 우리 DB에 적재해 검색할 예정(아직 미구현, 마스터스펙 6-1).
+// 해외 도시는 data/astro/cities.json(lib/astro/cities.ts)에서 검색한다.
 export const KOREA_TIME_ZONE = "Asia/Seoul";
 
 export const KOREA_REGIONS = [

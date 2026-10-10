@@ -1,11 +1,11 @@
-// 해외 출생지 도시 검색(마스터스펙 6-1). 데이터는 GeoNames cities15000을 scripts/build_cities.py로 줄인
-// data/astro/cities.json — 서버가 직접 읽어 검색하므로 사용자 입력이 외부로 나가지 않는다.
+// 해외 출생지 도시 검색(마스터스펙 6-1). 데이터는 2026-10-10 패키지의 해외도시_목록(4,565개, 한글 이름·IANA 시간대)을
+// scripts/build_overseas_cities.py로 줄인 data/astro/cities.json — 서버가 직접 읽어 검색하므로 사용자 입력이 외부로 나가지 않는다.
 // 표시는 "도시, 국가"(예: "로스앤젤레스, 미국"), 한글·영문 검색 모두 지원.
 
 export const CITY_ATTRIBUTION = "도시 데이터: GeoNames (CC BY 4.0)";
 
-/** [geonameid, 영문이름, 한글이름, 국가코드, 위도, 경도, 시간대, 인구, 검색키("|" 구분)] — 인구 내림차순 */
-export type CityRow = [number, string, string, string, number, number, string, number, string];
+/** [geonameid, 영문이름, 한글이름, 국가코드, 위도, 경도, 시간대, 인구, 검색키("|" 구분), 한글 국가명] — 인구 내림차순 */
+export type CityRow = [number, string, string, string, number, number, string, number, string, string?];
 
 export interface CityResult {
   id: number;
@@ -42,7 +42,7 @@ function countryKo(cc: string): string {
 
 export function toResult(r: CityRow): CityResult {
   const name = r[2] || r[1];
-  const country = countryKo(r[3]);
+  const country = r[9] || countryKo(r[3]);
   return { id: r[0], label: `${name}, ${country}`, name, country, en: r[1], lat: r[4], lng: r[5], timeZone: r[6] };
 }
 

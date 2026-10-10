@@ -7,6 +7,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import AuthStep from "@/components/auth/AuthStep";
+import GuideArt from "@/components/test/GuideArt";
 import { safeNextPath } from "@/lib/auth/nextPath";
 import { getRealSession } from "@/lib/supabase/browser";
 import { signInAnonymouslyIfNeeded } from "@/lib/supabase/authClient";
@@ -36,6 +37,7 @@ export default function LoginClient() {
       initialMode={params.get("mode") === "signup" ? "signup" : "signin"}
       oauthRedirect={typeof window !== "undefined" ? `${window.location.origin}${next}` : undefined}
       onSignedIn={goNext}
+      art={<GuideArt id="06" />}
       belowButtons={
         <button type="button" className="linkish mx-auto text-sm" onClick={() => void withoutLogin()} disabled={starting}>
           {starting ? "테스트를 준비하는 중…" : "로그인 없이 테스트하기"}

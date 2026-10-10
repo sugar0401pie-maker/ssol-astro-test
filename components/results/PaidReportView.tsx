@@ -6,6 +6,7 @@
 import type { PaidReport } from "@/lib/report/aiReport";
 import type { Block, WhyGroup } from "@/lib/report/paidSkeleton";
 import FiveYearStars from "./FiveYearStars";
+import { SOWELLA_USE_URL } from "@/lib/results/consent";
 
 const SOWELLA_CHAT_URL = "https://app.ssolwellnesshouse.com/chat";
 
@@ -125,6 +126,13 @@ export default function PaidReportView({ report }: { report: PaidReport }) {
                     <a href={SOWELLA_CHAT_URL} className="btn block">
                       쏘웰라와 대화 시작하기
                     </a>
+                    {/* 동의 문구 초안 ③(2026-10-10, 법률 검토 전): 넘어가는 순간 다시 알린다 */}
+                    <p className="sowella-note">
+                      대화를 시작하면 리포트 요약이 쏘웰라에게 전달돼요. 출생 시각·장소는 전달되지 않아요.{" "}
+                      <a href={SOWELLA_USE_URL} target="_blank" rel="noopener" className="underline">
+                        자세히
+                      </a>
+                    </p>
                   </div>
                 </>
               )}

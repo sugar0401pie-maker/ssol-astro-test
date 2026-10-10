@@ -215,3 +215,14 @@ test("키론 리턴이 2027~2031에 오면 5년 파트의 나이 마일스톤으
   assert.ok(ch);
   assert.equal(ch!.intervalsInWindow[0].from.slice(0, 4), "2028");
 });
+
+test("서머타임 경계 시각(정확한 시간)은 정확도 B로 표시하고 1시간 차이를 알린다(17_해외도시 ③)", () => {
+  const { chart, L } = computeNatal(new Date(Date.UTC(1996, 3, 1, 1, 17)), 37.2893, 127.0535);
+  const character = judgeCharacter(L, chart.elements, ref);
+  const base = { db, chart, longitudes: L, character, answers: { q1: "가족", q2: "버텨", q3: "회복" } as Answers, nickname: "하늘", birthYear: 1996, now: new Date("2026-10-07T03:00:00Z") };
+  assert.equal(buildFreeResult(base).accuracy, "A");
+  const r = buildFreeResult({ ...base, dstBoundary: "gap" });
+  assert.equal(r.accuracy, "B");
+  assert.match(r.gradeNote, /1시간 안의 차이/);
+  assert.equal(r.addTimeNote, null); // 시간을 알려 준 사람에게 '시간 추가하기'는 띄우지 않는다
+});

@@ -308,3 +308,7 @@ h3.sub-h{font-size:18px;font-weight:700;color:var(--navy);margin:22px 0 4px;font
 .saved-modal.on{opacity:1;transform:translate(-50%,-50%) scale(1)}
 .saved-modal .sm-ic{display:inline-flex;width:48px;height:48px;border-radius:50%;background:var(--gold);align-items:center;justify-content:center;margin-bottom:8px}
 .saved-modal p{margin:0;font-weight:700;font-size:1.08rem}
+/* 2026-10-10 쏘웰라 버튼 아래 고지(동의 문구 초안 ③: 버튼 너비, 12~13px. 크림 상자 안이라 크림 70% 대신 남색 70%) */
+.sowella-note{margin:8px 0 0;font-size:.78rem;line-height:1.5;color:var(--navy-70);text-align:center}
+/* 2026-10-10 화면별 안내 그림: 제목·안내말 아래, 화면 폭에 맞춘 정사각형 그림 */
+.guide-art{display:block;width:100%;max-width:320px;aspect-ratio:1/1;object-fit:cover;margin:4px auto 20px;border-radius:20px;box-shadow:0 10px 30px rgba(0,0,0,.25)}

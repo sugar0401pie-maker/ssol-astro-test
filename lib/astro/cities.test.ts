@@ -49,3 +49,12 @@ test("id로 다시 찾기", () => {
   assert.deepEqual(findCityById(rows, la.id), la);
   assert.equal(findCityById(rows, -1), null);
 });
+
+test("새 목록(2026-10-10, 4,565개): 별칭·북한 도시·한글 국가명", () => {
+  assert.equal(rows.length, 4565);
+  assert.equal(searchCities(rows, "상해")[0].timeZone, "Asia/Shanghai");
+  const py = searchCities(rows, "평양")[0];
+  assert.equal(py.timeZone, "Asia/Pyongyang");
+  assert.match(py.label, /^평양, /);
+  assert.equal(searchCities(rows, "뉴욕")[0].label, "뉴욕, 미국");
+});

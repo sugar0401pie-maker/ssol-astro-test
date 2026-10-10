@@ -6,7 +6,7 @@
 import { judgeCharacter, withCompetencyPick, type CalibrationTable, type CharacterResult } from "./character.ts";
 import type { Competency } from "./constants.ts";
 import { computeNatal, type Accuracy, type Longitudes, type NatalChart } from "./natal.ts";
-import { localToUtc, type LocalDateTime } from "./time.ts";
+import { dstBoundary, localToUtc, type LocalDateTime } from "./time.ts";
 import { computeStationsAndIngress, computeTransits, type Ingress, type Station, type TransitEvent } from "./transits.ts";
 import type { Place } from "./places.ts";
 
@@ -50,6 +50,8 @@ export interface BirthResult {
   engineVersion: string;
   /** 재계산용 저장값: 현지 시각 + 시간대 ID + UTC (마스터스펙 2장) */
   stored: { local: string; timeZone: string; utc: string; place: Place; time: BirthTime };
+  /** 정확한 시각(A)이 서머타임 경계(없는 시각·두 번 있는 시각)에 걸리면 — 화면은 정확도 B로 표시(17_해외도시 ③) */
+  dstBoundary?: "gap" | "ambiguous";
   accuracy: Accuracy;
   /** 후보가 갈리면 null — 사용자가 candidates 중 하나를 골라 pick으로 다시 요청한다 */
   resolved: null | {
@@ -186,10 +188,12 @@ function resolve(
     character = judgeCharacter(c.L, c.chart.elements, ref);
   }
   character = withCompetencyPick(character, input.competencyPick);
+  const dst = accuracy === "A" ? dstBoundary(localAt(input, chartMinutes), input.place.timeZone) : null;
   return {
     engineVersion: ENGINE_VERSION,
     stored: s,
     accuracy,
+    ...(dst ? { dstBoundary: dst } : {}),
     resolved: {
       chart,
       longitudes: L,

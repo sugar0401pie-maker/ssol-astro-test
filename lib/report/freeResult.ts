@@ -435,6 +435,8 @@ export function buildFreeResult(args: {
   retro?: PointKey[];
   /** 출생 시각 UTC(ISO) — '표로 보기' 각주 */
   utc?: string;
+  /** 정확한 시각이 서머타임 경계(없는/두 번 있는 시각)면 정확도 B로 표시(17_해외도시 ③) */
+  dstBoundary?: "gap" | "ambiguous";
   now?: Date;
 }): FreeResult {
   const { db, chart, longitudes, character, answers, nickname, birthYear } = args;
@@ -518,7 +520,7 @@ export function buildFreeResult(args: {
     terms: (["SUN", "MOON", "ASC"] as const)
       .filter((k) => k !== "ASC" || chart.planets.asc)
       .map((k) => ({ name: text(db, "A16", `TERM_${k}`, "name"), line: text(db, "A16", `TERM_${k}`, "meaning_line") })),
-    accuracy: chart.accuracy,
+    accuracy: args.dstBoundary && chart.accuracy === "A" ? "B" : chart.accuracy,
     header: { title: `${nickname}님의 별 리포트`, line: args.birthLine ?? "" },
     retro,
     utcLabel: args.utc ? `UTC ${args.utc.slice(0, 16).replace("T", " ")}` : "",
@@ -532,7 +534,11 @@ export function buildFreeResult(args: {
             }),
           }
         : null,
-    gradeNote: text(db, "A15", `FIX_GRADE_${chart.accuracy}`, "text"),
+    gradeNote:
+      args.dstBoundary && chart.accuracy === "A"
+        ? // 서머타임 경계: 계산은 입력한 시각 그대로(첫 번째 해석) 하되 1시간 안의 차이를 알린다 — 안내 문장은 Claude 초안(owner 검토 가능)
+          `${args.dstBoundary === "gap" ? "태어난 시각이 서머타임으로 시계를 건너뛴 시간에 있어, 건너뛴 만큼 뒤로 옮겨 계산했어요." : "태어난 시각이 서머타임이 끝나며 두 번 있었던 시간이라, 첫 번째(서머타임 쪽)로 계산했어요."} 1시간 안의 차이로 상승궁·하우스가 바뀔 수 있어요.`
+        : text(db, "A15", `FIX_GRADE_${chart.accuracy}`, "text"),
     addTimeNote: chart.accuracy === "A" ? null : text(db, "A15", "FIX_ADD_TIME", "text").replace(/\s*→\s*\[.*\]\s*$/, ""),
     chart,
     elements: elementTexts(db, chart.elements, dominant),

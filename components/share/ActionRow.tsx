@@ -6,6 +6,7 @@
 // 결과 자체는 질문을 마친 순간 이미 저장돼 있다(로그인 = 계정, 아니면 이 기기의 비회원 저장) — 로그인하면 비회원 결과를 계정으로 옮긴다.
 import { useEffect, useRef, useState } from "react";
 import AuthStep from "@/components/auth/AuthStep";
+import GuideArt from "@/components/test/GuideArt";
 import { claimGuestResults } from "@/lib/guest/client";
 import { getRealSession } from "@/lib/supabase/browser";
 import ShareSheet, { type ShareProps } from "./ShareSheet";
@@ -121,6 +122,7 @@ export default function ActionRow({
                 title={copy.loginBig}
                 subtitle={copy.loginSmall}
                 prefill={prefill}
+                art={<GuideArt id="06" />}
                 oauthRedirect={typeof window !== "undefined" && resultId ? `${window.location.origin}/results/${resultId}` : undefined}
                 onSignedIn={() => void afterSignIn()}
               />

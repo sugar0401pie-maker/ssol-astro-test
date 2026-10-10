@@ -152,7 +152,7 @@ test("A11 하늘의 공통 흐름: 5년 파트(2027~)에 걸치는 것만, A6 �
   assert.ok(!JSON.stringify(skeleton.sections.find((x) => x.no === 5)!.body).includes(a6)); // 뼈대 본문에는 넣지 않음
 });
 
-test("쏘웰라 채팅 요약: 유형·바라는 것·5년·2026 회고(+결제 시 본문·제안), 별자리·출생 정보·동물 이름 없음", () => {
+test("쏘웰라 채팅 요약: 별자리·유형·바라는 것·5년·2026 회고(+결제 시 본문·제안), 출생 정보·동물 이름 없음", () => {
   const { skeleton, wish } = setup();
   const free = buildFreeResult({
     db, chart: computeNatal(new Date(Date.UTC(1996, 3, 1, 1, 17)), 37.2893, 127.0535).chart,
@@ -162,12 +162,13 @@ test("쏘웰라 채팅 요약: 유형·바라는 것·5년·2026 회고(+결제 
   });
   const answers = { q1: "직업·커리어", q2: "변화", q3: "안정" } as const;
   const freeOnly = buildChatSummary({ db, free, answers, wish });
-  assert.ok(freeOnly.startsWith("[1. 별이 본 나의 유형] 누군가에게 기대는 일에"));
+  assert.ok(freeOnly.startsWith("[1. 별이 본 나의 유형] 태양 양자리, 달 "), freeOnly.slice(0, 60));
+  assert.ok(freeOnly.includes("상승궁 쌍둥이자리") && freeOnly.includes("누군가에게 기대는 일에") && freeOnly.includes("요즘 주요 고민: 직업·커리어."));
   assert.ok(freeOnly.includes("[2. 2027년에 바라는 것과 앞으로 5년의 흐름] 2027년에 바라는 것: 안정."));
   assert.ok(freeOnly.includes("2028년: 활짝 열리는 해(순풍)"));
   assert.ok(freeOnly.includes("[3. 2026년 회고] 2026년을 한 단어로: 변화."));
   assert.ok(!freeOnly.includes("[8."));
-  for (const banned of ["양자리", "처녀자리", "쌍둥이자리", "1996", "경기", "수달"]) assert.ok(!freeOnly.includes(banned), banned);
+  for (const banned of ["1996", "경기", "10:17", "수달"]) assert.ok(!freeOnly.includes(banned), banned);
   assert.equal(freeOnly.split("\n").length, 3);
   const withPaid = buildChatSummary({ db, free, answers, wish, paid: skeleton });
   assert.ok(withPaid.includes("[8. 별이 주는 질문과 웰니스 제안]"));

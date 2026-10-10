@@ -1,10 +1,12 @@
 // 결과 저장 동의 문구(마스터스펙 8-1: 출생일시·출생지는 민감정보 — 수집 목적·보관기간 동의를 받는다).
 // ⚠ 초안(Claude 작성, owner·법무 검토 전). 문구를 바꾸면 CONSENT_VERSION도 바꿔서 누가 어떤 문구에 동의했는지 남긴다.
 // 보관기간은 아직 정해지지 않아 '삭제 요청·탈퇴 시 삭제'만 적었다 — 기간이 정해지면 문구와 버전을 함께 고친다.
-export const CONSENT_VERSION = "astro-results-2026-10-10-draft"; // 10-10: 임시 계정 동의는 로그인 없이 테스트할 때(익명)만(owner 결정). 10-09: 생년월일 화면 필수 체크, 문구는 04_데이터.json 4_birth.consents
+export const CONSENT_VERSION = "astro-results-2026-10-10b-draft"; // 10-10: 임시 계정 동의는 로그인 없이 테스트할 때(익명)만(owner 결정). 10-09: 생년월일 화면 필수 체크, 문구는 04_데이터.json 4_birth.consents
 
 // 이 사이트의 자체 법적 고지 페이지(app/legal/page.tsx, 2026-10-08 owner 요청으로 쏘웰라 페이지에서 분리).
 export const PRIVACY_URL = "/legal#privacy";
+/** 리포트 요약의 쏘웰라 대화 활용 조항(쏘웰라 버튼 아래 [자세히]) */
+export const SOWELLA_USE_URL = "/legal#sowella";
 export const SENSITIVE_URL = "/legal#sensitive";
 export const TERMS_URL = "/legal#terms";
 
@@ -31,7 +33,7 @@ export const CONSENT_ITEMS: ReadonlyArray<{ id: ConsentItemId; label: string; no
   {
     id: "store",
     label: "[필수] 임시 계정 생성 및 결과 저장에 동의합니다",
-    note: "입력하신 생년월일·태어난 시간·태어난 곳과 결과를 저장하기 위해 임시 계정을 만들어요. 로그인하면 내 계정으로 옮겨집니다. 로그인하지 않으면 이 기기에서만 볼 수 있고 30일 뒤 지워져요.",
+    note: "입력하신 생년월일·태어난 시간·태어난 곳과 결과를 저장하기 위해 임시 계정을 만들어요. 로그인하면 내 계정으로 옮겨집니다. 로그인하지 않으면 이 기기에서만 볼 수 있고 30일 뒤 지워져요. 쏘웰라와 대화를 시작하면 리포트 요약(유형·답변·흐름)이 맞춤 대화에 쓰여요. 출생 시각과 장소는 넘어가지 않아요.",
   },
 ];
 

@@ -45,7 +45,10 @@ export default function AuthStep({
   initialMode = "signin",
   oauthRedirect,
   belowButtons,
+  art,
 }: {
+  /** 제목·안내말 아래 안내 그림(화면별 프로세스 #6 로그인) */
+  art?: React.ReactNode;
   onSignedIn: () => void;
   /** 로그인 버튼 세 개 바로 아래에 둘 것(/login의 '로그인 없이 테스트하기') */
   belowButtons?: React.ReactNode;
@@ -106,6 +109,7 @@ export default function AuthStep({
         {mode === "signup" ? "계정 만들기" : mode === "reset" ? "비밀번호 찾기" : title ?? "결과를 저장하고 보려면 로그인해 주세요."}
       </h1>
       <p className="small">{mode === "signin" && subtitle ? subtitle : "쏠 웰니스 하우스(쏘웰라·디저트 테스트)와 같은 계정이에요. 한 번 가입하면 모든 곳에서 쓸 수 있어요."}</p>
+      {mode === "signin" && art}
       {!configured && <p className="err">설정 오류로 로그인을 사용할 수 없어요. 잠시 후 다시 시도해 주세요.</p>}
 
       {mode !== "reset" && (

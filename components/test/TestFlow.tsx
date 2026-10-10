@@ -12,6 +12,7 @@ import type { FreeResult } from "@/lib/report/freeResult";
 import { getRealSession } from "@/lib/supabase/browser";
 import { b14, useCopy } from "@/lib/copy/useCopy";
 import { apiHeaders } from "@/lib/guest/client";
+import GuideArt from "./GuideArt";
 import CitySearch, { type PickedCity } from "./CitySearch";
 import ConsentStep from "./ConsentStep";
 import { allConsented, CONSENT_ERROR, consentItemsFor, type ConsentItemId } from "@/lib/results/consent";
@@ -376,6 +377,7 @@ export default function TestFlow() {
           <p className="eyebrow">Welcome</p>
           <h1 className="big" id="welcome-big">쏠 아스트로 하우스에 오신 당신을 환영합니다.</h1>
           <p className="small">당신을 뭐라고 불러드리면 될까요?</p>
+          <GuideArt id="02" />
           <label className="lbl sr-only" htmlFor="nickname">
             닉네임
           </label>
@@ -407,6 +409,7 @@ export default function TestFlow() {
           <h1 className="big" id="exp-big">
             {name}님, 오늘은 어떤 고민을 가져오셨나요? 그보다, 점성술은 오늘이 처음이신지요?
           </h1>
+          <GuideArt id="03" />
           <div className="stack">
             <button className="btn block ghost" type="button" onClick={() => { setFirstTime(false); setStep("birth"); }}>
               전에 본 적이 있어요
@@ -425,6 +428,7 @@ export default function TestFlow() {
             오늘 당신의 태어난 날짜와 시간을 토대로 점성술에 따라 {name}님의 과거와 현재, 미래를 알아봅니다. 우리 쏠 하우스만의 특제 레시피로 {name}님의 주요
             고민에 맞는 웰니스 제안을 해드릴게요. 이제 한 번 해볼까요?
           </h1>
+          <GuideArt id="03-1" />
           <div className="stack">
             <button className="btn block" type="button" onClick={() => setStep("birth")}>
               네, 좋아요!
@@ -439,6 +443,7 @@ export default function TestFlow() {
           <h1 className="big" id="birth-big">
             좋습니다. 먼저 {name}님의 생년월일과 태어난 시간, 태어난 곳을 알려주세요.
           </h1>
+          <GuideArt id="04" />
           <fieldset className="field" id="fs-date">
             <legend>생년월일 (양력)</legend>
             <div className="row3">
@@ -630,6 +635,7 @@ export default function TestFlow() {
           <h1 className="big" id="q-big">
             {name}님에 대해서 딱 3가지 더 여쭤보겠습니다.
           </h1>
+          <GuideArt id="05" />
           {QUESTIONS.map((q) => (
             <fieldset key={q.key} className="field q-block" id={`fs-${q.key}`}>
               <legend className="lbl">
@@ -679,6 +685,7 @@ export default function TestFlow() {
               별의 위치를 계산하는 중…
             </h1>
             <p className="small">{b14(copy, `EMPTY_LOADING_${loadingIdx + 1}`, "title", copy.FIX_LOADING ?? "", nickname)}</p>
+            <GuideArt id="08" />
           </div>
         </section>
       )}
@@ -693,6 +700,7 @@ export default function TestFlow() {
               ? "태어난 시간을 몰라 하루 전체를 30분 간격으로 계산했더니, 유형이 둘 이상으로 나왔어요. 요즘의 나와 더 가까운 쪽을 골라 주세요."
               : "고르신 시간대 안에서 30분 간격으로 계산했더니, 유형이 둘 이상으로 나왔어요. 요즘의 나와 더 가까운 쪽을 골라 주세요."}
           </p>
+          <GuideArt id="07" />
           <div className="choice night">
             {candidates.map((c) => (
               <button key={c.pick} type="button" aria-pressed="false" onClick={() => fetchResult(answers as Answers, c.pick)}>

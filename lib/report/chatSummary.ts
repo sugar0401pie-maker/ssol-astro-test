@@ -1,6 +1,7 @@
 // 쏘웰라 채팅이 참고할 점성술 리포트 요약(순수 함수). owner 결정(2026-10-08):
 // 유형 문장·2026년 회고·2027년에 바라는 것과 그 판정·앞으로 5년의 흐름, 그리고 결제했으면 리포트 본문과 제안을 넘긴다
-// ("사실상 보고서를 넘기는 것"). 별자리(태양·달·상승궁)와 출생 날짜·시간·장소는 넣지 않는다. 동물 이름도 넣지 않는다.
+// ("사실상 보고서를 넘기는 것"). 2026-10-10 owner 결정(16_쏘웰라연결 handoff)으로 태양·달·상승궁 별자리와 Q1 고민 영역도 넘긴다.
+// 출생 날짜·시간·장소·좌표·결제 정보는 넣지 않는다(동의 문구 초안 ①의 '이용하지 않는 항목'). 동물 이름도 넣지 않는다(캐릭터 비노출).
 //
 // 형식은 쏘웰라가 디저트 심층 리포트에 쓰는 것과 같다 — 한 섹션이 한 줄 "[번호. 제목] 본문"(lib/rag/reportSelect.ts가
 // 지금 이야기와 관련 있는 섹션만 골라 넣는다. 기본으로 2번·8번을 넣으므로 핵심인 '바라는 것과 5년 흐름'을 2번에, '질문·제안'을 8번에 둔다).
@@ -13,15 +14,6 @@ import { blockText, type Block } from "./paidSkeleton.ts";
 
 export const CHAT_SUMMARY_MAX = 6000;
 
-const SIGN_NAMES = ["양자리", "황소자리", "쌍둥이자리", "게자리", "사자자리", "처녀자리", "천칭자리", "전갈자리", "사수자리", "염소자리", "물병자리", "물고기자리"];
-
-/**
- * 별자리 이름을 가린다(owner: 별자리는 넘기지 않음). 회고·리포트 문장에 "상승궁 별자리인 쌍둥이자리"처럼
- * 사용자의 별자리가 섞여 있어서, 채팅용 요약에서만 "한 별자리"로 바꾼다(화면의 DB 문장은 그대로).
- */
-export function redactSigns(text: string): string {
-  return SIGN_NAMES.reduce((t, s) => t.split(s).join("한 별자리"), text);
-}
 
 export interface PaidPartsForChat {
   sections: Array<{ no: number; title: string; summary: string | null; body: Block[]; tail: Block[] }>;
@@ -42,7 +34,11 @@ export function buildChatSummary(args: {
   const c = free.character;
   const lines: string[] = [];
 
-  lines.push(`[1. 별이 본 나의 유형] ${one([`${c.typeLine}(${c.competency} × ${c.style}).`, c.why, c.competencyLine, c.styleLine])}`);
+  // 태양·달·상승궁(상승궁은 태어난 시간을 알 때만 — 시간 모름이면 계산하지 않으므로 빠진다)
+  const big3 = free.big3.map((b) => `${b.label.split(" ")[0]} ${b.sign}`).join(", ");
+  lines.push(
+    `[1. 별이 본 나의 유형] ${one([big3 ? `${big3}.` : null, `${c.typeLine}(${c.competency} × ${c.style}).`, c.why, c.competencyLine, c.styleLine, `요즘 주요 고민: ${answers.q1}.`])}`,
+  );
 
   const levelLine = (y: WishResult["years"][number]) => {
     const short = findRow(db, "A13", (r) => r.wish === answers.q3 && r.level === WISH_LEVEL_DISPLAY[y.level])?.short_line;
@@ -80,5 +76,5 @@ export function buildChatSummary(args: {
     const i = lines.findIndex((l) => l.startsWith(`[${no}. `));
     if (i >= 0) lines.splice(i, 1);
   }
-  return redactSigns(lines.join("\n")).slice(0, CHAT_SUMMARY_MAX);
+  return lines.join("\n").slice(0, CHAT_SUMMARY_MAX);
 }

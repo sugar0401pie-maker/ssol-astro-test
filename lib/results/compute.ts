@@ -64,6 +64,6 @@ export function computeFree(input: BirthInput, answers: Answers, nickname: strin
     kind: "result",
     birth: { ...birth, resolved: birth.resolved },
     result: buildFreeResult({ db: ASTRO_DB, chart, longitudes, character, answers, nickname, birthYear: input.year, birthDate: birth.stored.local.slice(0, 10), birthKey: birthKeyOf(input),
-      birthLine: birthLine(input), retro: retrogradeAt(new Date(birth.stored.utc)), utc: birth.stored.utc }),
+      birthLine: birthLine(input), retro: retrogradeAt(new Date(birth.stored.utc)), utc: birth.stored.utc, dstBoundary: birth.dstBoundary }),
   };
 }
