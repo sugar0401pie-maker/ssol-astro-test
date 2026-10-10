@@ -9,6 +9,7 @@ import { useCallback, useEffect, useState } from "react";
 import AuthStep from "@/components/auth/AuthStep";
 import GuideArt from "@/components/test/GuideArt";
 import { safeNextPath } from "@/lib/auth/nextPath";
+import { oauthErrorFromUrl } from "@/lib/auth/oauthError";
 import { getRealSession } from "@/lib/supabase/browser";
 import { signInAnonymouslyIfNeeded } from "@/lib/supabase/authClient";
 
@@ -18,6 +19,10 @@ export default function LoginClient() {
   const next = safeNextPath(params.get("next"));
   const goNext = useCallback(() => router.replace(next), [router, next]);
   const [starting, setStarting] = useState(false);
+  // 카카오·네이버 로그인이 실패하면 Supabase가 ?error=…&error_description=…(또는 # 뒤)로 돌려보낸다.
+  // 예전엔 이 이유가 화면에 안 나와 '그냥 로그인 화면으로 돌아온 것'처럼 보였다 → 이유를 보여 준다.
+  // 쿼리는 useSearchParams로 읽는다(서버·브라우저 첫 화면이 같게). # 뒤 오류는 드물어 쿼리만 본다.
+  const oauthError = oauthErrorFromUrl({ search: `?${params.toString()}`, hash: "" });
 
   // 이미 로그인돼 있으면(쏘웰라·디저트 테스트에서 로그인한 경우 포함) 바로 다음 화면으로.
   useEffect(() => {
@@ -35,7 +40,9 @@ export default function LoginClient() {
     <AuthStep
       title="쏠 웰니스 하우스 계정으로 로그인해 주세요."
       initialMode={params.get("mode") === "signup" ? "signup" : "signin"}
-      oauthRedirect={typeof window !== "undefined" ? `${window.location.origin}${next}` : undefined}
+      // 로그인 화면으로 돌아오게 한다: 성공하면 위 useEffect가 next로 보내고, 실패하면 이유를 여기서 보여 줄 수 있다.
+      oauthRedirect={typeof window !== "undefined" ? `${window.location.origin}/login?next=${encodeURIComponent(next)}` : undefined}
+      initialError={oauthError}
       onSignedIn={goNext}
       art={<GuideArt id="06" />}
       belowButtons={

@@ -46,7 +46,10 @@ export default function AuthStep({
   oauthRedirect,
   belowButtons,
   art,
+  initialError,
 }: {
+  /** 처음부터 보여 줄 오류(카카오·네이버 로그인에서 돌아왔는데 실패한 경우 그 이유) */
+  initialError?: string | null;
   /** 제목·안내말 아래 안내 그림(화면별 프로세스 #6 로그인) */
   art?: React.ReactNode;
   onSignedIn: () => void;
@@ -66,7 +69,7 @@ export default function AuthStep({
   const [mode, setMode] = useState<Mode>(initialMode);
   // 프로토타입 #scr-login: [카카오로 계속하기][네이버로 계속하기][이메일로 계속하기] — 이메일 칸은 누른 뒤에 연다
   const [emailOpen, setEmailOpen] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(initialError ?? null);
   // 가입하려던 이메일이 이미 있으면 비밀번호 찾기로 보내면서 그 이메일을 채워 둔다(owner 2026-10-10)
   const [resetEmail, setResetEmail] = useState<string | null>(null);
   const configured = !!getBrowserClient();
@@ -134,6 +137,11 @@ export default function AuthStep({
         </div>
       )}
 
+      {mode === "signin" && !emailOpen && error && (
+        <p className="err" role="alert">
+          {error}
+        </p>
+      )}
       {mode === "signin" && belowButtons}
       {mode === "signin" && emailOpen && <SignInForm configured={configured} error={error} setError={setError} onForgot={() => go("reset")} />}
       {mode === "signup" && (

@@ -4,7 +4,7 @@
 // 생일을 받기 전(02~08)은 '안내 캐릭터'가, 결과(09-1~09-8)부터는 사용자의 태양 별자리 캐릭터가 맡는다.
 // 파일: public/guide/<연번>.png, 결과 화면은 별자리별 public/guide/<연번>-<별자리 영문>.png(예: 09-1-aries.png)를 먼저 찾고
 // 없으면 <연번>.png. 둘 다 없으면 자리를 차지하지 않고 숨는다. 별자리 캐릭터는 그림일 뿐 — 이름·진단 문구를 붙이지 않는다.
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export const GUIDE_ART = {
   "02": "문 앞에서 손 흔들며 맞이하는 안내 캐릭터",
@@ -33,11 +33,27 @@ export const SIGN_FILE_KEYS = ["aries", "taurus", "gemini", "cancer", "leo", "vi
 
 export default function GuideArt({ id, signIndex }: { id: GuideArtId; signIndex?: number }) {
   const sign = signIndex !== undefined ? SIGN_FILE_KEYS[signIndex] : undefined;
-  const candidates = [...(sign ? [`/guide/${id}-${sign}.png`] : []), `/guide/${id}.png`];
-  const [i, setI] = useState(0);
-  if (i >= candidates.length) return null;
-  return (
-    // eslint-disable-next-line @next/next/no-img-element -- 파일이 없을 때 다음 후보로 넘기거나 조용히 숨기려고 onError를 쓴다
-    <img key={candidates[i]} src={candidates[i]} alt={GUIDE_ART[id]} className="guide-art" onError={() => setI((n) => n + 1)} />
-  );
+  const first = sign ? `/guide/${id}-${sign}.png` : null;
+  const fallback = `/guide/${id}.png`;
+  // 파일이 실제로 있는지 브라우저에서 먼저 불러 본 뒤에만 그린다. <img onError>로 숨기면 화면이 준비되기 전에
+  // 오류가 나서 놓치는 경우가 있어(서버에서 그린 HTML) 깨진 그림 아이콘이 보였다 — 2026-10-10 수정.
+  const [src, setSrc] = useState<string | null>(null);
+  useEffect(() => {
+    let alive = true;
+    const tryLoad = (url: string, next: () => void) => {
+      const im = new window.Image();
+      im.onload = () => alive && setSrc(url);
+      im.onerror = () => alive && next();
+      im.src = url;
+    };
+    const loadFallback = () => tryLoad(fallback, () => {});
+    if (first) tryLoad(first, loadFallback);
+    else loadFallback();
+    return () => {
+      alive = false;
+    };
+  }, [first, fallback]);
+  if (!src) return null;
+  // eslint-disable-next-line @next/next/no-img-element -- 미리 불러 확인한 정적 파일
+  return <img src={src} alt={GUIDE_ART[id]} className="guide-art" />;
 }
