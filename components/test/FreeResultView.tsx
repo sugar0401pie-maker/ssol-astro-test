@@ -496,12 +496,15 @@ export default function FreeResultView({
                     )}
                     {/* 4번 섹션(유료 경계 통합): 앞 2줄 아래는 처음부터 흐린 가짜 문장(B13) — 실제 본문 아님 */}
                     {s.no === 4 &&
-                      pv?.filler &&
-                      [0, 1, 2].map((k) => (
-                        <p key={`f${k}`} className="lp full">
-                          {pv.filler.slice((k * 53) % Math.max(1, pv.filler.length - 120))}
-                        </p>
-                      ))}
+                      !!pv?.filler &&
+                      [0, 1, 2].map((k) => {
+                        const f = pv.filler ?? "";
+                        return (
+                          <p key={`f${k}`} className="lp full">
+                            {f.slice((k * 53) % Math.max(1, f.length - 120))}
+                          </p>
+                        );
+                      })}
                   </div>
                 </div>
               </section>
