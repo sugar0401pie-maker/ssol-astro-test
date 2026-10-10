@@ -10,6 +10,9 @@ export interface ValidationIssue {
     | "unknown_token"
     | "missing_token"
     | "unknown_planet_or_sign"
+    | "table"
+    | "label_single"
+    | "money_predict"
     | "banned_phrase"
     | "theory_name"
     | "markdown_bold"
@@ -111,7 +114,14 @@ export interface ValidateOptions {
   headwind2027?: boolean;
   /** C1 사전(있으면 AI 범위로 함께 검사) */
   c1Rules?: C1Rule[];
+  /** 사용자의 2027 바람(경제적 여유면 수입·수익 예측을 막는다 — 패키지 15_AI검증 MONEY_PREDICT) */
+  wish?: string;
 }
+
+// 2026-10-10 패키지 15_AI검증(validateAi.mjs)과 같은 규칙: 판정 이름은 두 말로 함께("활짝 열리는 해(순풍)"),
+// 경제적 여유는 수입·수익 예측 금지, 표는 서버가 그리므로 AI는 표를 만들지 않는다.
+const LABEL_PARTS = ["활짝 열리는 해", "내 손에 달린 해", "기반을 다지는 해"];
+const MONEY_BAN = /수입|수익|연봉|월급|돈이 들어|재물운|부자|큰돈을 벌/;
 
 // 숫자가 아닌데 숫자 자리에 쓰이는 '한 달·두 달' 등에서 '달'(moon)을 오탐하지 않게 앞말을 본다.
 const MOON_FALSE_PREFIX = /(한|두|세|네|몇|이번|다음|지난|매|석|넉|열|반)\s?$/;
@@ -181,6 +191,20 @@ export function validateReport(text: string, opts: ValidateOptions): ValidationI
     if (hit) issues.push({ code: "theory_name", detail: p });
   }
   if (text.includes("**")) issues.push({ code: "markdown_bold", detail: "**" });
+  if (/^\s*\|/m.test(text)) issues.push({ code: "table", detail: "표는 서버가 그린다" });
+  for (const part of LABEL_PARTS) {
+    for (let i = text.indexOf(part); i >= 0; i = text.indexOf(part, i + part.length)) {
+      const tail = text.slice(i + part.length, i + part.length + 6);
+      if (!tail.startsWith("(") && !/^에 가까/.test(tail)) {
+        issues.push({ code: "label_single", detail: part });
+        break;
+      }
+    }
+  }
+  if (opts.wish === "경제적 여유") {
+    const m = text.match(MONEY_BAN);
+    if (m) issues.push({ code: "money_predict", detail: m[0] });
+  }
   for (const s of opts.requiredSections ?? []) if (!text.includes(s)) issues.push({ code: "missing_section", detail: s });
   if (opts.headwind2027) {
     for (const p of SUGARCOAT_PHRASES) if (text.includes(p)) issues.push({ code: "headwind_sugarcoat", detail: p });

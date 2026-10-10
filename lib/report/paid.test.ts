@@ -242,3 +242,17 @@ test("블러 자리는 해석 DB B13 가짜 문장으로 채운다(섹션별, �
   assert.ok(!f4.includes("{닉네임}"));
   assert.equal(blurFiller(db, 9, "지우"), "");
 });
+
+test("AI 검증: 패키지 15_AI검증의 나쁜 예(판정 한쪽만·수입 예측·표·질문으로 끝내기)를 잡는다", async () => {
+  const { validateReport } = await import("./validate.ts");
+  const { checkBridge } = await import("./aiPrompt.ts");
+  const base = { allowedTokens: ["흐름근거"], allowedNames: ["목성", "금성"] };
+  const codes = (t: string, o = {}) => validateReport(t, { ...base, ...o }).map((i) => i.code);
+  assert.ok(codes("이 해는 기반을 다지는 해예요.").includes("label_single"));
+  assert.ok(!codes("이 해는 기반을 다지는 해(역풍)예요.").includes("label_single"));
+  assert.ok(codes("목성 덕분에 연봉이 오를 거예요.", { wish: "경제적 여유" }).includes("money_predict"));
+  assert.ok(!codes("목성 덕분에 연봉이 오를 거예요.", { wish: "사랑" }).includes("money_predict"));
+  assert.ok(codes("| 연도 | 판정 |\n| a | b |").includes("table"));
+  const bridge = "사랑을 바라는 지우님에게 이 해는 마음을 천천히 여는 해예요. {{흐름근거}} 무렵부터는 표현이 한결 수월해지기 쉬워 고마운 사람에게 짧게라도 마음을 전해 보기 좋습니다. 다만 서두르기보다 내가 편안한 속도를 먼저 알아 두는 편이 좋아요. 이번 주에는 가까운 사람에게 어떤 말을 전해 볼까요?";
+  assert.ok(checkBridge(bridge, { wish: "사랑", judgement: "", values: { 흐름근거: "7월 말 목성이 마음의 자리로 들어오는" } }).includes("question_end"));
+});

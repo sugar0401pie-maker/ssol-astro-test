@@ -131,6 +131,7 @@ export function checkBridge(raw: string, opts: { wish: string; judgement: string
   if (sentences.length !== 4) problems.push(`sentences_${sentences.length}`);
   if (text.length < 150 || text.length > 320) problems.push(`length_${text.length}`);
   if (!text.includes(opts.wish)) problems.push("no_wish");
+  if (text.trimEnd().endsWith("?")) problems.push("question_end"); // 06 v3.1: 질문으로 끝내지 않는다
   if (opts.judgement && overlapRatio(text, opts.judgement) >= 0.6) problems.push("overlap");
   return problems;
 }
@@ -180,6 +181,7 @@ export function processPartOutput(
     requiredSections: PARTS[part].headers,
     headwind2027: part === "B" && built.headwind2027,
     c1Rules,
+    wish: built.input.answers.q3_wish_2027,
   });
   for (const w of bannedWords) if (text.includes(w)) issues.push({ code: "character_name", detail: w });
   const failures = issues.filter((i) => i.severity !== "경고");
