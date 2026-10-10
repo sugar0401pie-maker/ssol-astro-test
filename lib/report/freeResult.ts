@@ -5,7 +5,7 @@
 import { DOMAIN_MAP, isSoftTone, type Answers, type Q2Word } from "../astro/answers.ts";
 import type { CharacterResult } from "../astro/character.ts";
 import { SHOW_CHARACTER, characterLabel } from "./characterDisplay.ts";
-import { CHARACTER_GRID, ELEMENTS, SIGNS, STYLES, STYLE_BY_ELEMENT, elementOf, type Element, type PointKey } from "../astro/constants.ts";
+import { CHARACTER_GRID, PLANET_KEYS, SIGNS, STYLES, STYLE_BY_ELEMENT, elementOf, type Element, type PointKey } from "../astro/constants.ts";
 import type { Accuracy, Longitudes, NatalChart } from "../astro/natal.ts";
 import {
   buildTimeline, periodFilter, scoreInWindow, turningPoints, type ScoredEvent, type TimelineEvent,
@@ -23,11 +23,26 @@ export const PAID_SECTION_TITLES = [
   { no: 7, title: "별이 주는 질문과 웰니스 제안" },
 ] as const;
 
+/** 휠 탭 시트(프로토타입 planetSheet·signSheet·aspectSheet 그대로): 제목 + 작은 글씨 kicker + 문단(굵은 앞말 b가 있을 수 있음) */
 export interface WheelSheet {
   title: string;
-  lines: string[];
-  /** 무료로는 일부만 보낸 시트(나머지는 결제 후) */
-  partial: boolean;
+  /** 별자리 시트 제목 앞 기호 */
+  glyph?: string;
+  kicker: string;
+  paras: Array<{ b?: string; t: string }>;
+  /** 작은 회색 줄(예: "이 칸에 있는 행성: …") */
+  muted?: string;
+}
+
+/** 휠 각도 선(프로토타입 topAspects: 합 제외, 행성끼리, 점수순 — 앞 8개만 처음에 보임) */
+export interface WheelAspect {
+  a: PointKey;
+  b: PointKey;
+  aspect: string;
+  orb: number;
+  harm: boolean;
+  /** '표로 보기' 각도 표의 뜻(B3 line_meaning) */
+  meaning: string;
 }
 
 export interface FreeResult {
@@ -37,12 +52,23 @@ export interface FreeResult {
   /** 점성술이 처음인 사람에게 태양·달·상승궁 용어 한 줄 설명(A16, 마스터스펙 6-1 기타) */
   terms: Array<{ name: string; line: string }>;
   accuracy: Accuracy;
+  /** 결과 머리(프로토타입 res-head): "1996.04.01 10:17 · 경기" */
+  header: { title: string; line: string };
+  /** 출생 순간 역행 중인 행성 */
+  retro: PointKey[];
+  /** '표로 보기' 각주의 계산 시각 "UTC 1996-04-01 01:17" */
+  utcLabel: string;
+  /** 휠 각도 선(점수순) — 시트 키는 순서 번호 */
+  wheelAspects: WheelAspect[];
+  /** A등급 역량 동점: 2번 섹션 "요즘의 나와 더 가까운 건?" 두 카드(프로토타입 renderType). 아니면 null */
+  tie: { options: Array<{ competency: string; style: string; card: string; selected: boolean }> } | null;
   gradeNote: string;
   /** B·C등급: "태어난 시간을 알면 더 정확해져요" 안내(A15 FIX_ADD_TIME) */
   addTimeNote: string | null;
   chart: NatalChart;
-  elements: { strong: { element: Element; text: string; styleLink: string } | null; weak: Array<{ element: Element; text: string }> };
-  /** 휠 탭 시트. lines 키는 lineKey(a, b, aspect) — 각도 선(B3, 이 차트에 있는 선만) */
+  /** 4원소(프로토타입 renderSky): 가장 강한 원소(점 표시) + A7 문장(강할 때 1개 + 1점 이하인 원소의 부족할 때) */
+  elements: { strongest: Element; texts: string[] };
+  /** 휠 탭 시트. lines 키는 wheelAspects 순서 번호 */
   wheelSheets: { planets: Partial<Record<PointKey, WheelSheet>>; signs: Record<string, WheelSheet>; lines: Record<string, WheelSheet> };
   /** 처음인 사용자의 휠 3단계 안내 말풍선(A15 FIX_WHEEL_TIP_1~3) */
   wheelTips: string[];
@@ -109,39 +135,50 @@ const BIG3_LABEL = { sun: "태양 (삶의 중심)", moon: "달 (감정의 욕구
 
 // ---- 4원소 ----
 
+const ELEM_ORDER: readonly Element[] = ["불", "흙", "공기", "물"];
+
 /**
- * A7은 "강할 때·부족할 때의 점수 경계는 엔진에서 정한다"고 했다. 여기서 정한 경계(Claude 판단, owner 검토 가능):
- * 강함 = 캐릭터 방식을 정한 원소(가장 강한 원소, 동점이면 달→태양 원소) 하나, 부족함 = 0점인 원소.
+ * 4원소 문장(프로토타입 renderSky 그대로): 가장 강한 원소 = 캐릭터 방식을 정한 원소가 최고점이면 그것, 아니면 불·흙·공기·물 순 첫 최고점.
+ * A7 '강할 때' 1개 + 점수가 1점 이하인 원소마다 '부족할 때'.
  */
 export function elementTexts(db: AstroDb, elements: Record<Element, number>, dominant: Element): FreeResult["elements"] {
-  const strongRow = row(db, "A7", `ELEM_${ELEMENT_ID[dominant]}_STRONG`);
-  return {
-    strong: strongRow ? { element: dominant, text: strongRow.text, styleLink: strongRow.style_link } : null,
-    weak: ELEMENTS.filter((e) => elements[e] === 0).map((e) => ({ element: e, text: text(db, "A7", `ELEM_${ELEMENT_ID[e]}_WEAK`, "text") })),
-  };
+  const max = Math.max(...ELEM_ORDER.map((e) => elements[e]));
+  const strongest = elements[dominant] === max ? dominant : ELEM_ORDER.find((e) => elements[e] === max)!;
+  const texts = [text(db, "A7", `ELEM_${ELEMENT_ID[strongest]}_STRONG`, "text")];
+  for (const e of ELEM_ORDER) if (elements[e] <= 1) texts.push(text(db, "A7", `ELEM_${ELEMENT_ID[e]}_WEAK`, "text"));
+  return { strongest, texts: texts.filter(Boolean) };
 }
 
 // ---- 휠 탭 시트 ----
 
-function planetSheet(db: AstroDb, key: PointKey, chart: NatalChart): WheelSheet | null {
+function planetSheet(db: AstroDb, key: PointKey, chart: NatalChart, retro: readonly PointKey[]): WheelSheet | null {
   const p = chart.planets[key];
   if (!p) return null;
   const sid = SIGN_ID[p.sign];
-  const houseLine = p.house ? row(db, ["jupiter", "saturn", "uranus", "neptune", "pluto"].includes(key) ? "B2b" : "B2a", `HS_${POINT_ID[key]}_H${pad2(p.house)}`) : null;
-  const title = `${POINT_KO[key]} · ${p.sign}${p.house ? ` · ${p.house}하우스` : ""}`;
-  // 태양·달·상승궁은 무료: 본문 전체
-  if (key === "sun" || key === "moon" || key === "asc") {
-    const table = key === "sun" ? "A2" : key === "moon" ? "A3" : "A4";
-    const lines = [text(db, table, `${POINT_ID[key]}_${sid}`, "text")];
-    if (houseLine) lines.push(`${houseLine.short_line} ${houseLine.text}`.trim());
-    return { title, lines: lines.filter(Boolean), partial: false };
+  const term = row(db, "A16", `TERM_${POINT_ID[key]}`);
+  const deg = `${p.sign} ${p.deg.toFixed(1)}°`;
+  if (key === "asc") {
+    return { title: `상승궁 · ${p.sign} · 1하우스`, kicker: `${deg} — ${term ? `${term.nickname}: ${term.meaning_line}` : ""}`, paras: [{ t: text(db, "A4", `ASC_${sid}`, "text") }].filter((x) => x.t) };
   }
-  if (key === "mc") return { title, lines: [text(db, "A16", "TERM_MC", "meaning_line"), text(db, "A16", "TERM_MC", "detail")].filter(Boolean), partial: false };
-  // 나머지 행성: 별자리(B1a·B1b) + 하우스(B2a·B2b) 문장 전체 — 2026-10-09부터 무료
-  const signRow = row(db, "B1a", `PL_${POINT_ID[key]}_${sid}`) ?? row(db, "B1b", `PL_${POINT_ID[key]}_${sid}`);
-  const lines = signRow ? [signRow.short_line, signRow.text] : [text(db, "A16", `TERM_${POINT_ID[key]}`, "meaning_line")];
-  if (houseLine) lines.push(`${p.house}하우스 · ${houseLine.short_line} ${houseLine.text}`.trim());
-  return { title, lines: lines.filter(Boolean), partial: false };
+  if (key === "mc") {
+    return { title: `천정 · ${p.sign} · ${p.house}하우스`, kicker: deg, paras: term ? [{ t: `${term.meaning_line} ${term.detail}` }] : [] };
+  }
+  const title = `${POINT_KO[key]} · ${p.sign}${p.house ? ` · ${p.house}하우스` : ""}`;
+  const kicker = `${deg}${retro.includes(key) ? " · 역행" : ""}${term ? ` — ${term.nickname}: ${term.meaning_line}` : ""}`;
+  const paras: WheelSheet["paras"] = [];
+  if (key === "sun" || key === "moon") {
+    const t = text(db, key === "sun" ? "A2" : "A3", `${POINT_ID[key]}_${sid}`, "text");
+    if (t) paras.push({ t });
+    const b2 = p.house ? row(db, "B2a", `HS_${POINT_ID[key]}_H${pad2(p.house)}`) : null;
+    if (b2) paras.push({ t: `${b2.short_line} ${b2.text}` });
+    return { title, kicker, paras };
+  }
+  const outer = key === "uranus" || key === "neptune" || key === "pluto";
+  const b1 = row(db, outer ? "B1b" : "B1a", `PL_${POINT_ID[key]}_${sid}`);
+  if (b1) paras.push({ b: b1.short_line, t: b1.text });
+  const b2 = p.house ? row(db, key === "mercury" || key === "venus" || key === "mars" ? "B2a" : "B2b", `HS_${POINT_ID[key]}_H${pad2(p.house)}`) : null;
+  if (b2) paras.push({ b: `${p.house}하우스`, t: `· ${b2.short_line} ${b2.text}` });
+  return { title, kicker, paras };
 }
 
 /** A6 '쉬운 정의' 한 줄(역량·방식). */
@@ -155,29 +192,34 @@ export function lineKey(a: string, b: string, aspect: string): string {
 }
 
 const ASPECT_TERM: Record<string, string> = { 합: "TERM_CONJ", 육분: "TERM_SEXTILE", 사각: "TERM_SQUARE", 삼분: "TERM_TRINE", 충: "TERM_OPPOSITION" };
+const GROUP_KO: Record<string, string> = { CONJ: "합", HARM: "조화", TENSE: "긴장" };
+const b3For = (db: AstroDb, a: PointKey, b: PointKey, aspect: string) => {
+  const g = aspectGroup(aspect);
+  return row(db, "B3", `ASP_${POINT_ID[a]}_${POINT_ID[b]}_${g}`) ?? row(db, "B3", `ASP_${POINT_ID[b]}_${POINT_ID[a]}_${g}`);
+};
 
-/**
- * 각도 선 탭 시트(B3: 제목 + 선 탭 한 줄 + 해석 2문장). 행성 순서가 반대로 적힌 행도 찾는다.
- * B3에는 개인 행성·목성·토성 쌍만 있어서, 천왕성·해왕성·명왕성이 낀 선은 A16 용어 문장(각도 뜻 + 두 행성 뜻)으로 보여 준다.
- */
-function lineSheets(db: AstroDb, chart: NatalChart): Record<string, WheelSheet> {
+/** 휠 각도 선(프로토타입 topAspects): 합은 빼고, 행성끼리만, (무게 합) × 각도 무게 × (1 − 오브/6) 점수순 */
+export function wheelAspects(db: AstroDb, chart: NatalChart): WheelAspect[] {
+  return chart.aspects
+    .filter((a) => a.aspect !== "합" && READING_WEIGHT[a.a] && READING_WEIGHT[a.b])
+    .map((a) => ({ a, sc: (READING_WEIGHT[a.a]! + READING_WEIGHT[a.b]!) * READING_ASPECT_W[a.aspect] * (1 - a.orb / 6) }))
+    .sort((x, y) => y.sc - x.sc)
+    .map(({ a }) => ({ a: a.a, b: a.b, aspect: a.aspect, orb: a.orb, harm: a.aspect === "삼분" || a.aspect === "육분", meaning: b3For(db, a.a, a.b, a.aspect)?.line_meaning ?? "" }));
+}
+
+/** 각도 선 탭 시트(프로토타입 aspectSheet): B3 제목, kicker(두 행성 별자리·각도·오차 — 각도 별명), B3 두 줄 / 없으면 A16 각도 뜻 */
+function lineSheets(db: AstroDb, chart: NatalChart, list: WheelAspect[]): Record<string, WheelSheet> {
   const out: Record<string, WheelSheet> = {};
-  const group = (a: string) => (a === "합" ? "CONJ" : a === "삼분" || a === "육분" ? "HARM" : "TENSE");
-  for (const asp of chart.aspects) {
-    const g = group(asp.aspect);
-    const key = lineKey(asp.a, asp.b, asp.aspect);
-    const r = row(db, "B3", `ASP_${POINT_ID[asp.a]}_${POINT_ID[asp.b]}_${g}`) ?? row(db, "B3", `ASP_${POINT_ID[asp.b]}_${POINT_ID[asp.a]}_${g}`);
-    if (r) {
-      out[key] = { title: `${r.title}(${asp.aspect})`, lines: [r.line_meaning, r.text].filter(Boolean), partial: false };
-      continue;
-    }
-    const lines = [
-      text(db, "A16", ASPECT_TERM[asp.aspect], "meaning_line"),
-      `${POINT_KO[asp.a]}: ${text(db, "A16", `TERM_${POINT_ID[asp.a]}`, "meaning_line")}`,
-      `${POINT_KO[asp.b]}: ${text(db, "A16", `TERM_${POINT_ID[asp.b]}`, "meaning_line")}`,
-    ].filter((l) => !l.endsWith(": "));
-    if (lines[0]) out[key] = { title: `${POINT_KO[asp.a]}-${POINT_KO[asp.b]} ${asp.aspect}`, lines, partial: false };
-  }
+  list.forEach((a, i) => {
+    const r = b3For(db, a.a, a.b, a.aspect);
+    const ta = row(db, "A16", ASPECT_TERM[a.aspect]);
+    const kicker = `${POINT_KO[a.a]} ${chart.planets[a.a]?.sign} · ${POINT_KO[a.b]} ${chart.planets[a.b]?.sign} · ${a.aspect} (오차 ${a.orb.toFixed(1)}°)${ta ? ` — ${ta.nickname}` : ""}`;
+    out[String(i)] = {
+      title: r ? r.title : `${POINT_KO[a.a]}-${POINT_KO[a.b]} ${GROUP_KO[aspectGroup(a.aspect)]}`,
+      kicker,
+      paras: r ? [{ t: r.line_meaning }, { t: r.text }] : ta ? [{ t: ta.meaning_line }] : [],
+    };
+  });
   return out;
 }
 
@@ -217,12 +259,28 @@ export function planetReading(db: AstroDb, chart: NatalChart): FreeResult["plane
   return { head: b11(db, "HEAD_PLANETS"), planets, aspectsHead: b11(db, "HEAD_ASPECTS"), aspects };
 }
 
-function signSheets(db: AstroDb): Record<string, WheelSheet> {
+/** 별자리 칸 탭 시트(프로토타입 signSheet): 기호+이름, kicker(기간·원소·양태·수호성·키워드), 한 줄·용어, (시간 앎) 하우스 뜻, 이 칸의 행성 */
+function signSheets(db: AstroDb, chart: NatalChart): Record<string, WheelSheet> {
   const out: Record<string, WheelSheet> = {};
-  for (const sign of SIGNS) {
+  const asc = chart.planets.asc;
+  SIGNS.forEach((sign, i) => {
     const r = row(db, "A1", `SIGN_${SIGN_ID[sign]}`);
-    if (r) out[sign] = { title: `${r.sign} · ${r.dates}`, lines: [r.one_liner, r.term_note].filter(Boolean), partial: false };
-  }
+    if (!r) return;
+    const paras: WheelSheet["paras"] = [{ t: r.one_liner }, { t: r.term_note }].filter((x) => x.t);
+    if (asc) {
+      const hn = (((i - SIGNS.indexOf(asc.sign)) % 12) + 12) % 12 + 1;
+      const t = row(db, "A16", `TERM_H${pad2(hn)}`);
+      if (t) paras.push({ b: `${hn}하우스 · ${t.nickname}`, t: `— ${t.meaning_line}` });
+    }
+    const inside = PLANET_KEYS.filter((k) => chart.planets[k]?.sign === sign).map((k) => POINT_KO[k]);
+    out[sign] = {
+      title: r.sign,
+      glyph: r.symbol,
+      kicker: `${r.dates} · ${r.element} · ${r.modality} · 수호성 ${r.ruler} · ${r.keywords}`,
+      paras,
+      muted: inside.length ? `이 칸에 있는 행성: ${inside.join(", ")}` : undefined,
+    };
+  });
   return out;
 }
 
@@ -369,6 +427,12 @@ export function buildFreeResult(args: {
   birthKey?: string;
   /** 현지 출생일 'YYYY-MM-DD' — 키론 리턴(2026 전환점) 계산용. 없으면 키론은 빠진다 */
   birthDate?: string;
+  /** 결과 머리 줄(프로토타입 res-head, 예: "1996.04.01 10:17 · 경기") */
+  birthLine?: string;
+  /** 출생 순간 역행 중인 행성(natal.ts retrogradeAt) */
+  retro?: PointKey[];
+  /** 출생 시각 UTC(ISO) — '표로 보기' 각주 */
+  utc?: string;
   now?: Date;
 }): FreeResult {
   const { db, chart, longitudes, character, answers, nickname, birthYear } = args;
@@ -435,11 +499,15 @@ export function buildFreeResult(args: {
   const temp = row(db, "A17b", `TEMP_${ELEMENT_ID[elementOf(longitudes.sun)]}_${ELEMENT_ID[elementOf(longitudes.moon)]}`);
   const charRow = db.dbs.A5.rows.find((r) => r.character === character.name)!;
 
+  const retro = args.retro ?? [];
   const planets: FreeResult["wheelSheets"]["planets"] = {};
   for (const k of Object.keys(chart.planets) as PointKey[]) {
-    const sh = planetSheet(db, k, chart);
+    const sh = planetSheet(db, k, chart, retro);
     if (sh) planets[k] = sh;
   }
+  const wAspects = wheelAspects(db, chart);
+  // A등급 역량 동점: 계산상 1위가 먼저, 지금 고른 쪽이 눌린 상태(프로토타입 renderType)
+  const tiePair = character.needs_confirm ? [character.competency, character.runner_up].sort((a, b) => character.percentiles[a] - character.percentiles[b]) : [];
 
   const soft = isSoftTone(answers.q2);
   return {
@@ -449,11 +517,24 @@ export function buildFreeResult(args: {
       .filter((k) => k !== "ASC" || chart.planets.asc)
       .map((k) => ({ name: text(db, "A16", `TERM_${k}`, "name"), line: text(db, "A16", `TERM_${k}`, "meaning_line") })),
     accuracy: chart.accuracy,
+    header: { title: `${nickname}님의 별 리포트`, line: args.birthLine ?? "" },
+    retro,
+    utcLabel: args.utc ? `UTC ${args.utc.slice(0, 16).replace("T", " ")}` : "",
+    wheelAspects: wAspects,
+    tie:
+      chart.accuracy === "A" && tiePair.length === 2
+        ? {
+            options: tiePair.map((comp) => {
+              const name = CHARACTER_GRID[comp][STYLES.indexOf(character.style)];
+              return { competency: comp, style: character.style, card: db.dbs.B6.rows.find((r) => r.character === name)?.choice_line ?? "", selected: comp === character.competency };
+            }),
+          }
+        : null,
     gradeNote: text(db, "A15", `FIX_GRADE_${chart.accuracy}`, "text"),
     addTimeNote: chart.accuracy === "A" ? null : text(db, "A15", "FIX_ADD_TIME", "text").replace(/\s*→\s*\[.*\]\s*$/, ""),
     chart,
     elements: elementTexts(db, chart.elements, dominant),
-    wheelSheets: { planets, signs: signSheets(db), lines: lineSheets(db, chart) },
+    wheelSheets: { planets, signs: signSheets(db, chart), lines: lineSheets(db, chart, wAspects) },
     wheelTips: [1, 2, 3].map((i) => text(db, "A15", `FIX_WHEEL_TIP_${i}`, "text")).filter(Boolean),
     planetReading: planetReading(db, chart),
     character: {

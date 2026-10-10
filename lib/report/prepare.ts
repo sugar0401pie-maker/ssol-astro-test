@@ -32,9 +32,25 @@ export function sectionParagraphs(s: Pick<PaidSection, "body" | "tail">): string
  * 결제 전 미리보기(2026-10-09 페이월): 유료 섹션마다 제목 + 굵은 요약 + 본문 앞부분 문장 두 개만.
  * 나머지 본문·표·근거는 보내지 않는다(블러만으로 가리면 결제 없이 볼 수 있으므로).
  */
-export function previewLines(skeleton: ReturnType<typeof prepareSkeleton>["skeleton"]): Array<{ no: number; title: string; first: string; lines: string[] }> {
+export function previewLines(
+  skeleton: ReturnType<typeof prepareSkeleton>["skeleton"],
+): Array<{ no: number; title: string; first: string; lines: string[]; parts: Array<{ head?: string; text?: string }> }> {
   return skeleton.sections.map((s) => {
     const sentences = sectionParagraphs(s).join(" ").match(/[^.!?]+[.!?]+/g) ?? [];
-    return { no: s.no, title: s.title, first: s.summary ?? "", lines: sentences.slice(0, PREVIEW_LINES).map((x) => x.trim()) };
+    // 프로토타입 잠긴 화면(.locked .lp): 소제목은 그대로, 문단·목록은 앞 2줄 남짓만 보이고 흐려진다 — 앞부분 글자만 보낸다(본문 전체는 보내지 않음).
+    const parts: Array<{ head?: string; text?: string }> = [];
+    for (const b of [...s.body, ...s.tail]) {
+      if (parts.length >= PREVIEW_PARTS) break;
+      if (b.t === "head" || b.t === "sub") parts.push({ head: b.text });
+      else {
+        const t = blockText(b);
+        if (t) parts.push({ text: t.length > PREVIEW_CHARS ? t.slice(0, PREVIEW_CHARS) : t });
+      }
+    }
+    return { no: s.no, title: s.title, first: s.summary ?? "", lines: sentences.slice(0, PREVIEW_LINES).map((x) => x.trim()), parts };
   });
 }
+
+/** 잠긴 섹션 미리보기: 조각 수와 조각마다 보내는 글자 수(2.7줄 남짓 — 화면에서 흐려지는 만큼만) */
+const PREVIEW_PARTS = 6;
+const PREVIEW_CHARS = 70;

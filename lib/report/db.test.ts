@@ -6,8 +6,6 @@ import { readFileSync } from "node:fs";
 import { CHARACTER_GRID, COMPETENCY_BY_PLANET, ELEMENTS, SIGNS, STYLES } from "../astro/constants.ts";
 import { Q1_OPTIONS, Q2_OPTIONS, Q3_ALL, type Answers } from "../astro/answers.ts";
 import { b9Id } from "./movement.ts";
-import { pickAspectLines } from "../astro/wheelLayout.ts";
-import { lineKey } from "./freeResult.ts";
 import { computeNatal } from "../astro/natal.ts";
 import { judgeCharacter, type CalibrationTable } from "../astro/character.ts";
 import { ELEMENT_ID, POINT_ID, SIGN_ID, fillTemplate, firstSentence, pad2, row, tryFill, type AstroDb } from "./db.ts";
@@ -125,8 +123,13 @@ test("샘플: 캐릭터·태양달 대비·원소가 샘플 리포트와 같은 
   assert.equal(r.character.styleLine, row(db, "A6", "STYLE_APPROACH")!.plain);
   // 샘플: "겉은 빠르고 당당한 양자리 태양이지만, 속은 차근차근 정리해야 편한 처녀자리 달이에요."
   assert.ok(r.character.sunMoonLine?.startsWith("겉은 빠르고 당당한 양자리 태양이지만, 속은 차근차근 정리해야 편한 처녀자리 달이에요."));
-  assert.equal(r.elements.strong?.element, "불");
-  assert.deepEqual(r.elements.weak.map((w) => w.element), ["공기"]);
+  // 프로토타입 renderSky: 가장 강한 원소 = 불, 1점 이하인 원소마다 '부족할 때'
+  assert.equal(r.elements.strongest, "불");
+  assert.equal(r.elements.texts[0], row(db, "A7", "ELEM_FIRE_STRONG")!.text);
+  for (const e of ["불", "흙", "공기", "물"] as const) {
+    const weak = row(db, "A7", `ELEM_${({ 불: "FIRE", 흙: "EARTH", 공기: "AIR", 물: "WATER" } as const)[e]}_WEAK`)!.text;
+    assert.equal(r.elements.texts.includes(weak), r.chart.elements[e] <= 1, e);
+  }
   assert.equal(r.big3.length, 3);
   assert.equal(r.gradeNote, row(db, "A15", "FIX_GRADE_A")!.text);
   assert.equal(r.addTimeNote, null);
@@ -135,9 +138,11 @@ test("샘플: 캐릭터·태양달 대비·원소가 샘플 리포트와 같은 
 
 test("샘플: 휠 각도 선마다 탭 시트(B3)와 처음 안내 말풍선 3개가 있다", () => {
   const r = sample();
-  const lines = pickAspectLines(r.chart.aspects, true);
-  assert.ok(lines.length > 0);
-  for (const l of lines) assert.ok(r.wheelSheets.lines[lineKey(l.a, l.b, l.aspect)], `${l.a}-${l.b} ${l.aspect}`);
+  // 프로토타입 topAspects: 합 제외, 행성끼리, 점수순 — 선마다 시트(번호)
+  assert.ok(r.wheelAspects.length > 0 && r.wheelAspects.every((a) => a.aspect !== "합"));
+  r.wheelAspects.forEach((a, i) => assert.ok(r.wheelSheets.lines[String(i)]?.kicker.includes(`${a.aspect} (오차`), `${a.a}-${a.b}`));
+  // 별자리 시트: 기간·원소·양태·수호성·키워드
+  assert.ok(r.wheelSheets.signs["양자리"].kicker.includes("수호성 화성"));
   assert.equal(r.wheelTips.length, 3);
 });
 
@@ -179,8 +184,7 @@ test("C등급: 하우스 없이, 전환점은 C등급판, 휠 시트에 하우�
   assert.ok(r.year2026.turningPoints.every((t) => !t.includes("{{") && !t.includes("하우스")));
   assert.ok(Object.values(r.wheelSheets.planets).every((s) => !s!.title.includes("하우스")));
   // 2026-10-09부터 모든 행성 설명 무료(전체), C등급은 하우스 문장 없음
-  assert.equal(r.wheelSheets.planets.mars?.partial, false);
-  assert.ok(r.wheelSheets.planets.mars!.lines.length >= 2 && r.wheelSheets.planets.mars!.lines.every((l) => !l.includes("하우스 ·")));
+  assert.ok(r.wheelSheets.planets.mars!.paras.length >= 1 && r.wheelSheets.planets.mars!.paras.every((p) => !(p.b ?? "").includes("하우스")));
   assert.equal(r.planetReading.planets.length, 8);
   assert.ok(r.planetReading.planets.every((p) => p.houseLine === null && p.text));
   assert.ok(r.planetReading.aspects.length > 0 && r.planetReading.aspects.length <= 3);

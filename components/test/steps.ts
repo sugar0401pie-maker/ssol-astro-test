@@ -1,5 +1,6 @@
 // 테스트 화면 단계와 '이전' 버튼이 돌아갈 곳(순수 함수 — steps.test.ts).
-export type Step = "welcome" | "experience" | "firstTime" | "birth" | "q1" | "q2" | "q3" | "loading" | "candidates" | "tie" | "consent" | "result";
+// 2026-10-10 owner 결정: 질문 3개는 프로토타입처럼 한 화면(questions), 동점 선택은 결과 2번 섹션 안으로(별도 화면 없음).
+export type Step = "welcome" | "experience" | "firstTime" | "birth" | "questions" | "loading" | "candidates" | "consent" | "result";
 
 /** 이전 화면. 없으면 null(첫 화면·계산 중·결과는 '이전'을 보이지 않는다). 생년월일 화면은 처음 안내를 거쳤으면 그리로 돌아간다. */
 export function prevStep(step: Step, firstTime: boolean | null): Step | null {
@@ -10,12 +11,8 @@ export function prevStep(step: Step, firstTime: boolean | null): Step | null {
       return "experience";
     case "birth":
       return firstTime ? "firstTime" : "experience";
-    case "q1":
+    case "questions":
       return "birth";
-    case "q2":
-      return "q1";
-    case "q3":
-      return "q2";
     default:
       return null;
   }
@@ -29,11 +26,8 @@ const SLUG: Partial<Record<Step, string>> = {
   experience: "experience",
   firstTime: "intro",
   birth: "birth",
-  q1: "q1",
-  q2: "q2",
-  q3: "q3",
+  questions: "questions",
   candidates: "type",
-  tie: "type-check",
   result: "result",
 };
 
@@ -67,7 +61,7 @@ export interface Progress {
 
 /**
  * 새로고침한 주소의 화면을 그대로 보여 줘도 되는지 — 앞 화면의 답이 없으면 답이 있는 가장 뒤 화면으로 되돌린다.
- * 후보·동점·결과는 계산 결과가 메모리에만 있어 다시 그릴 수 없으므로 마지막 질문으로(저장된 결과가 있으면 그쪽은 화면에서 처리).
+ * 후보·결과는 계산 결과가 메모리에만 있어 다시 그릴 수 없으므로 질문 화면으로(저장된 결과가 있으면 그쪽은 화면에서 처리).
  */
 export function restorableStep(requested: Step, p: Progress | null): Step {
   if (!p) return "welcome";
@@ -81,17 +75,13 @@ export function restorableStep(requested: Step, p: Progress | null): Step {
         return ok("experience") && p.firstTime === true;
       case "birth":
         return ok("experience") && p.firstTime !== null;
-      case "q1":
+      case "questions":
         return ok("birth") && p.consented;
-      case "q2":
-        return ok("q1") && !!p.answers.q1;
-      case "q3":
-        return ok("q2") && !!p.answers.q2;
       default:
         return false;
     }
   };
-  const want = requested === "candidates" || requested === "tie" || requested === "result" ? "q3" : requested;
+  const want = requested === "candidates" || requested === "result" ? "questions" : requested;
   // 요청한 화면에서 '이전' 방향으로 거슬러 올라가며 처음 보여 줄 수 있는 화면
   let s: Step | null = want;
   while (s && !ok(s)) s = s === "firstTime" ? "experience" : prevStep(s, p.firstTime);

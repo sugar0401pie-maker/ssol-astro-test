@@ -6,7 +6,7 @@ export const metadata: Metadata = { title: "쏠 아스트로 하우스 — 로�
 
 export default function LoginPage() {
   return (
-    <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 px-4 py-10">
+    <main className="flex w-full flex-1 flex-col gap-6 pb-8 pt-7">
       <Suspense fallback={null}>
         <LoginClient />
       </Suspense>

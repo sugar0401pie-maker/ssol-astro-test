@@ -6,6 +6,7 @@
 // 인스타그램·유튜브는 웹에서 바로 올리는 주소가 없어, 공유 이미지를 기기 공유창으로 넘기거나 저장한 뒤 앱에서 올리도록 안내한다.
 import { useEffect, useState } from "react";
 import type { NatalChart } from "@/lib/astro/natal";
+import BottomSheet from "@/components/ui/BottomSheet";
 import { BRAND_PATHS } from "./brandIcons";
 import { buildShareSvg, svgToPng } from "./shareImage";
 
@@ -66,15 +67,6 @@ export default function ShareSheet({ open, onClose, ...props }: ShareProps & { o
   useEffect(() => () => {
     if (preview?.startsWith("blob:")) URL.revokeObjectURL(preview);
   }, [preview]);
-
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
-
-  if (!open) return null;
 
   const file = png ? new File([png], "ssol-astro.png", { type: "image/png" }) : null;
   const canShareFile = !!file && typeof navigator !== "undefined" && !!navigator.canShare?.({ files: [file] });
@@ -138,40 +130,32 @@ export default function ShareSheet({ open, onClose, ...props }: ShareProps & { o
     }
   }
 
+  // 프로토타입 shareSheet(): 크림색 아래 시트 + 6개 아이콘. 공유 이미지 미리보기·저장은 owner 결정(2026-10-10)으로 유지.
   return (
-    <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/50" onClick={onClose}>
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="share-title"
-        className="flex max-h-[90vh] w-full max-w-md flex-col gap-4 overflow-auto rounded-t-3xl bg-midnight px-4 pb-8 pt-4 text-cream"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between">
-          <h3 id="share-title" className="text-lg font-bold">결과 공유하기</h3>
-          <button type="button" className="text-sm underline" onClick={onClose}>
-            닫기
+    <BottomSheet open={open} onClose={onClose} labelledBy="share-title">
+      <h3 id="share-title">결과 공유하기</h3>
+      <p className="kicker">{props.nickname}님의 별 리포트를 나눠 보세요. 출생 정보는 공유되지 않아요.</p>
+      <div className="share-grid">
+        {SHARES.map((x) => (
+          <button key={x.key} type="button" id={`share-${x.key}`} onClick={() => void share(x.key)}>
+            <i style={{ background: x.bg }}>{x.icon}</i>
+            {x.label}
           </button>
-        </div>
-        <p className="text-sm text-cream/80">{props.nickname}님의 별 리포트를 나눠 보세요. 출생 정보는 공유되지 않아요.</p>
-        <div className="grid grid-cols-3 gap-3">
-          {SHARES.map((x) => (
-            <button key={x.key} type="button" onClick={() => void share(x.key)} className="flex flex-col items-center gap-1.5 text-xs">
-              <i className="flex h-14 w-14 items-center justify-center rounded-full" style={{ background: x.bg }}>
-                {x.icon}
-              </i>
-              {x.label}
-            </button>
-          ))}
-        </div>
-        {note && <p role="status" className="rounded-xl bg-cream px-3 py-2 text-center text-sm text-navy">{note}</p>}
-        {/* eslint-disable-next-line @next/next/no-img-element -- 브라우저에서 만든 이미지(blob)라 next/image를 쓰지 않는다 */}
-        {preview ? <img src={preview} alt="공유 이미지 미리보기: 출생차트와 유형 문구" className="mx-auto max-h-[40vh] rounded-2xl" /> : <p className="text-sm text-cream/70">이미지를 만드는 중…</p>}
-        <button type="button" className="w-full rounded-full border border-cream/50 px-6 py-3 disabled:opacity-40" disabled={!png} onClick={saveImage}>
-          공유 이미지 저장하기
-        </button>
-        <p className="text-xs text-cream/70">이미지에는 닉네임·생년월일·태어난 곳이 들어가지 않아요.</p>
+        ))}
       </div>
-    </div>
+      {note && (
+        <p role="status" className="muted" style={{ textAlign: "center" }}>
+          {note}
+        </p>
+      )}
+      {/* eslint-disable-next-line @next/next/no-img-element -- 브라우저에서 만든 이미지(blob)라 next/image를 쓰지 않는다 */}
+      {preview ? <img src={preview} alt="공유 이미지 미리보기: 출생차트와 유형 문구" className="mx-auto mt-2 max-h-[34vh] rounded-2xl" /> : <p className="muted">이미지를 만드는 중…</p>}
+      <button type="button" className="btn block mt-3" disabled={!png} onClick={saveImage}>
+        공유 이미지 저장하기
+      </button>
+      <p className="muted" style={{ fontSize: ".8rem", marginTop: 8 }}>
+        이미지에는 닉네임·생년월일·태어난 곳이 들어가지 않아요.
+      </p>
+    </BottomSheet>
   );
 }

@@ -92,6 +92,20 @@ export async function getResult(owner: Owner, id: string): Promise<StoredResult 
   return (data as unknown as StoredResult | null) ?? null;
 }
 
+/** 결과 2번 섹션에서 동점 유형을 바꿨을 때: 저장된 입력(competencyPick)과 판정 요약만 고친다. 본인 것만. */
+export async function updateResultPick(
+  owner: Owner,
+  id: string,
+  patch: { input: BirthInput; character: string; competency: string; style: string; chatSummary?: string | null },
+): Promise<boolean> {
+  const row: Record<string, unknown> = { birth_input: patch.input, character: patch.character, competency: patch.competency, style: patch.style };
+  const run = (r: object) => byOwner(createAdminClient().from(TABLE).update(r), owner).eq("id", id).select("id");
+  let { data, error } = await run(patch.chatSummary ? { ...row, chat_summary: patch.chatSummary, chat_summary_at: new Date().toISOString() } : row);
+  if (error?.code === "42703" && patch.chatSummary) ({ data, error } = await run(row));
+  if (error) throw new Error(`결과 수정 실패: ${error.code}`);
+  return (data?.length ?? 0) > 0;
+}
+
 export async function deleteResult(owner: Owner, id: string): Promise<boolean> {
   const { data, error } = await byOwner(createAdminClient().from(TABLE).delete(), owner).eq("id", id).select("id");
   if (error) throw new Error(`결과 삭제 실패: ${error.code}`);

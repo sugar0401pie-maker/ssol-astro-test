@@ -1,58 +1,59 @@
 "use client";
 
-// 5년 타임라인(디자인가이드 7장, 바람 판정 v3): 2027→2031 별 다섯 개를 선으로 잇는다.
-// 별 크기·밝기 = 이루어짐(활짝 열리는 해 큼 · 내 손에 달린 해 중간 · 기반을 다지는 해 작음 — 흐리게 지우지 않고 테두리 또렷이),
-// 별 둘레 고리 = 움직임(움직이는 해만, 3~4초 주기로 반짝임 / '동작 줄이기'면 점선 고리),
-// 바라는 것이 처음 열리는 해 = 별 안을 펄골드로 채움. 색만으로 구분하지 않도록 판정 이름(두 말)을 글자로 함께 단다.
+// 5년 타임라인 — 2026-10-09 프로토타입 timelineSVG() 그대로: 세로 지그재그 별 5개(크림 상자 안).
+// 별 크기·진하기 = 이루어짐(순풍 > 보통 > 역풍), 처음 열리는 해 = 펄골드, 움직이는 해 = 반짝이는 고리(.ring-move, 동작 줄이기면 점선),
+// 오른쪽 글자: 연도(+ ✦) · 판정 이름 · 한 해의 테마 · (처음 열리는 해 / 경계 표시).
 import type { TimelineStar } from "@/lib/report/paidSkeleton";
 
-const SIZE: Record<TimelineStar["level"], number> = { 순풍: 30, 보통: 22, 역풍: 15 };
-
-function starPath(cx: number, cy: number, r: number): string {
+function star(cx: number, cy: number, r: number, fill: string, stroke: string) {
   const pts: string[] = [];
   for (let i = 0; i < 10; i++) {
-    const rad = (Math.PI / 5) * i - Math.PI / 2;
-    const rr = i % 2 === 0 ? r : r * 0.45;
-    pts.push(`${(cx + rr * Math.cos(rad)).toFixed(2)},${(cy + rr * Math.sin(rad)).toFixed(2)}`);
+    const a = -Math.PI / 2 + (i * Math.PI) / 5;
+    const rr = i % 2 ? r * 0.45 : r;
+    pts.push(`${(cx + rr * Math.cos(a)).toFixed(2)},${(cy + rr * Math.sin(a)).toFixed(2)}`);
   }
-  return `M${pts.join("L")}Z`;
+  return <polygon points={pts.join(" ")} fill={fill} stroke={stroke} strokeWidth="1.2" strokeLinejoin="round" />;
 }
 
 export default function FiveYearStars({ stars }: { stars: TimelineStar[] }) {
-  if (!stars.length) return null;
+  const H = 88, top = 26;
+  const pts = stars.map((_, i) => [i % 2 ? 46 : 30, top + i * H] as const);
   return (
-    <figure className="rounded-2xl border border-gold/40 px-2 py-4" aria-label="앞으로 5년 타임라인">
-      <div className="relative grid" style={{ gridTemplateColumns: `repeat(${stars.length}, minmax(0, 1fr))` }}>
-        {/* 별자리 선 — 별 가운데 높이(36px)에 맞춘다 */}
-        <div aria-hidden className="absolute left-[10%] right-[10%] top-[36px] h-px bg-gold/50" />
-        {stars.map((s) => {
-          const r = SIZE[s.level];
-          return (
-            <div key={s.year} className="relative flex flex-col items-center gap-1 px-0.5 text-center">
-              <svg width="72" height="72" viewBox="0 0 72 72" aria-hidden="true">
-                {s.movement === "움직이는 해" && (
-                  <circle cx="36" cy="36" r={r + 6} fill="none" stroke="var(--astro-gold)" strokeWidth="1.5" className="astro-ring" />
+    <>
+      <div className="timeline" id="timeline" style={{ marginTop: 16 }}>
+        <svg viewBox={`0 0 320 ${top * 2 + H * (stars.length - 1)}`} role="img" aria-label="앞으로 5년 별 타임라인">
+          <polyline points={pts.map((p) => p.join(",")).join(" ")} fill="none" stroke="#013566" strokeOpacity=".35" strokeWidth="1.2" strokeDasharray="2 3" />
+          {stars.map((s, i) => {
+            const [x, y] = pts[i];
+            const r = s.level === "순풍" ? 13 : s.level === "보통" ? 9.5 : 6.5;
+            const op = s.level === "순풍" ? 1 : s.level === "보통" ? 0.7 : 0.45;
+            const tx = 78, ty = y - 14;
+            const extra = s.firstOpen ? "바라는 것이 처음 열리는 해" : s.edgeBadge ?? "";
+            return (
+              <g key={s.year}>
+                {s.movement === "움직이는 해" && <circle className="ring-move" cx={x} cy={y} r={r + 6} fill="none" stroke="#CBB27A" strokeWidth="1.4" />}
+                {star(x, y, r, s.firstOpen ? "#CBB27A" : `rgba(1,53,102,${op})`, s.firstOpen ? "#9E8550" : "#013566")}
+                <text x={tx} y={ty} fontSize="13" fontWeight="700" fill="#013566">
+                  {s.year}
+                  {s.movement === "움직이는 해" ? " ✦" : ""}
+                </text>
+                <text x={tx} y={ty + 17} fontSize="12.5" fill="#0B2A4F">
+                  {s.display}
+                </text>
+                <text x={tx} y={ty + 33} fontSize="11.5" fill="rgba(1,53,102,.72)">
+                  {s.theme}
+                </text>
+                {extra && (
+                  <text x={tx} y={ty + 49} fontSize="11" fontWeight="700" fill="#8A6F35">
+                    {extra}
+                  </text>
                 )}
-                <path
-                  d={starPath(36, 36, r)}
-                  fill={s.firstOpen ? "var(--astro-gold)" : s.level === "역풍" ? "var(--astro-midnight)" : "var(--astro-cream)"}
-                  stroke="var(--astro-gold)"
-                  strokeWidth={s.level === "역풍" ? 1.8 : 1.2}
-                />
-              </svg>
-              <p className="text-sm font-bold text-cream">{s.year}년</p>
-              <p className="text-[11px] leading-snug text-cream/90">{s.display}</p>
-              {s.edgeBadge && <p className="text-[10px] leading-snug text-gold">{s.edgeBadge}</p>}
-              {s.movement && <p className="text-[10px] leading-snug text-cream/70">{s.movement}</p>}
-              {s.theme && <p className="text-[10px] leading-snug text-cream/70">{s.theme}</p>}
-            </div>
-          );
-        })}
+              </g>
+            );
+          })}
+        </svg>
       </div>
-      <figcaption className="mt-3 px-2 text-center text-[11px] leading-relaxed text-cream/70">
-        별이 클수록 바라는 일이 열리기 쉬운 해예요. ✦ 고리 = 삶이 크게 움직이는 해(좋고 나쁨이 아니라 바뀌는 정도).
-        {stars.some((s) => s.firstOpen) && " 안이 채워진 별 = 바라는 것이 처음 열리는 해."}
-      </figcaption>
-    </figure>
+      <p className="legend">✦ 고리 = 삶이 크게 움직이는 해. 좋고 나쁨이 아니라 바뀌는 정도를 뜻해요.</p>
+    </>
   );
 }

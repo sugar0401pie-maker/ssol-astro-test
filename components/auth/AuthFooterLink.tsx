@@ -31,7 +31,7 @@ export default function AuthFooterLink() {
   if (loggedIn === null) return null;
 
   return (
-    <p className="mx-auto w-full max-w-md px-4 pt-6 text-center text-sm text-cream/80">
+    <p className="pt-2 text-center text-sm text-cream/80">
       {loggedIn ? (
         <>
           <Link href="/results" className="underline">내 결과</Link>

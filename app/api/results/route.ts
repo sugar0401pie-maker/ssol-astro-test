@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
 
   let computed;
   try {
-    computed = computeFree(parsed.input, parsed.answers, parsed.nickname, { askTie: true });
+    computed = computeFree(parsed.input, parsed.answers, parsed.nickname);
   } catch (e) {
     if (e instanceof RangeError) return NextResponse.json({ error: "고른 시간을 다시 확인해 주세요." }, { status: 400 });
     console.error("결과 계산 실패:", e instanceof Error ? e.name : "unknown");

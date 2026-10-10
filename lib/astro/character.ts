@@ -15,7 +15,7 @@ export interface CharacterResult {
   competency: Competency;
   style: Style;
   percentiles: Record<Competency, number>;
-  /** 1·2위 역량이 3%p 안 → "요즘 더 가까운 쪽은?" 확인 화면 */
+  /** 1·2위 역량이 3%p 안 → 결과 2번 섹션의 "요즘의 나와 더 가까운 건?"(A등급) */
   needs_confirm: boolean;
   element_tie: boolean;
   /** 확인 화면에 보여줄 2위 역량(needs_confirm일 때만 의미 있음) */
@@ -102,6 +102,7 @@ export function judgeCharacter(
  */
 export function withCompetencyPick(c: CharacterResult, pick: Competency | undefined): CharacterResult {
   if (!pick || !c.needs_confirm || (pick !== c.competency && pick !== c.runner_up)) return c;
-  if (pick === c.competency) return { ...c, needs_confirm: false };
-  return { ...c, competency: pick, runner_up: c.competency, name: characterName(pick, c.style), needs_confirm: false };
+  // 고른 뒤에도 needs_confirm은 그대로 둔다 — 결과 2번 섹션에서 두 유형 사이를 다시 바꿀 수 있게(프로토타입, owner 2026-10-10).
+  if (pick === c.competency) return c;
+  return { ...c, competency: pick, runner_up: c.competency, name: characterName(pick, c.style) };
 }

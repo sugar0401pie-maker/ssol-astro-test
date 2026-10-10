@@ -182,18 +182,19 @@ test("섹션 나누기: 6·7을 한 출력에서 나눈다", () => {
   assert.deepEqual(s[7], ["다."]);
 });
 
-test("C등급(시간 모름)은 2027·5년 판정 곁에 '시간을 몰라 상승궁·하우스를 빼고 풀었다'는 DB 문장을 밝힌다(5-2)", () => {
+test("C등급(시간 모름)은 연말·2027 파트에 프로토타입 안내 문장을 밝힌다(5-2)", () => {
   const answers: Answers = { q1: "직업·커리어", q2: "변화", q3: "안정" };
   const { chart, L } = computeNatal(new Date(Date.UTC(1996, 3, 1, 1, 17)), 37.2893, 127.0535);
   const character = judgeCharacter(L, chart.elements, ref);
   const events = buildTimeline(L, { start: "2026-01-01", end: "2031-12-31" }, periodWindows(NOW).eoy);
   const periods = selectPeriods(events, answers.q1, NOW);
   const wish = computeWish(L, answers.q3, { birthDate: "1996-04-01", dayChart: null });
-  const gradeC = row(db, "A15", "FIX_GRADE_C")!.text;
+  const gradeC = "태어난 시간을 몰라 하우스·상승궁 없이, 바람의 주제 행성과 달의 흐름으로만 판정했어요.";
   const sk = (accuracy: "A" | "C") =>
     buildPaidSkeleton({ db, chart: { ...chart, accuracy }, longitudes: L, character, answers, events, periods, wish, nickname: "지우" });
   const c = sk("C");
-  assert.ok(c.dbSentences[5].includes(gradeC) && c.dbSentences[6].includes(gradeC));
+  assert.ok(c.dbSentences[5].includes(gradeC));
+  assert.ok(c.sections[0].body.some((b) => b.t === "note" && b.text.startsWith("태어난 시간을 몰라, 이 파트의 ‘자리’는")));
   assert.ok(!sk("A").dbSentences[5].includes(gradeC));
 });
 

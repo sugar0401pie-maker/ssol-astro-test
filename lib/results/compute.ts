@@ -2,11 +2,12 @@ import "server-only";
 // 출생정보 + 답 → (후보가 갈리면) 후보 / (정해지면) 무료 결과. /api/result(확인용)와 /api/results(저장·다시 보기)가 같은 함수를 쓴다.
 import { isAnswers, type Answers } from "@/lib/astro/answers";
 import { computeBirth, type BirthInput, type BirthResult } from "@/lib/astro/birth";
+import { retrogradeAt } from "@/lib/astro/natal";
 import type { CalibrationTable } from "@/lib/astro/character";
 import { placeFromCityId } from "@/lib/astro/cityData";
 import { parseBirthRequest } from "@/lib/astro/validate";
 import { ASTRO_DB } from "@/lib/report/dbData";
-import { buildFreeResult, candidateCards, tieOptions, type FreeResult } from "@/lib/report/freeResult";
+import { buildFreeResult, candidateCards, type FreeResult } from "@/lib/report/freeResult";
 import { birthKeyOf } from "@/lib/report/variants";
 import calibration from "@/data/astro/calibration.json";
 
@@ -15,6 +16,16 @@ const ref = calibration as CalibrationTable;
 export type Parsed = { ok: true; input: BirthInput; answers: Answers; nickname: string } | { ok: false; error: string };
 
 /** 닉네임은 DB 문장의 {닉네임}을 채운다. 괄호는 토큰과 헷갈리지 않게 지운다. */
+const BAND_KO: Record<string, string> = { dawn: "새벽", morning: "오전", afternoon: "오후", evening: "저녁" };
+
+/** 결과 머리 줄(프로토타입 renderResult): "1996.04.01 10:17 · 경기" / "… 오전 시간대 · …" / "… 시간 모름 · …" */
+export function birthLine(input: BirthInput): string {
+  const p2 = (n: number) => String(n).padStart(2, "0");
+  const t = input.time;
+  const time = t.kind === "exact" ? `${p2(t.hour)}:${p2(t.minute)}` : t.kind === "band" ? `${BAND_KO[t.band] ?? t.band} 시간대` : "시간 모름";
+  return `${input.year}.${p2(input.month)}.${p2(input.day)} ${time} · ${input.place.label.split(",")[0].trim()}`;
+}
+
 export function cleanNickname(v: unknown): string {
   return typeof v === "string" ? v.replace(/[{}]/g, "").trim().slice(0, 12) : "";
 }
@@ -30,15 +41,10 @@ export function parseResultRequest(body: Record<string, unknown> | null): Parsed
 
 export type Computed =
   | { kind: "candidates"; payload: { candidates: Array<Omit<BirthResult["candidates"][number], "name"> & { label: string; card: string }>; candidateIntro: string; accuracy: string } }
-  | { kind: "tie"; payload: { tie: { intro: string; options: Array<{ competency: string; style: string; label: string; card: string }> }; accuracy: string } }
   | { kind: "result"; birth: BirthResult & { resolved: NonNullable<BirthResult["resolved"]> }; result: FreeResult };
 
-/** RangeError(고른 후보 시각이 구간 밖 등)는 호출한 쪽에서 400으로 돌려준다. */
-/**
- * askTie: 새로 결과를 만들 때만 동점 확인을 묻는다. 저장된 결과를 다시 볼 때는(이 화면이 생기기 전에 저장된 것 포함)
- * 묻지 않고 저장 당시 판정(고른 값이 있으면 그것, 없으면 1위)을 그대로 쓴다.
- */
-export function computeFree(input: BirthInput, answers: Answers, nickname: string, opts: { askTie?: boolean } = {}): Computed {
+/** RangeError(고른 후보 시각이 구간 밖 등)는 호출한 쪽에서 400으로 돌려준다. 역량 동점은 결과 2번 섹션에서 고른다(별도 화면 없음, owner 2026-10-10). */
+export function computeFree(input: BirthInput, answers: Answers, nickname: string): Computed {
   // 무료 결과에는 2026년만 필요하다(트랜짓 기간을 짧게).
   const birth = computeBirth(input, ref, { start: "2026-01-01", end: "2026-01-01" });
   if (!birth.resolved) {
@@ -54,13 +60,10 @@ export function computeFree(input: BirthInput, answers: Answers, nickname: strin
     };
   }
   const { chart, longitudes, character } = birth.resolved;
-  if (character.needs_confirm && opts.askTie) {
-    // 역량 동점(1·2위 3%p 안) — 사용자가 고른다(무작위 금지). 고른 값은 다음 요청의 birth.competencyPick으로 온다.
-    return { kind: "tie", payload: { tie: tieOptions(ASTRO_DB, character), accuracy: birth.accuracy } };
-  }
   return {
     kind: "result",
     birth: { ...birth, resolved: birth.resolved },
-    result: buildFreeResult({ db: ASTRO_DB, chart, longitudes, character, answers, nickname, birthYear: input.year, birthDate: birth.stored.local.slice(0, 10), birthKey: birthKeyOf(input) }),
+    result: buildFreeResult({ db: ASTRO_DB, chart, longitudes, character, answers, nickname, birthYear: input.year, birthDate: birth.stored.local.slice(0, 10), birthKey: birthKeyOf(input),
+      birthLine: birthLine(input), retro: retrogradeAt(new Date(birth.stored.utc)), utc: birth.stored.utc }),
   };
 }

@@ -48,7 +48,7 @@ export default function ActionRow({
 
   useEffect(() => {
     if (!toast) return;
-    const t = setTimeout(() => setToast(null), 2600);
+    const t = setTimeout(() => setToast(null), 2200);
     return () => clearTimeout(t);
   }, [toast]);
 
@@ -87,47 +87,54 @@ export default function ActionRow({
 
   return (
     <>
-      <div className="grid grid-cols-2 gap-2.5">
-        <button type="button" onClick={() => setShareOpen(true)} className="flex min-h-14 items-center justify-center gap-2 rounded-full bg-[#FEE500] px-3 text-[16px] font-bold text-[#191919]">
+      {/* 프로토타입 actRow: .act-row 반반, 56px */}
+      <div className="act-row">
+        <button type="button" className="btn kakao act-btn" onClick={() => setShareOpen(true)}>
           {KAKAO_ICON}
           SNS 공유하기
         </button>
-        <button type="button" onClick={(e) => void save(e)} className="flex min-h-14 items-center justify-center gap-2 rounded-full bg-gold px-3 text-[16px] font-bold text-navy">
+        <button type="button" className="btn act-btn save-btn" onClick={(e) => void save(e)}>
           {SAVE_ICON}
           저장하기
         </button>
       </div>
       <ShareSheet {...share} open={shareOpen} onClose={() => setShareOpen(false)} />
 
-      {modal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" role="status">
-          <p className="rounded-2xl bg-cream px-8 py-6 text-lg font-bold text-navy">{copy.saveDone || "저장되었습니다!"}</p>
-        </div>
-      )}
+      {/* "저장되었습니다!"(프로토타입 .saved-modal — 금색 동그라미 체크, 뒤 배경 없음) */}
+      <div className={`saved-modal${modal ? " on" : ""}`} role="status" aria-live="polite" hidden={!modal}>
+        <span className="sm-ic" aria-hidden="true">
+          <svg width="28" height="28" viewBox="0 0 24 24">
+            <path d="M5 12.5l4.2 4.2L19 7" fill="none" stroke="#013566" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </span>
+        <p>{copy.saveDone || "저장되었습니다!"}</p>
+      </div>
 
       {login && (
-        // 로그인 화면(화면 6). 전체를 덮고, 로그인하거나 [결과로 돌아가기]를 누르면 결과의 같은 위치로 돌아간다.
-        <div role="dialog" aria-modal="true" aria-label="로그인" className="fixed inset-0 z-50 overflow-auto bg-midnight">
-          <div className="mx-auto flex w-full max-w-md flex-col gap-4 px-4 py-10">
-            <AuthStep
-              title={copy.loginBig}
-              subtitle={copy.loginSmall}
-              prefill={prefill}
-              oauthRedirect={typeof window !== "undefined" && resultId ? `${window.location.origin}/results/${resultId}` : undefined}
-              onSignedIn={() => void afterSignIn()}
-            />
-            <button type="button" className="mx-auto text-sm text-cream underline" onClick={() => backToResult(null)}>
-              결과로 돌아가기
-            </button>
+        // 로그인 화면(프로토타입 #scr-login). 로그인하거나 [결과로 돌아가기]를 누르면 결과의 같은 위치로 돌아간다.
+        <div role="dialog" aria-modal="true" aria-label="로그인" className="fixed inset-0 z-50 overflow-auto" style={{ background: "linear-gradient(180deg,var(--midnight) 0%,#08244d 45%,var(--navy) 100%)" }}>
+          <div className="app">
+            <section className="screen on" id="scr-login" aria-labelledby="login-big">
+              <AuthStep
+                title={copy.loginBig}
+                subtitle={copy.loginSmall}
+                prefill={prefill}
+                oauthRedirect={typeof window !== "undefined" && resultId ? `${window.location.origin}/results/${resultId}` : undefined}
+                onSignedIn={() => void afterSignIn()}
+              />
+              <div className="footer-ctrl" style={{ justifyContent: "center" }}>
+                <button type="button" className="linkish" onClick={() => backToResult(null)}>
+                  결과로 돌아가기
+                </button>
+              </div>
+            </section>
           </div>
         </div>
       )}
 
-      {toast && (
-        <p role="status" className="fixed inset-x-4 bottom-24 z-50 mx-auto max-w-md rounded-2xl bg-cream px-4 py-3 text-center text-sm text-navy shadow-lg">
-          {toast}
-        </p>
-      )}
+      <div className={`toast${toast ? " on" : ""}`} role="status" aria-live="polite">
+        {toast}
+      </div>
     </>
   );
 }

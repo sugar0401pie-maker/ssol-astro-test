@@ -15,7 +15,7 @@ test("withCompetencyPick: 1·2위 중 고른 쪽만 받아들인다", () => {
   const second = withCompetencyPick(base, "말하기");
   assert.equal(second.competency, "말하기");
   assert.equal(second.name, "물개"); // 말하기 × 다가가기
-  assert.equal(second.needs_confirm, false);
+  assert.equal(second.needs_confirm, true); // 결과 화면에서 다시 바꿀 수 있게 그대로
   assert.equal(withCompetencyPick(base, "기대기").competency, "기대기");
   assert.equal(withCompetencyPick(base, "회복하기"), base); // 1·2위가 아닌 값은 무시
   assert.equal(withCompetencyPick(base, undefined), base);
@@ -37,5 +37,6 @@ test("computeBirth: 동점인 출생은 고른 역량으로 결과가 정해진�
   const c = computeBirth(found, ref, { start: "2026-01-01", end: "2026-01-01" }).resolved!.character;
   const picked = computeBirth({ ...found, competencyPick: c.runner_up }, ref, { start: "2026-01-01", end: "2026-01-01" }).resolved!.character;
   assert.equal(picked.competency, c.runner_up);
-  assert.equal(picked.needs_confirm, false);
+  assert.equal(picked.needs_confirm, true);
+  assert.equal(picked.runner_up, c.competency);
 });

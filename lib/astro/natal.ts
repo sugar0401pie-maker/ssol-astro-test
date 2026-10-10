@@ -68,6 +68,17 @@ export function ascMc(utc: Date, t: AstroTime, lat: number, lng: number): { asc:
   return { asc, mc };
 }
 
+/** 출생 순간 역행 중인 행성(태양·달 제외) — 프로토타입 computeChart와 같은 계산(±12시간 경도 차). */
+export function retrogradeAt(utc: Date): PlanetKey[] {
+  const t = timeOf(utc);
+  return PLANET_KEYS.filter((k) => {
+    if (k === "sun" || k === "moon") return false;
+    const a = longitude(k, t.AddDays(-0.5));
+    const c = longitude(k, t.AddDays(0.5));
+    return ((c - a + 540) % 360) - 180 < 0;
+  });
+}
+
 export function houseOf(lon: number, ascLon: number): number {
   // 홀사인: 상승궁이 있는 별자리 전체가 1하우스.
   return (((signIndex(lon) - signIndex(ascLon)) % 12) + 12) % 12 + 1;

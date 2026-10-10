@@ -1,4 +1,6 @@
 @import "tailwindcss";
+/* 프로토타입 스타일(.btn .box .bul …) — components 층이라 요소에 직접 쓴 Tailwind 클래스가 이긴다 */
+@import "./proto.css" layer(components);
 
 /* 디자인 토큰 — docs/spec/02_디자인가이드.md 1장. 값만 바꾸면 전체 화면에 퍼진다. */
 :root {
@@ -16,18 +18,12 @@
   --color-cream: var(--astro-cream);
   --color-gold: var(--astro-gold);
   --color-lavender: var(--astro-lavender);
+  --color-ink: #0b2a4f; /* 크림 상자 위 본문 글자(프로토타입 --ink) */
   --font-sans: var(--font-noto-sans-kr), system-ui, sans-serif;
+  --font-serif: var(--font-gowun-batang), "Gowun Batang", serif; /* 제목·요약(프로토타입 --f-head, owner 2026-10-10 결정) */
 }
 
-html {
-  background-color: var(--astro-navy); /* 페이지가 화면보다 길 때 아래쪽도 밤색으로 */
-}
-
-body {
-  background: linear-gradient(to bottom, var(--astro-midnight), var(--astro-navy)) fixed;
-  color: var(--astro-cream);
-  font-family: var(--font-noto-sans-kr), system-ui, sans-serif;
-}
+/* 배경·글꼴·별 입자는 proto.css(body, .app, .sky-dust)가 맡는다. */
 
 /* 5년 타임라인: 움직이는 해의 고리 반짝임(3.5초). '동작 줄이기'면 반짝이지 않고 점선 고리. */
 @keyframes astro-ring-pulse {
@@ -41,33 +37,5 @@ body {
   .astro-ring {
     animation: none;
     stroke-dasharray: 3 3;
-  }
-}
-
-/* 화면 공통 배경의 아주 옅은 별 입자(디자인가이드 2장): 3~4초 주기의 느린 반짝임, '동작 줄이기'면 정지. 장식이라 클릭을 막지 않는다. */
-.astro-stars {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background-image:
-    radial-gradient(1px 1px at 12% 18%, rgb(253 246 233 / 0.55), transparent 60%),
-    radial-gradient(1px 1px at 78% 9%, rgb(253 246 233 / 0.45), transparent 60%),
-    radial-gradient(1.5px 1.5px at 35% 42%, rgb(203 178 122 / 0.5), transparent 60%),
-    radial-gradient(1px 1px at 88% 36%, rgb(253 246 233 / 0.4), transparent 60%),
-    radial-gradient(1px 1px at 22% 71%, rgb(253 246 233 / 0.35), transparent 60%),
-    radial-gradient(1.5px 1.5px at 64% 63%, rgb(253 246 233 / 0.4), transparent 60%),
-    radial-gradient(1px 1px at 52% 22%, rgb(253 246 233 / 0.3), transparent 60%),
-    radial-gradient(1px 1px at 8% 88%, rgb(203 178 122 / 0.35), transparent 60%),
-    radial-gradient(1px 1px at 93% 82%, rgb(253 246 233 / 0.35), transparent 60%);
-  animation: astro-twinkle 3.5s ease-in-out infinite;
-}
-@keyframes astro-twinkle {
-  0%, 100% { opacity: 0.6; }
-  50% { opacity: 1; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .astro-stars {
-    animation: none;
   }
 }

@@ -46,7 +46,7 @@ export function formatYear(y: number): string {
   return `${y}년`;
 }
 
-export const QUARTER_LABELS = ["1분기(1~3월)", "2분기(4~6월)", "3분기(7~9월)", "4분기(10~12월)"] as const;
+export const QUARTER_LABELS = ["1분기 (1~3월)", "2분기 (4~6월)", "3분기 (7~9월)", "4분기 (10~12월)"] as const; // 프로토타입 QLABEL과 같게(괄호 앞 띄어쓰기)
 
 // ---- 조사(받침 판정) ----
 

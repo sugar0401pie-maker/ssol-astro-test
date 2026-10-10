@@ -9,7 +9,7 @@ import { SIGNS, elementOf, signIndex, type PlanetKey, type PointKey } from "../a
 import type { Longitudes, NatalChart } from "../astro/natal.ts";
 import { clipIntervals, scoreInWindow, type PeriodKey, type PeriodResult, type TimelineEvent, type Window } from "../astro/timeline.ts";
 import { dailyPositions, dailyRange } from "../astro/transits.ts";
-import { WISH_LEVEL_DISPLAY, type MovementLabel, type WishFactor, type WishLevel, type WishResult, type WishYear } from "../astro/wish.ts";
+import { EDGE_LABEL, WISH_LEVEL_DISPLAY, type MovementLabel, type WishFactor, type WishLevel, type WishResult, type WishYear } from "../astro/wish.ts";
 import { ELEMENT_ID, POINT_ID, aspectGroup, findRow, pad2, row, tryFill, type AstroDb } from "./db.ts";
 import { a6Line, a8Id } from "./freeResult.ts";
 import { formatDate, formatRange, josa, QUARTER_LABELS } from "./format.ts";
@@ -421,7 +421,10 @@ export function buildPaidSkeleton(args: {
   const b8 = findRow(db, "B8", (r) => r.domain === answers.q1);
   const b7 = findRow(db, "B7", (r) => r.character === character.name);
   const quiet = t(db, "A15", "FIX_QUIET_DOMAIN", "text");
-  const gradeC = args.chart.accuracy === "C" ? t(db, "A15", "FIX_GRADE_C", "text") : "";
+  // 시간 모름(C등급) 안내 — 프로토타입 renderEOY·render2027의 문장 그대로(5년 파트에는 없음)
+  const isC = args.chart.accuracy === "C";
+  const gradeC4 = isC ? "태어난 시간을 몰라, 이 파트의 ‘자리’는 태양 별자리를 1하우스로 두고 살폈어요." : "";
+  const gradeC = isC ? "태어난 시간을 몰라 하우스·상승궁 없이, 바람의 주제 행성과 달의 흐름으로만 판정했어요." : "";
   const variant = (r: Record<string, string> | null, slot: "text" | "fallback_text" = "text", salt = "") => (r ? a13Variant(db, r, key, slot, salt) : "");
   const mvLine = (y: WishYear) => movementLine(db, y, wish.temperament, answers.q3);
 
@@ -433,12 +436,14 @@ export function buildPaidSkeleton(args: {
   const sum4 = fillSummary(b11(db, "SUM_EOY"), { 닉네임: nick, 조심할것: eoyWord });
   const body4: Block[] = [];
   if (b8) body4.push({ t: "p", text: b8.focus_intro });
+  if (gradeC4) body4.push({ t: "note", text: gradeC4 });
   // 연말에 조심할 세 가지: 금성·수성·화성 역행(프로토타입 rx 시작 기준일 그대로)
   const three = [rxFrom(db, events, "venus", "2026-09-01", base), rxFrom(db, events, "mercury", "2026-10-01", base), rxFrom(db, events, "mars", "2026-12-01", base)].filter(
     (x): x is Rx & { row: Record<string, string> } => !!x?.row,
   );
+  // 소제목은 늘 둔다(프로토타입 renderEOY)
+  body4.push({ t: "head", text: "• 연말에 조심할 세 가지" });
   if (three.length) {
-    body4.push({ t: "head", text: "• 연말에 조심할 세 가지" });
     body4.push({
       t: "items",
       items: three.map((x) => ({
@@ -625,7 +630,6 @@ export function buildPaidSkeleton(args: {
     sum6 = near ? fillSummary(b11(db, "SUM_5Y_NEAR"), { 닉네임: nick, 바람: wishWord, 가까운해: `${near.year}년` }) : null;
     open6 = near ? tryFill(variant(openRow, "fallback_text"), { 가까운해: `${near.year}년` }) : null;
   }
-  if (gradeC) body6.push({ t: "note", text: gradeC });
   if (open6) body6.push({ t: "p", text: open6 });
   const desiredYear = first?.year ?? near?.year ?? null;
   const br5 = findRow(db, "B12", (r) => r.section === "5년" && r.wish === wishWord);
@@ -647,17 +651,17 @@ export function buildPaidSkeleton(args: {
     if (d) body6.push({ t: "head", text: `• ${y.year}년 — ✦ 움직이는 해` }, { t: "p", text: d });
   }
   const stars: TimelineStar[] = [];
+  // 5년 표(프로토타입 render5y): 연도 | {바람} — 이루어짐 · 움직임 | 한 해의 테마. 경계 표시는 EDGE_LABEL(프로토타입 l.edge).
   const fiveRows: TableRow[] = years.map((y) => {
-    const edge = edgeLines(db, y);
+    const edge = y.edge ? EDGE_LABEL[y.edge] : "";
     const cell =
       WISH_LEVEL_DISPLAY[y.level] +
-      (y.movementLabel ? ` · ${y.movementLabel === "움직이는 해" ? "✦ " : ""}${y.movementLabel}` : "") +
-      (edge ? ` — ${edge.badge}` : "") +
+      (y.movementLabel === "움직이는 해" ? " · ✦ 움직이는 해" : y.movementLabel === "잔잔한 해" ? " · 잔잔한 해" : "") +
+      (edge ? ` — ${edge}` : "") +
       (first && y.year === first.year ? ` — ${josa(wishWord, "이/가")} 열리는 해` : "");
     const theme = themes[y.year]?.kw ?? "";
-    stars.push({ year: y.year, level: y.level, display: WISH_LEVEL_DISPLAY[y.level], edgeBadge: edge?.badge ?? null, movement: y.movementLabel, firstOpen: !!first && y.year === first.year, theme });
-    // 모바일 2열(마스터스펙 6-4 '펼친 상태는 2열'): 연도 | 이루어짐·움직임 + 한 해의 테마
-    return { label: `${y.year}년`, cells: [theme ? `${cell}\n${theme}` : cell] };
+    stars.push({ year: y.year, level: y.level, display: WISH_LEVEL_DISPLAY[y.level], edgeBadge: edge || null, movement: y.movementLabel, firstOpen: !!first && y.year === first.year, theme });
+    return { label: String(y.year), cells: [cell, theme] };
   });
   const why6: WhyGroup[] = years.map((y) => {
     const items: WhyItem[] = [];
@@ -702,7 +706,7 @@ export function buildPaidSkeleton(args: {
     { no: 5, title: "2027년을 맞는 마음가짐", summary: sum5, body: body5, tail: [], table: { columns: ["시기", "마음가짐"], rows: quarterRows }, why: why5Clean },
     {
       no: 6, title: `앞으로 5년, ${nick}님의 삶은 이렇게 흘러갈 거예요`, summary: sum6, body: body6, tail: [],
-      table: { columns: ["연도", `${wishWord} — 이루어짐 · 움직임 · 테마`], rows: fiveRows }, stars, commonSky: commonSky(db), why: why6,
+      table: { columns: ["연도", `${wishWord} — 이루어짐 · 움직임`, "한 해의 테마"], rows: fiveRows }, stars, commonSky: commonSky(db), why: why6,
     },
     { no: 7, title: "별이 주는 질문과 웰니스 제안", summary: sum7, body: body7, tail: [], table: null, why: [] },
   ];
@@ -716,7 +720,7 @@ export function buildPaidSkeleton(args: {
       4: texts(body4),
       // 판정 문장은 꼭 들어가야 하는 하한선. 유형을 풀어 쓸 때의 바탕(A6 역량·방식 쉬운 정의, 06 프롬프트 v3 '캐릭터 표기')
       5: [...texts(body5), ...(gradeC ? [gradeC] : []), ...[a6Line(db, "역량", character.competency), a6Line(db, "방식", character.style)].filter((x): x is string => !!x)],
-      6: [...texts(body6), ...(gradeC ? [gradeC] : [])],
+      6: texts(body6),
       7: [...texts(body7), ...practices.map((p) => `${p.title}: ${p.how} ${p.why}`)],
     },
     bridgeBasis27,

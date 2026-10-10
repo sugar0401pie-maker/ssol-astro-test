@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
   const parsed = parseResultRequest(body);
   if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
   try {
-    const c = computeFree(parsed.input, parsed.answers, parsed.nickname, { askTie: true });
+    const c = computeFree(parsed.input, parsed.answers, parsed.nickname);
     return NextResponse.json(c.kind === "result" ? { ready: true } : c.payload);
   } catch (e) {
     if (e instanceof RangeError) return NextResponse.json({ error: "고른 시간을 다시 확인해 주세요." }, { status: 400 });

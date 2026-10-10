@@ -10,6 +10,10 @@ export type CityRow = [number, string, string, string, number, number, string, n
 export interface CityResult {
   id: number;
   label: string;
+  /** 목록 한 줄(프로토타입 "도쿄, 일본 (Tokyo)")·선택 줄("선택: 도쿄 (Tokyo) · UTC+9")용 */
+  name: string;
+  country: string;
+  en: string;
   lat: number;
   lng: number;
   timeZone: string;
@@ -37,7 +41,24 @@ function countryKo(cc: string): string {
 }
 
 export function toResult(r: CityRow): CityResult {
-  return { id: r[0], label: `${r[2] || r[1]}, ${countryKo(r[3])}`, lat: r[4], lng: r[5], timeZone: r[6] };
+  const name = r[2] || r[1];
+  const country = countryKo(r[3]);
+  return { id: r[0], label: `${name}, ${country}`, name, country, en: r[1], lat: r[4], lng: r[5], timeZone: r[6] };
+}
+
+/** 표준시 기준 UTC 차이 글자("UTC+9", "UTC-5", "UTC+5.5"). 1월 1일 기준이라 서머타임은 빼고 보여 준다. */
+export function utcOffsetLabel(timeZone: string): string {
+  try {
+    const part = new Intl.DateTimeFormat("en-US", { timeZone, timeZoneName: "shortOffset" })
+      .formatToParts(new Date(Date.UTC(2026, 0, 1, 12)))
+      .find((p) => p.type === "timeZoneName")?.value ?? "GMT";
+    const m = part.match(/GMT([+-])(\d{1,2})(?::(\d{2}))?/);
+    if (!m) return "UTC+0";
+    const v = Number(m[2]) + (m[3] ? Number(m[3]) / 60 : 0);
+    return `UTC${m[1]}${Number.isInteger(v) ? v : v.toFixed(1)}`;
+  } catch {
+    return "UTC";
+  }
 }
 
 /**
