@@ -6,6 +6,7 @@
 import type { PaidReport } from "@/lib/report/aiReport";
 import type { Block, WhyGroup } from "@/lib/report/paidSkeleton";
 import FiveYearStars from "./FiveYearStars";
+import GuideArt, { LOCKED_ART } from "@/components/test/GuideArt";
 import { SOWELLA_USE_URL } from "@/lib/results/consent";
 
 const SOWELLA_CHAT_URL = "https://app.ssolwellnesshouse.com/chat";
@@ -75,7 +76,7 @@ export function WhyList({ groups, head = "▸ 왜 그럴까 — 하늘에서 일
   );
 }
 
-export default function PaidReportView({ report }: { report: PaidReport }) {
+export default function PaidReportView({ report, signIndex }: { report: PaidReport; signIndex?: number }) {
   return (
     <div className="locked-zone">
       {report.sections.map((s) => (
@@ -85,6 +86,7 @@ export default function PaidReportView({ report }: { report: PaidReport }) {
           </h2>
           <div className="box">
             {s.summary && <p className="lead summary">{s.summary}</p>}
+            {LOCKED_ART[s.no] && <GuideArt id={LOCKED_ART[s.no]} signIndex={signIndex} />}
             <div className="locked-body">
               {[...s.body, ...s.tail].map((b, i) => (
                 <BlockView key={i} b={b} />

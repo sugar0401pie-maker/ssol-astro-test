@@ -89,7 +89,7 @@ export default function ResultView({ id }: { id: string }) {
         resultId={id}
         // C등급: 시간을 알게 됐으면 테스트를 다시(새 결과로 저장된다)
         onAddTime={() => router.push("/test")}
-        paidContent={data.paid && report ? <PaidReportView report={report} /> : undefined}
+        paidContent={data.paid && report ? <PaidReportView report={report} signIndex={data.result.sunSignIndex} /> : undefined}
         // 결제 후 리포트를 쓰는 동안에도 유료 섹션 제목·첫 문장 자리를 그대로 두고, 완성되면 같은 자리에서 채운다.
         paidPending={
           data.paid && !report

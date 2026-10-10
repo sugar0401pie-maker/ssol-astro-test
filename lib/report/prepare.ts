@@ -47,7 +47,10 @@ export function previewLines(
         if (t) parts.push({ text: t.length > PREVIEW_CHARS ? t.slice(0, PREVIEW_CHARS) : t });
       }
     }
-    return { no: s.no, title: s.title, first: s.summary ?? "", lines: sentences.slice(0, PREVIEW_LINES).map((x) => x.trim()), parts };
+    // 2026-10-10 owner: 유료 경계(9-4)와 연말 섹션(9-5)을 한 화면으로 — 4번 섹션은 본문 앞 2줄(첫 조각)만 실제 문장,
+    // 그 아래는 전부 흐린 가짜 문장(B13)으로 채운다. 그래서 첫 조각 뒤의 실제 소제목·문장은 보내지 않는다.
+    const shown = s.no === 4 ? parts.filter((p) => p.text).slice(0, 1) : parts;
+    return { no: s.no, title: s.title, first: s.summary ?? "", lines: sentences.slice(0, PREVIEW_LINES).map((x) => x.trim()), parts: shown };
   });
 }
 

@@ -139,6 +139,10 @@ test("결제 전 미리보기: 섹션마다 굵은 요약 + 본문 앞 두 문�
     assert.ok(l.lines.length <= 2, `${l.no}`);
     assert.ok(l.lines.join(" ").length < JSON.stringify(s.body).length, `${l.no}: 본문 전체를 보내면 안 됨`);
   }
+  // 4번(유료 경계 통합, 2026-10-10): 첫 조각 하나만 실제 문장, 소제목도 보내지 않는다
+  const s4 = lines.find((l) => l.no === 4)!;
+  assert.equal(s4.parts.length, 1);
+  assert.ok(s4.parts[0].text && !s4.parts[0].head);
 });
 
 test("A11 하늘의 공통 흐름: 5년 파트(2027~)에 걸치는 것만, A6 역량·방식은 5번 AI 바탕 문장에", () => {

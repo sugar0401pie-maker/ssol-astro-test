@@ -4,6 +4,7 @@
 // 머리 → 1. 태어난 순간의 하늘(정확도·시간 추가·휠·표·4원소·나의 행성 읽기) → 2. 별이 본 나의 유형(동점이면 고르기) →
 // 3. 2026 회고 → [SNS 공유하기][저장하기] → 4~7(잠김: 요약 + 앞부분만, 결제 후 전체) → 부드러운 톤 카드 → 공유·저장 → 고지.
 // 1~3번 문장은 서버가 해석 DB에서 골라 보낸다(AI 0회). 4~7번 본문은 결제 전에는 브라우저로 보내지 않는다.
+import GuideArt, { LOCKED_ART } from "./GuideArt";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { REPORT_PRICE } from "@/lib/billing/pricing";
@@ -221,6 +222,7 @@ export default function FreeResultView({
             )}
           </div>
         )}
+        <GuideArt id="09-1" signIndex={result.sunSignIndex} />
         <div className="wheel-wrap" id="wheel-wrap">
           <Wheel chart={chart} aspects={result.wheelAspects} retro={result.retro} showAll={showAll} tipStep={tip} onSelect={setSheetKey} />
           {tip > 0 && result.wheelTips[tip - 1] && (
@@ -375,6 +377,7 @@ export default function FreeResultView({
       <Section no={2} title="별이 본 나의 유형">
         <div className="box">
           <Summary text={character.summary} />
+          <GuideArt id="09-2" signIndex={result.sunSignIndex} />
           {result.tie && (
             <>
               <h3>요즘의 나와 더 가까운 건?</h3>
@@ -430,6 +433,7 @@ export default function FreeResultView({
       <Section no={3} title={`2026년, ${nickname}님의 한 해는 이랬어요`}>
         <div className="box">
           <Summary text={year2026.summary} />
+          <GuideArt id="09-3" signIndex={result.sunSignIndex} />
           {year2026.intro && <p>{year2026.intro}</p>}
           <p className="bul">• 올해의 전환점</p>
           {year2026.turningPoints.map((t) => (
@@ -475,6 +479,7 @@ export default function FreeResultView({
                 <div className="box">
                   {/* 요약은 선명하게, 각 부분은 앞 2줄 정도만 보이고 흐려진다(프로토타입 .locked .lp) */}
                   {pv?.first && <p className="lead summary">{pv.first}</p>}
+                  {LOCKED_ART[s.no] && <GuideArt id={LOCKED_ART[s.no]} signIndex={result.sunSignIndex} />}
                   <div className="locked-body" inert>
                     {(pv?.parts.length ? pv.parts : [{ text: "　" }, { text: "　" }]).map((x, i) =>
                       x.head ? (
@@ -489,6 +494,14 @@ export default function FreeResultView({
                         </p>
                       ),
                     )}
+                    {/* 4번 섹션(유료 경계 통합): 앞 2줄 아래는 처음부터 흐린 가짜 문장(B13) — 실제 본문 아님 */}
+                    {s.no === 4 &&
+                      pv?.filler &&
+                      [0, 1, 2].map((k) => (
+                        <p key={`f${k}`} className="lp full">
+                          {pv.filler.slice((k * 53) % Math.max(1, pv.filler.length - 120))}
+                        </p>
+                      ))}
                   </div>
                 </div>
               </section>
