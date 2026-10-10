@@ -6,7 +6,8 @@ export function oauthErrorFromUrl(loc: { search: string; hash: string }): string
   const code = q.get("error") ?? h.get("error");
   if (!code) return null;
   const desc = q.get("error_description") ?? h.get("error_description") ?? "";
-  if (/email/i.test(desc)) return "로그인한 계정에서 이메일을 받지 못했어요. 네이버·카카오 동의 화면에서 이메일 제공에 동의했는지 확인해 주세요.";
+  // 원문(desc)을 괄호로 함께 보여 준다 — 원인을 정확히 찾을 수 있게(예전엔 이메일 관련이면 원문을 숨겼다)
+  if (/email/i.test(desc)) return `로그인한 계정의 이메일 확인에서 막혔어요. 잠시 후 다시 시도하거나 다른 방법으로 로그인해 주세요. (${desc.slice(0, 120)})`;
   return `로그인하지 못했어요. 잠시 후 다시 시도하거나 다른 방법으로 로그인해 주세요.${desc ? ` (${desc.slice(0, 120)})` : ""}`;
 }
 
