@@ -139,10 +139,9 @@ test("결제 전 미리보기: 섹션마다 굵은 요약 + 본문 앞 두 문�
     assert.ok(l.lines.length <= 2, `${l.no}`);
     assert.ok(l.lines.join(" ").length < JSON.stringify(s.body).length, `${l.no}: 본문 전체를 보내면 안 됨`);
   }
-  // 4번(유료 경계 통합, 2026-10-10): 첫 조각 하나만 실제 문장, 소제목도 보내지 않는다
-  const s4 = lines.find((l) => l.no === 4)!;
-  assert.equal(s4.parts.length, 1);
-  assert.ok(s4.parts[0].text && !s4.parts[0].head);
+  // 패키지 v3: 소제목·조각은 보내지 않는다(요약·두 문장·제목만)
+  for (const l of lines) assert.deepEqual(Object.keys(l).sort(), ["first", "lines", "no", "title"]);
+  assert.ok(lines.find((l) => l.no === 4)!.lines.length === 2);
 });
 
 test("A11 하늘의 공통 흐름: 5년 파트(2027~)에 걸치는 것만, A6 역량·방식은 5번 AI 바탕 문장에", () => {
@@ -238,13 +237,13 @@ test("DB 뼈대: 5·6번에 B12 대체 문장(흐름근거·바라던해 채움)
   assert.ok(skeleton.sections[3].summary?.startsWith("지우님께 별이 드리는 질문은"));
 });
 
-test("블러 자리는 해석 DB B13 가짜 문장으로 채운다(섹션별, 닉네임 치환, 모자라면 반복)", async () => {
-  const { blurFiller } = await import("./prepare.ts");
-  const f4 = blurFiller(db, 4, "지우", 300);
-  assert.ok(f4.length >= 300);
-  assert.ok(f4.includes("지우님"));
-  assert.ok(!f4.includes("{닉네임}"));
-  assert.equal(blurFiller(db, 9, "지우"), "");
+test("블러 자리는 해석 DB B13 가짜 문장으로 채운다(섹션별, 닉네임 치환, 두 번 이어 최대 7개)", async () => {
+  const { blurParagraphs } = await import("./prepare.ts");
+  const f4 = blurParagraphs(db, 4, "지우");
+  assert.equal(f4.length, 7);
+  assert.ok(f4.join(" ").includes("지우님"));
+  assert.ok(!f4.join(" ").includes("{닉네임}"));
+  assert.deepEqual(blurParagraphs(db, 9, "지우"), []);
 });
 
 test("AI 검증: 패키지 15_AI검증의 나쁜 예(판정 한쪽만·수입 예측·표·질문으로 끝내기)를 잡는다", async () => {

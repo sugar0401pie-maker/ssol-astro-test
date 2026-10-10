@@ -15,7 +15,7 @@ import { apiHeaders } from "@/lib/guest/client";
 import GuideArt from "./GuideArt";
 import CitySearch, { type PickedCity } from "./CitySearch";
 import ConsentStep from "./ConsentStep";
-import { allConsented, CONSENT_ERROR, consentItemsFor, type ConsentItemId } from "@/lib/results/consent";
+import { allConsented, CONSENT_ERROR, CONSENT_VERSION, consentItemsFor, type ConsentItemId } from "@/lib/results/consent";
 import FreeResultView from "./FreeResultView";
 import SiteFooter from "@/components/SiteFooter";
 
@@ -136,7 +136,22 @@ export default function TestFlow() {
   // 로그인하지 않은(익명·비회원) 사람에게만 '임시 계정 생성 및 결과 저장' 동의를 보인다(owner 2026-10-10). 확인 전엔 보이는 쪽(fail safe).
   const [guest, setGuest] = useState(true);
   useEffect(() => {
-    void getRealSession().then((s) => setGuest(!s));
+    void getRealSession().then((s) => {
+      setGuest(!s);
+      if (!s) return;
+      // 카카오·네이버 프로필 이름이 있으면 닉네임 칸에 미리 채운다(고칠 수 있음, 패키지 v3 화면 3)
+      const meta = (s.user.user_metadata ?? {}) as Record<string, unknown>;
+      const profileName = [meta.nickname, meta.name, meta.full_name].find((v): v is string => typeof v === "string" && v.trim() !== "");
+      if (profileName) setNickname((n) => n || profileName.trim().slice(0, 12));
+      // 같은 약관 버전에 이미 동의한 계정이면 동의를 체크된 상태로(약관이 바뀌면 다시 받는다)
+      void fetch("/api/results", { headers: { authorization: `Bearer ${s.access_token}` }, cache: "no-store" })
+        .then((r) => (r.ok ? r.json() : { results: [] }))
+        .then((d: { results?: Array<{ consent_version?: string }> }) => {
+          if (d.results?.some((r) => r.consent_version === CONSENT_VERSION))
+            setConsents((c) => (Object.values(c).some(Boolean) ? c : Object.fromEntries(consentItemsFor(false).map((x) => [x.id, true]))));
+        })
+        .catch(() => {});
+    });
   }, []);
   const consentItems = consentItemsFor(guest);
   const consented = allConsented(consents, guest);

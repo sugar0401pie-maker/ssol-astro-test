@@ -14,6 +14,8 @@ export interface ScreenCopy {
   FIX_LOADING?: string;
   FIX_PRIVACY_NOTE?: string;
   B14?: Record<string, B14Row>;
+  /** 로그인·임시 계정 화면 문구(B11, `/api/copy`의 B11_IDS) */
+  B11?: Record<string, string>;
 }
 
 let cache: ScreenCopy | null = null;
@@ -47,4 +49,10 @@ export function useCopy(): ScreenCopy {
 export function b14(copy: ScreenCopy, id: string, field: keyof B14Row, fallback: string, nickname = ""): string {
   const t = copy.B14?.[id]?.[field];
   return t ? t.replaceAll("{닉네임}", nickname) : fallback;
+}
+
+/** B11 한 줄({닉네임} 채움, 끝의 "[버튼 이름]" 표기는 뗀다). 없으면 fallback. */
+export function b11(copy: ScreenCopy, id: string, fallback: string, nickname = ""): string {
+  const t = copy.B11?.[id];
+  return t ? t.replaceAll("{닉네임}", nickname).replace(/\s*\[[^\]]*\]\s*$/, "") : fallback;
 }

@@ -2,7 +2,8 @@
 -- 대상: Supabase(PostgreSQL 15+). 공용 테이블은 쏘웰라·다른 테스트(디저트·해양생물·타로)와 함께 쓰고,
 -- astro_ 로 시작하는 테이블은 점성술 테스트 전용이다.
 -- 이미 같은 역할의 테이블(결제·동의·공유 등)이 운영 중이면 그 테이블을 쓰고, 여기 칸 가운데 없는 것만 추가한다.
--- 사용자 = auth.users (임시 계정은 Supabase 익명 로그인 is_anonymous=true → 로그인 시 같은 id로 연결)
+-- 사용자 = auth.users (로그인 먼저 확정 2026-10-10: 테스트 전에 카카오·네이버·이메일로 로그인, 세 수단은 각각 별도 계정.
+--   '로그인 없이 테스트하기'를 고른 경우에만 Supabase 익명 로그인(is_anonymous=true) — 30일 보관, 쏘웰라 불가, 로그인하면 같은 id로 연결)
 
 create extension if not exists pgcrypto;
 
@@ -10,12 +11,12 @@ create extension if not exists pgcrypto;
 -- 1. 공용 테이블 (쏘웰라와 공유)
 -- =====================================================================
 
--- 1-1. 동의 기록: 화면 4의 필수 동의 4개(만 14세 이상·개인정보·약관·임시 계정 저장)
+-- 1-1. 동의 기록: 화면 5(출생 정보)의 필수 동의 4개(만 14세 이상·개인정보·약관·입력 정보와 결과 저장)
 create table if not exists public.consents (
   id            uuid primary key default gen_random_uuid(),
   user_id       uuid not null references auth.users(id) on delete cascade,
   test_key      text not null,                       -- 'astro' | 'dessert' | 'marine' | 'tarot' | 'sowella'
-  consent_key   text not null,                       -- 'age14' | 'privacy' | 'terms' | 'temp_account'
+  consent_key   text not null,                       -- 'age14' | 'privacy' | 'terms' | 'save_result'
   version       text not null,                       -- 약관 버전(예: '2026-10-01')
   agreed        boolean not null default true,
   agreed_at     timestamptz not null default now(),
@@ -233,5 +234,6 @@ create policy paid_own_after_pay  on public.astro_paid_reports   for select
 create policy share_public_read   on public.share_links          for select using (expires_at is null or expires_at > now());
 -- funnel_events, astro_ai_calls: 사용자 조회 정책 없음(서버·분석 전용)
 
--- 4. 정리 규칙(결정 필요): 로그인으로 연결되지 않은 익명 계정은 30일 뒤 삭제 → on delete cascade로 출생정보·결과 함께 삭제.
+-- 4. 정리 규칙: 회원 탈퇴 시 on delete cascade로 출생정보·결과 함께 삭제. 익명(로그인 없이 테스트하기) 계정은 30일 뒤 삭제.
+--    쏘웰라 제한: sowella_passes·wellness_results는 auth.users.is_anonymous = false 인 계정에만 서버가 만든다(익명 계정이 로그인으로 연결되면 그때 생성).
 --    결제 기록(payments)은 user_id만 비우고(on delete set null) 전자상거래법 보관 기간 동안 남긴다.

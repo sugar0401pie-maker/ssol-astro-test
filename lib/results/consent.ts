@@ -1,7 +1,7 @@
 // 결과 저장 동의 문구(마스터스펙 8-1: 출생일시·출생지는 민감정보 — 수집 목적·보관기간 동의를 받는다).
 // ⚠ 초안(Claude 작성, owner·법무 검토 전). 문구를 바꾸면 CONSENT_VERSION도 바꿔서 누가 어떤 문구에 동의했는지 남긴다.
 // 보관기간은 아직 정해지지 않아 '삭제 요청·탈퇴 시 삭제'만 적었다 — 기간이 정해지면 문구와 버전을 함께 고친다.
-export const CONSENT_VERSION = "astro-results-2026-10-10b-draft"; // 10-10: 임시 계정 동의는 로그인 없이 테스트할 때(익명)만(owner 결정). 10-09: 생년월일 화면 필수 체크, 문구는 04_데이터.json 4_birth.consents
+export const CONSENT_VERSION = "astro-results-2026-10-10c-draft"; // 10-10: 임시 계정 동의는 로그인 없이 테스트할 때(익명)만(owner 결정). 10-09: 생년월일 화면 필수 체크, 문구는 04_데이터.json 4_birth.consents
 
 // 이 사이트의 자체 법적 고지 페이지(app/legal/page.tsx, 2026-10-08 owner 요청으로 쏘웰라 페이지에서 분리).
 export const PRIVACY_URL = "/legal#privacy";
@@ -25,7 +25,14 @@ export const CONSENT_CHECK_LABEL = "위 내용을 확인했고, 결과 저장에
 export type ConsentItemId = "age" | "privacy" | "terms" | "store";
 // 문구는 04_데이터.json(4_birth.consents) 그대로 + 두 가지를 덧붙였다(Claude 판단, owner 검토 가능):
 // ① 출생 정보는 민감정보라 개인정보 처리방침 옆에 민감정보 처리방침 링크도 둔다 ② 임시 저장이 30일 뒤 지워진다는 사실(보관기간 고지).
-export const CONSENT_ITEMS: ReadonlyArray<{ id: ConsentItemId; label: string; note?: string; link?: { href: string; text: string }; extraLink?: { href: string; text: string } }> = [
+export interface ConsentItem {
+  id: ConsentItemId;
+  label: string;
+  note?: string;
+  link?: { href: string; text: string };
+  extraLink?: { href: string; text: string };
+}
+export const CONSENT_ITEMS: ReadonlyArray<ConsentItem> = [
   // 2026-10-10 패키지: 개인정보보호법상 만 14세 미만은 보호자 동의가 필요해 이용 대상에서 뺀다(04_데이터.json agree-age).
   { id: "age", label: "[필수] 만 14세 이상입니다" },
   { id: "privacy", label: "[필수] 개인정보 처리방침에 동의합니다", link: { href: PRIVACY_URL, text: "보기" }, extraLink: { href: SENSITIVE_URL, text: "민감정보 처리방침" } },
@@ -40,13 +47,20 @@ export const CONSENT_ITEMS: ReadonlyArray<{ id: ConsentItemId; label: string; no
 /** 하나라도 빠졌을 때(04_데이터.json 4_birth.consents.error) */
 export const CONSENT_ERROR = "필수 항목에 모두 동의해 주세요.";
 
+/** 로그인한 사람의 저장 동의(패키지 v3 04_데이터.json agree-save + 쏘웰라 활용 고지 초안 ②) */
+const SAVE_ITEM: ConsentItem = {
+  id: "store",
+  label: "[필수] 입력 정보와 결과 저장에 동의합니다",
+  note: "입력하신 생년월일·태어난 시간·태어난 곳과 결과를 내 계정에 저장해, 다시 보거나 태어난 시간을 고칠 수 있게 해요. 쏘웰라와 대화를 시작하면 리포트 요약(유형·답변·흐름)이 맞춤 대화에 쓰여요. 출생 시각과 장소는 넘어가지 않아요.",
+};
+
 /**
- * 이 사람에게 보여 줄 필수 동의(owner 결정 2026-10-10): '임시 계정 생성 및 결과 저장'은 로그인 없이(익명) 테스트할 때만.
- * 로그인한 사람은 만 14세·개인정보 처리방침·이용약관 세 가지(결과 저장은 개인정보 처리방침의 수집·이용 항목으로 안내).
- * guest를 모르면(로그인 확인 전) true로 — 동의를 하나 더 받는 쪽이 안전하다(fail safe).
+ * 이 사람에게 보여 줄 필수 동의 4가지(owner 결정 2026-10-10, 패키지 v3 추천안):
+ * 로그인 없이(익명·비회원) → '임시 계정 생성 및 결과 저장', 로그인 → '입력 정보와 결과 저장'(내 계정에 저장).
+ * 둘 다 같은 칸(store)이라 서버의 동의 확인은 같다. guest를 모르면(로그인 확인 전) true — 임시 계정 문구가 더 많이 알린다.
  */
-export function consentItemsFor(guest: boolean) {
-  return guest ? CONSENT_ITEMS : CONSENT_ITEMS.filter((c) => c.id !== "store");
+export function consentItemsFor(guest: boolean): ReadonlyArray<ConsentItem> {
+  return guest ? CONSENT_ITEMS : CONSENT_ITEMS.map((c) => (c.id === "store" ? SAVE_ITEM : c));
 }
 
 /** 보이는 항목을 모두 체크했는지(하나라도 빠지면 다음으로 못 넘어간다) */

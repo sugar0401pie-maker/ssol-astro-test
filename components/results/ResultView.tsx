@@ -13,8 +13,9 @@ import { useRealSession } from "./useSession";
 import PaidReportView from "./PaidReportView";
 import { b14, useCopy } from "@/lib/copy/useCopy";
 import type { PaidReport } from "@/lib/report/aiReport";
+import { lastPage } from "@/lib/results/lastPage";
 
-export default function ResultView({ id }: { id: string }) {
+export default function ResultView({ id, page }: { id: string; page?: number }) {
   const session = useRealSession();
   const copy = useCopy();
   const router = useRouter();
@@ -89,7 +90,9 @@ export default function ResultView({ id }: { id: string }) {
         resultId={id}
         // C등급: 시간을 알게 됐으면 테스트를 다시(새 결과로 저장된다)
         onAddTime={() => router.push("/test")}
-        paidContent={data.paid && report ? <PaidReportView report={report} signIndex={data.result.sunSignIndex} /> : undefined}
+        // 주소에 페이지가 없으면(/results/{id} — 결제 후 돌아올 때 등) 이 기기에 기억한 마지막 페이지로 연다
+        initialPage={page ?? lastPage(id)}
+        paidSection={data.paid && report ? (no) => <PaidReportView report={report} signIndex={data.result.sunSignIndex} resultId={id} only={no} /> : undefined}
         // 결제 후 리포트를 쓰는 동안에도 유료 섹션 제목·첫 문장 자리를 그대로 두고, 완성되면 같은 자리에서 채운다.
         paidPending={
           data.paid && !report

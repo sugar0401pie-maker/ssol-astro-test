@@ -11,7 +11,7 @@ import {
   buildTimeline, periodFilter, scoreInWindow, turningPoints, type ScoredEvent, type TimelineEvent,
 } from "../astro/timeline.ts";
 import { POINT_ID, SIGN_ID, ELEMENT_ID, aspectGroup, findRow, pad2, row, tryFill, type AstroDb } from "./db.ts";
-import { formatDate, QUARTER_LABELS } from "./format.ts";
+import { batchim, formatDate, QUARTER_LABELS } from "./format.ts";
 import { a12Variant, b11, fillSummary, hashPick } from "./variants.ts";
 import { pickTheme, themeScores, themeTable } from "./theme2026.ts";
 import { POINT_KO } from "./labels.ts";
@@ -123,6 +123,8 @@ export interface FreeResult {
   paywallBox: string;
   /** 결제 팝업 문구(B11 PAY_POPUP, "안내 · 덧붙임 · [버튼]") */
   payPopup: string;
+  /** 4~7번 페이지 공유 줄 위 안내(결제 전, B11 SHARE_NOTE_LOCKED) */
+  shareNoteLocked: string;
   /** 저장·로그인 화면 문구(B11 SAVE_DONE·LOGIN_BIG·LOGIN_SMALL·LOGIN_DONE) */
   saveCopy: { saveDone: string; loginBig: string; loginSmall: string; loginDone: string };
   /** 임시 계정(로그인 안 함) 결제 안내(B11, 2026-10-10): 결제 팝업 아래 작은 글씨 · 결제 직후 리포트 위 배너 · 그때의 가입 화면 제목 */
@@ -321,6 +323,9 @@ export function q2Matches(word: Q2Word, top: ScoredEvent[], db: AstroDb, hasTurn
   return true;
 }
 
+/** 개인 트랜짓 전환점에서 보는 출생 지점 */
+const PERSONAL_TARGETS = new Set<string>(["sun", "moon", "asc", "mc"]);
+
 const TP_PLANET: Record<string, string> = { jupiter: "JUPITER", saturn: "SATURN", uranus: "URANUS", neptune: "NEPTUNE", pluto: "PLUTO" };
 
 /** 전환점 이벤트 → A18 행 ID와 우선순위(개인 이벤트가 먼저). 맞는 행이 없으면 null. */
@@ -367,7 +372,7 @@ const TP_INGRESS: Record<string, [string, number]> = {
  * 프로토타입에 없는 나이 마일스톤(목성 리턴 80·천왕성 충 85·해왕성 사각 85)도 A18 행이 있어 같은 규칙에 넣었다
  * (마스터스펙 6-2 '나이 마일스톤 포함' — Claude 판단, owner 검토 가능).
  */
-export function turningPointTexts(db: AstroDb, events: TimelineEvent[], chart: NatalChart, birthYear: number, opts: { birthDate?: string; domainHouses?: number[] } = {}): string[] {
+export function turningPointTexts(db: AstroDb, events: TimelineEvent[], chart: NatalChart, birthYear: number, opts: { birthDate?: string; domainHouses?: number[]; today?: string } = {}): string[] {
   const ascSign = chart.planets.asc?.sign ?? null;
   const timed = !!ascSign;
   const houseArea = (h: number) => `${text(db, "A16", `TERM_H${pad2(h)}`, "nickname")}(${h}하우스)`;
@@ -377,7 +382,7 @@ export function turningPointTexts(db: AstroDb, events: TimelineEvent[], chart: N
     const [y, m, d] = date.split("-").map(Number);
     return y - by - (m < bm || (m === bm && d < bd) ? 1 : 0);
   };
-  const tps: Array<{ pri: number; date: string; text: string | null }> = [];
+  const tps: Array<{ pri: number; date: string; text: string | null; gen?: boolean }> = [];
   const in2026 = (d?: string) => !!d && d.startsWith("2026") && d !== "2026-01-01";
   for (const e of events) {
     if (e.kind === "transit" && e.milestone) {
@@ -407,12 +412,44 @@ export function turningPointTexts(db: AstroDb, events: TimelineEvent[], chart: N
       pri = 90;
     } else {
       id = `TP_${TP_INGRESS[key][0]}_${timed ? "H" : "C"}`;
-      pri = TP_INGRESS[key][1] + (timed && e.house && (opts.domainHouses ?? []).includes(e.house) ? 30 : 0);
+      // 패키지 v3: 고민 영역 하우스 가산 30 → 15(개인 트랜짓이 모두에게 같은 별자리 이동보다 앞서게)
+      pri = TP_INGRESS[key][1] + (timed && e.house && (opts.domainHouses ?? []).includes(e.house) ? 15 : 0);
     }
-    tps.push({ pri, date, text: tryFill(text(db, "A18", id, "text"), { 날짜: formatDate(date), 별자리: e.sign, 하우스영역: e.house ? houseArea(e.house) : "", 행성: POINT_KO[e.planet] }) });
+    tps.push({ pri, date, gen: pri < 90, text: tryFill(text(db, "A18", id, "text"), { 날짜: formatDate(date), 별자리: e.sign, 하우스영역: e.house ? houseArea(e.house) : "", 행성: POINT_KO[e.planet] }) });
+  }
+  // 개인 트랜짓(TP_PERSONAL, 패키지 v3 2026-10-10): 출생 태양·달·상승궁·천정과 맺은 각도로 2026년(오늘까지) 정확한 날이 있는 것.
+  // 토성 긴장 80/조화 60, 천왕성·해왕성·명왕성 긴장 85/조화 65, 목성 사각·충 55/그 밖 72. 행성마다 하나만.
+  const today = opts.today ?? "9999-12-31";
+  const pers: Array<{ pri: number; date: string; text: string; pl: string }> = [];
+  for (const e of events) {
+    if (e.kind !== "transit" || e.milestone || !PERSONAL_TARGETS.has(e.target)) continue;
+    const date = e.intervals.find((iv) => in2026(iv.exact) && iv.exact! <= today)?.exact;
+    if (!date) continue;
+    const hard = e.aspect === "합" || e.aspect === "사각" || e.aspect === "충";
+    const outer = e.transit === "uranus" || e.transit === "neptune" || e.transit === "pluto";
+    const pri = e.transit === "saturn" ? (hard ? 80 : 60) : outer ? (hard ? 85 : 65) : e.transit === "jupiter" ? (e.aspect === "사각" || e.aspect === "충" ? 55 : 72) : 0;
+    if (!pri) continue;
+    const id = a8Id(e);
+    const a8 = id ? row(db, "A8", id) : null;
+    if (!a8?.table_past) continue;
+    const head = String(a8.meaning_line ?? "").split(" — ")[0].trim();
+    if (!head) continue;
+    pers.push({ pri, date, pl: e.transit, text: `${formatDate(date)} 무렵은 ${head}${batchim(head)?.has ? "이었어요" : "였어요"}. ${a8.table_past}` });
+  }
+  const usedPl = new Set<string>();
+  for (const t of pers.sort((a, b) => b.pri - a.pri)) {
+    if (usedPl.has(t.pl)) continue;
+    usedPl.add(t.pl);
+    tps.push({ pri: t.pri, date: t.date, text: t.text, gen: false });
   }
   const ok = tps.filter((t) => t.text).sort((a, b) => b.pri - a.pri);
-  const pick = [...ok.slice(0, 2), ...ok.slice(2).filter((t) => t.pri >= 70).slice(0, 1)].sort((a, b) => (a.date < b.date ? -1 : 1));
+  const pick = [...ok.slice(0, 2), ...ok.slice(2).filter((t) => t.pri >= 70).slice(0, 1)];
+  // 개인 사건이 하나라도 있으면 최소 하나는 넣는다
+  if (!pick.some((t) => !t.gen)) {
+    const bp = ok.find((t) => !t.gen);
+    if (bp) pick[pick.length > 1 ? 1 : 0] = bp;
+  }
+  pick.sort((a, b) => (a.date < b.date ? -1 : 1));
   return pick.length ? pick.map((t) => t.text!) : [text(db, "A18", "TP_QUIET_YEAR", "text")].filter(Boolean);
 }
 
@@ -482,7 +519,7 @@ export function buildFreeResult(args: {
     return { label: QUARTER_LABELS[qn - 1], cell, reasons: reasons.map(({ title, when, meaning }) => ({ title, when, meaning })) };
   });
 
-  const tps = turningPointTexts(db, events, chart, birthYear, { birthDate: args.birthDate, domainHouses: DOMAIN_MAP[answers.q1].houses });
+  const tps = turningPointTexts(db, events, chart, birthYear, { birthDate: args.birthDate, domainHouses: DOMAIN_MAP[answers.q1].houses, today });
   const q2 = row(db, "A12", `Q2_${pad2(["버텨", "배움", "변화", "멈춤", "성취", "이별", "고생", "그만하자", "시작", "설렘"].indexOf(answers.q2) + 1)}`);
   const hasTp = turningPoints(events, w).length > 0;
   const match = q2Matches(answers.q2, scored.slice(0, 5), db, hasTp);
@@ -589,10 +626,12 @@ export function buildFreeResult(args: {
       : null,
     paywallBox: text(db, "A15", "FIX_PAYWALL_BOX", "text").replace(/\s*→\s*\[.*\]\s*$/, ""),
     payPopup: b11(db, "PAY_POPUP"),
+    shareNoteLocked: b11(db, "SHARE_NOTE_LOCKED"),
     saveCopy: {
       saveDone: b11(db, "SAVE_DONE"),
-      loginBig: fillSummary(b11(db, "LOGIN_BIG"), { 닉네임: nickname }) ?? "",
-      loginSmall: b11(db, "LOGIN_SMALL"),
+      // 패키지 v3: LOGIN_BIG·LOGIN_SMALL은 테스트 시작 로그인 화면 문구로 바뀌었다 — 결과의 [저장하기]에는 저장용 문구
+      loginBig: fillSummary(b11(db, "LOGIN_BIG_SAVE"), { 닉네임: nickname }) ?? "",
+      loginSmall: b11(db, "LOGIN_SMALL_GUEST"),
       loginDone: b11(db, "LOGIN_DONE"),
     },
     tempPay: {

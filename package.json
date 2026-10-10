@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --test --no-warnings lib/astro/*.test.ts lib/report/*.test.ts lib/auth/*.test.ts lib/results/guest.test.ts lib/results/consent.test.ts components/test/*.test.ts components/intro/*.test.ts"
+    "test": "node --test --no-warnings lib/astro/*.test.ts lib/report/*.test.ts lib/auth/*.test.ts lib/results/guest.test.ts lib/results/consent.test.ts lib/results/lastPage.test.ts lib/results/pageArt.test.ts components/test/*.test.ts components/intro/*.test.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

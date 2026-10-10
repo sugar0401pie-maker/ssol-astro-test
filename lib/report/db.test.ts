@@ -146,16 +146,18 @@ test("샘플: 휠 각도 선마다 탭 시트(B3)와 처음 안내 말풍선 3�
   assert.equal(r.wheelTips.length, 3);
 });
 
-test("샘플: 2026 회고 — v1.3 주제는 무게·책임(토성 리턴 100), '변화'는 엇갈림 문장(A12c), 고민 영역 문장(A12d), 전환점 두 개", () => {
+test("샘플: 2026 회고 — v1.3 주제는 무게·책임(토성 리턴 100), '변화'는 엇갈림 문장(A12c), 고민 영역 문장(A12d), 전환점 셋(패키지 v3: 개인 트랜짓 포함)", () => {
   const r = sample();
   assert.equal(r.year2026.theme, "WEIGHT");
   const a12c = db.dbs.A12c.rows.filter((x) => x.word === "변화" && x.theme === "무게·책임").map((x) => x.text);
   assert.ok(a12c.includes(r.year2026.intro));
   assert.ok(db.dbs.A12c.rows.find((x) => x.text === r.year2026.intro)!.fit === "엇갈림");
   assert.ok(db.dbs.A12d.rows.filter((x) => x.word === "변화" && x.area === "직업·커리어").some((x) => x.text === r.year2026.areaLine));
-  assert.equal(r.year2026.turningPoints.length, 2);
+  assert.equal(r.year2026.turningPoints.length, 3);
   assert.ok(r.year2026.turningPoints[0].startsWith("2월 7일에는 토성이 태어날 때의 자리로 처음 돌아오는"));
   assert.ok(r.year2026.turningPoints[1].startsWith("4월 26일에는 변화의 별 천왕성이 상승궁 별자리인 쌍둥이자리에"));
+  // TP_PERSONAL: 출생 천정과 맺은 천왕성 사각(7월, 오늘 이전) — "날짜 무렵은 …였어요. table_past"
+  assert.ok(/^7월 \d+일 무렵은 .+(이었|였)어요\. /.test(r.year2026.turningPoints[2]), r.year2026.turningPoints[2]);
   // 1분기 표에는 토성 리턴 과거형 문장, 지금 지나는 4분기는 미래형
   assert.ok(r.year2026.quarters[0].cell.includes(row(db, "A8", "TR_SATURN_RETURN")!.table_past));
   // 지금 지나는 4분기는 '연말까지' 섹션으로 잇는 문장(프로토타입)

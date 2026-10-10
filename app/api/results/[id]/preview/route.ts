@@ -2,13 +2,13 @@ import { resolveOwner } from "@/lib/results/owner";
 import { NextRequest, NextResponse } from "next/server";
 import { wishContextOf } from "@/lib/astro/wish";
 import { ASTRO_DB } from "@/lib/report/dbData";
-import { blurFiller, prepareSkeleton, previewLines } from "@/lib/report/prepare";
+import { blurParagraphs, prepareSkeleton, previewLines } from "@/lib/report/prepare";
 import { birthKeyOf } from "@/lib/report/variants";
 import { computeFree } from "@/lib/results/compute";
 import { getResult, isUuid } from "@/lib/results/store";
 
 // 결제 전 페이월 미리보기(디자인가이드 2장: 유료 섹션은 제목과 두괄식 첫 문장만 선명, 본문 블러).
-// DB 뼈대의 첫 문장 하나씩만 보낸다 — 나머지 본문·표·근거는 결제 후 /report에서만. AI는 부르지 않는다. 본인 결과만.
+// 섹션마다 굵은 요약 + 본문 첫 두 문장만 보낸다 — 나머지 본문·표·근거는 결제 후 /report에서만. AI는 부르지 않는다. 본인 결과만.
 export const runtime = "nodejs";
 
 export async function GET(req: NextRequest, ctx: RouteContext<"/api/results/[id]/preview">) {
@@ -30,8 +30,8 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/results/[id]
       birthKey: birthKeyOf(row.birth_input),
       now: new Date(),
     });
-    // 블러 자리는 B13 가짜 문장(실제 본문 아님) — 섹션마다 한 덩어리, 화면이 부분마다 이어 붙인다.
-    const sections = previewLines(skeleton).map((x) => ({ ...x, filler: blurFiller(ASTRO_DB, x.no, row.nickname) }));
+    // 블러 자리는 B13 가짜 문장(실제 본문 아님)
+    const sections = previewLines(skeleton).map((x) => ({ ...x, dummy: blurParagraphs(ASTRO_DB, x.no, row.nickname) }));
     return NextResponse.json({ sections });
   } catch (e) {
     console.error(e instanceof Error ? e.message : "미리보기 실패");

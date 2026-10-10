@@ -29,45 +29,24 @@ export function sectionParagraphs(s: Pick<PaidSection, "body" | "tail">): string
 }
 
 /**
- * 결제 전 미리보기(2026-10-09 페이월): 유료 섹션마다 제목 + 굵은 요약 + 본문 앞부분 문장 두 개만.
- * 나머지 본문·표·근거는 보내지 않는다(블러만으로 가리면 결제 없이 볼 수 있으므로).
+ * 결제 전 미리보기(패키지 v3 웹툰식 결과, 2026-10-10): 4~7장마다 굵은 요약 + 본문 첫 두 문장만.
+ * 나머지 본문·소제목·표·근거는 보내지 않는다(블러만으로 가리면 결제 없이 볼 수 있으므로) — 흐린 자리는 B13 가짜 문장.
  */
-export function previewLines(
-  skeleton: ReturnType<typeof prepareSkeleton>["skeleton"],
-): Array<{ no: number; title: string; first: string; lines: string[]; parts: Array<{ head?: string; text?: string }> }> {
+export function previewLines(skeleton: ReturnType<typeof prepareSkeleton>["skeleton"]): Array<{ no: number; title: string; first: string; lines: string[] }> {
   return skeleton.sections.map((s) => {
-    const sentences = sectionParagraphs(s).join(" ").match(/[^.!?]+[.!?]+/g) ?? [];
-    // 프로토타입 잠긴 화면(.locked .lp): 소제목은 그대로, 문단·목록은 앞 2줄 남짓만 보이고 흐려진다 — 앞부분 글자만 보낸다(본문 전체는 보내지 않음).
-    const parts: Array<{ head?: string; text?: string }> = [];
-    for (const b of [...s.body, ...s.tail]) {
-      if (parts.length >= PREVIEW_PARTS) break;
-      if (b.t === "head" || b.t === "sub") parts.push({ head: b.text });
-      else {
-        const t = blockText(b);
-        if (t) parts.push({ text: t.length > PREVIEW_CHARS ? t.slice(0, PREVIEW_CHARS) : t });
-      }
-    }
-    // 2026-10-10 owner: 유료 경계(9-4)와 연말 섹션(9-5)을 한 화면으로 — 4번 섹션은 본문 앞 2줄(첫 조각)만 실제 문장,
-    // 그 아래는 전부 흐린 가짜 문장(B13)으로 채운다. 그래서 첫 조각 뒤의 실제 소제목·문장은 보내지 않는다.
-    const shown = s.no === 4 ? parts.filter((p) => p.text).slice(0, 1) : parts;
-    return { no: s.no, title: s.title, first: s.summary ?? "", lines: sentences.slice(0, PREVIEW_LINES).map((x) => x.trim()), parts: shown };
+    // 프로토타입 lockTeasers: 소제목(• …)은 건너뛰고 문단에서 문장 두 개
+    const paras = [...s.body, ...s.tail].filter((b) => b.t !== "head" && b.t !== "sub").map(blockText).filter(Boolean);
+    const sentences = paras.join(" ").match(/[^.!?]+[.!?]+[”’"]?/g) ?? [];
+    return { no: s.no, title: s.title, first: s.summary ?? "", lines: sentences.slice(0, PREVIEW_LINES).map((x) => x.trim()) };
   });
 }
 
-/** 잠긴 섹션 미리보기: 조각 수와 조각마다 보내는 글자 수(2.7줄 남짓 — 화면에서 흐려지는 만큼만) */
-const PREVIEW_PARTS = 6;
-const PREVIEW_CHARS = 70;
-
 /**
- * 블러 영역을 채울 가짜 문장(해석 DB B13, 2026-10-10 패키지): 결제 전에는 실제 유료 본문을 보내지 않으므로,
- * 각 부분의 앞 2줄(실제) 아래 흐려지는 자리를 샘플 리포트에서 날짜·이름을 지운 문장으로 채운다.
- * 같은 섹션 문장을 순서대로 이어 붙이고, 모자라면 처음부터 반복한다(minChars까지).
+ * 블러 자리를 채울 가짜 문단(해석 DB B13): 결제 전에는 실제 유료 본문을 보내지 않으므로, 첫 두 문장 아래 흐려지는 자리를
+ * 샘플 리포트에서 날짜·이름을 지운 문장으로 채운다. 프로토타입처럼 섹션 문장을 두 번 이어 앞에서 max개.
  */
-export function blurFiller(db: AstroDb, section: number, nickname: string, minChars = 160): string {
+export function blurParagraphs(db: AstroDb, section: number, nickname: string, max = 7): string[] {
   const rows = (db.dbs.B13?.rows ?? []).filter((r) => String(r.section) === String(section)).sort((a, b) => a.id.localeCompare(b.id));
-  if (!rows.length) return "";
   const texts = rows.map((r) => r.text.replaceAll("{닉네임}", nickname));
-  let out = "";
-  for (let i = 0; out.length < minChars; i++) out += (out ? " " : "") + texts[i % texts.length];
-  return out;
+  return [...texts, ...texts].slice(0, max);
 }

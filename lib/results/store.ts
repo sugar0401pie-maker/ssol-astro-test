@@ -73,8 +73,9 @@ export async function saveResult(args: {
   return data.id as string;
 }
 
-export async function listResults(owner: Owner): Promise<Array<Pick<StoredResult, "id" | "created_at" | "nickname" | "character" | "sun_sign" | "accuracy">>> {
-  const { data, error } = await byOwner(createAdminClient().from(TABLE).select("id, created_at, nickname, character, sun_sign, accuracy"), owner)
+export async function listResults(owner: Owner): Promise<Array<Pick<StoredResult, "id" | "created_at" | "nickname" | "character" | "sun_sign" | "accuracy"> & { consent_version?: string }>> {
+  // consent_version: 같은 약관 버전에 이미 동의한 계정은 다음 테스트에서 동의를 체크된 상태로 보여 준다(패키지 v3)
+  const { data, error } = await byOwner(createAdminClient().from(TABLE).select("id, created_at, nickname, character, sun_sign, accuracy, consent_version"), owner)
     .order("created_at", { ascending: false })
     .limit(50);
   if (error) throw new Error(`결과 목록 실패: ${error.code}`);

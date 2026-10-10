@@ -6,10 +6,10 @@
 import type { PaidReport } from "@/lib/report/aiReport";
 import type { Block, WhyGroup } from "@/lib/report/paidSkeleton";
 import FiveYearStars from "./FiveYearStars";
-import GuideArt, { LOCKED_ART } from "@/components/test/GuideArt";
+import SowellaButton from "./SowellaButton";
+import PageArt from "./PageArt";
 import { SOWELLA_USE_URL } from "@/lib/results/consent";
 
-const SOWELLA_CHAT_URL = "https://app.ssolwellnesshouse.com/chat";
 
 export function BlockView({ b }: { b: Block }) {
   switch (b.t) {
@@ -76,17 +76,18 @@ export function WhyList({ groups, head = "▸ 왜 그럴까 — 하늘에서 일
   );
 }
 
-export default function PaidReportView({ report, signIndex }: { report: PaidReport; signIndex?: number }) {
+/** 패키지 v3 웹툰식 결과: only = 지금 페이지의 섹션 번호(4~7)만 그린다 */
+export default function PaidReportView({ report, signIndex, resultId, only }: { report: PaidReport; signIndex?: number; resultId?: string; only?: number }) {
   return (
     <div className="locked-zone">
-      {report.sections.map((s) => (
+      {report.sections.filter((s) => only === undefined || s.no === only).map((s) => (
         <section key={s.no} className="rsec paid unlock-anim" id={`sec-${s.no}`} aria-labelledby={`sec-${s.no}-t`}>
           <h2 className="rsec-title" id={`sec-${s.no}-t`}>
             <span>{s.title}</span>
           </h2>
+          <PageArt page={s.no} signIndex={signIndex} />
           <div className="box">
             {s.summary && <p className="lead summary">{s.summary}</p>}
-            {LOCKED_ART[s.no] && <GuideArt id={LOCKED_ART[s.no]} signIndex={signIndex} />}
             <div className="locked-body">
               {[...s.body, ...s.tail].map((b, i) => (
                 <BlockView key={i} b={b} />
@@ -125,9 +126,7 @@ export default function PaidReportView({ report, signIndex }: { report: PaidRepo
                   <div style={{ borderTop: "1px solid var(--box-line)", paddingTop: 14, marginTop: 6 }}>
                     <p>{report.closing}</p>
                     {/* 7번 섹션 끝 '쏘웰라 대화 시작'(마스터스펙 6-2). 같은 계정이라 로그인이 이어진다. */}
-                    <a href={SOWELLA_CHAT_URL} className="btn block">
-                      쏘웰라와 대화 시작하기
-                    </a>
+                    <SowellaButton label="쏘웰라와 대화 시작하기" className="btn block" resultId={resultId} page={7} />
                     {/* 동의 문구 초안 ③(2026-10-10, 법률 검토 전): 넘어가는 순간 다시 알린다 */}
                     <p className="sowella-note">
                       대화를 시작하면 리포트 요약이 쏘웰라에게 전달돼요. 출생 시각·장소는 전달되지 않아요.{" "}
