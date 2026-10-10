@@ -71,10 +71,11 @@ test("샘플(1996-04-01 경기): 프로펙션·판정이 원본 샘플 판정과
   for (const [y, lord] of Object.entries(sample.profection as Record<string, string>)) {
     assert.equal(KO[profectionLord(c.L.asc as number, c.birth_local, `${y}-12-31`)], lord, y);
   }
-  for (const wish of ["안정", "도약", "새로운 시작"] as Q3Wish[]) {
+  for (const wish of ["안정", "도약", "시작"] as Q3Wish[]) {
     const r = computeWish(c.L, wish, { birthDate: c.birth_local, dayChart: c.day_chart });
     for (const y of r.years) {
-      const e = sample[wish].years[String(y.year)];
+      // 원본 샘플 판정 JSON은 확정 전 이름 '새로운 시작'을 키로 쓴다(2026-10-10 '시작'으로 확정)
+      const e = sample[wish === "시작" ? "새로운 시작" : wish].years[String(y.year)];
       assert.equal(y.level, e.level, `${wish} ${y.year}`);
       assert.equal(y.movementLabel, e.movement_label, `${wish} ${y.year}`);
       assert.equal(y.edge ?? "", e.edge_db, `${wish} ${y.year} edge`);

@@ -1,0 +1,130 @@
+{
+  "schema_version": "astro_handoff_v1",
+  "test_key": "astro",
+  "source_id": "(astro_sessions.id)",
+  "created_at": "2026-10-10T12:00:00+09:00",
+  "is_paid": true,
+  "user": {
+    "nickname": "지우",
+    "accuracy": "A",
+    "soft_tone": false
+  },
+  "answers": {
+    "q1_domain": "직업·커리어",
+    "q2_word_2026": "변화",
+    "q3_wish_2027": "안정"
+  },
+  "chart_summary": {
+    "sun": "양자리",
+    "moon": "처녀자리",
+    "asc": "쌍둥이자리",
+    "strongest_element": "불",
+    "temperament": "활동",
+    "type": {
+      "competency": "기대기",
+      "style": "다가가기",
+      "type_line": "누군가에게 기대는 일에 에너지가 많이 들고, 그럴 때 먼저 다가가는 유형"
+    }
+  },
+  "year_2026": {
+    "theme": "무게·책임",
+    "fit": "엇갈림",
+    "turning_points": [
+      {
+        "date": "2026-02-07",
+        "label": "토성 리턴",
+        "line": "무엇을 책임지며 살 것인가를 묻는 큰 점검"
+      },
+      {
+        "date": "2026-04-26",
+        "label": "천왕성 쌍둥이자리(상승궁) 진입",
+        "line": "나를 보여 주는 방식이 서서히 바뀌는 출발선"
+      }
+    ]
+  },
+  "year_end": {
+    "cautions": [
+      "결정은 한 박자 늦게",
+      "말과 기록은 두 번 확인",
+      "에너지는 아껴 쓰기"
+    ],
+    "good_thing": "10월 27일~1월 29일 목성이 상승궁과 돕는 각도 — 가까운 동료·짧은 배움을 통한 작은 도움"
+  },
+  "year_2027": {
+    "keyword": "이어 온 일 위에 뿌리내리기",
+    "judgement": "내 손에 달린 해(보통)",
+    "movement": "움직이는 해",
+    "flow": [
+      "2026년 연말 — 다시 보기",
+      "1~4월 — 정하지 말고 준비",
+      "4·6월 — 제안과 계기",
+      "7월 말부터 — 정하고 자리 잡기",
+      "9월 — 정리"
+    ],
+    "let_go": "모든 걸 혼자, 빨리 해결해야 한다는 마음",
+    "grow": "기대기"
+  },
+  "five_years": [
+    {
+      "year": 2027,
+      "judgement": "내 손에 달린 해(보통)",
+      "movement": "움직이는 해",
+      "theme": "이어 온 일 위에 뿌리내리기"
+    },
+    {
+      "year": 2028,
+      "judgement": "활짝 열리는 해(순풍)",
+      "movement": "",
+      "theme": "안정이 자리 잡고, 하반기엔 즐거움이 돌아와요"
+    },
+    {
+      "year": 2029,
+      "judgement": "내 손에 달린 해(보통)",
+      "edge": "활짝 열리는 해에 가까움",
+      "movement": "",
+      "theme": "일과 일상의 리듬을 새로 짜기"
+    },
+    {
+      "year": 2030,
+      "judgement": "내 손에 달린 해(보통)",
+      "movement": "",
+      "theme": "마음의 무게를 나누며 나를 다시 세우기"
+    },
+    {
+      "year": 2031,
+      "judgement": "내 손에 달린 해(보통)",
+      "movement": "움직이는 해",
+      "theme": "새로운 나로 다시 시작"
+    }
+  ],
+  "first_open_year": 2028,
+  "questions": [
+    "올해 책임진 것들 중, 2027년에도 계속 지고 싶은 것은 무엇이고 내려놓고 싶은 것은 무엇인가요?",
+    "지우님에게 ‘안정적이다’는 느낌은 어떤 장면인가요?",
+    "힘들 때 먼저 연락하는 사람은 누구인가요? 그 사람에게 요즘 내 사정을 얼마나 말했나요?"
+  ],
+  "practices": [
+    {
+      "ssol_id": "(A14 실천 ID)",
+      "name": "결정 메모 하루 묵히기"
+    },
+    {
+      "ssol_id": "(A14 실천 ID)",
+      "name": "기댈 사람 두 명 정하고, 구체적으로 부탁하기"
+    },
+    {
+      "ssol_id": "(A14 실천 ID)",
+      "name": "주 1회, 생활 공간 한 구석 정리하기"
+    }
+  ],
+  "section_summaries": {
+    "type": "(B11 SUM_TYPE 채운 문장)",
+    "2026": "(B11 SUM_2026)",
+    "eoy": "(B11 SUM_EOY)",
+    "2027": "지우님의 2027년은 안정이 내 손에 달린 해(보통)이고, 이어 온 일 위에 뿌리내리기예요.",
+    "5y": "(B11 SUM_5Y_OPEN)",
+    "question": "(B11 SUM_QUESTION)"
+  },
+  "greeting_id": "GREET_QUESTION",
+  "excluded": "출생 시각·출생지·좌표, 결제 정보, 엔진 원본 숫자는 넣지 않는다"
+}

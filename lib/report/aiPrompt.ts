@@ -75,7 +75,7 @@ export interface PartOutcome {
   /** 섹션 번호 → 본문 조각(토큰을 실제 값으로 바꾼 뒤) */
   sections: Partial<Record<SectionNo, Block[]>>;
   issues: ValidationIssue[];
-  /** 잇기가 규칙(4문장·140~260자·바람 단어·토큰·겹침)에 맞지 않았던 섹션 */
+  /** 잇기가 규칙(4문장·150~320자·바람 단어·토큰·겹침)에 맞지 않았던 섹션 */
   bridgeFailed: Array<5 | 6>;
 }
 
@@ -115,7 +115,7 @@ export function overlapRatio(a: string, b: string): number {
 }
 
 /**
- * 바람과 흐름 잇기 검증(06 v3.1 '검증(서버)'): 정확히 4문장 · 140~260자 · 바람 단어 포함 · 날짜 토큰 1개 이상 ·
+ * 바람과 흐름 잇기 검증(06 v3.1 '검증(서버)'): 정확히 4문장 · 150~320자 · 바람 단어 포함 · 날짜 토큰 1개 이상 ·
  * DB 판정 문장과 60% 미만 겹침. 토큰 밖 숫자·C1 금지어·입력 밖 토큰은 파트 전체 검증이 이미 본다.
  */
 export function checkBridge(raw: string, opts: { wish: string; judgement: string; values: Record<string, string> }): string[] {
@@ -129,7 +129,7 @@ export function checkBridge(raw: string, opts: { wish: string; judgement: string
   }
   const sentences = text.match(/[^.!?]+[.!?]+/g) ?? [];
   if (sentences.length !== 4) problems.push(`sentences_${sentences.length}`);
-  if (text.length < 140 || text.length > 260) problems.push(`length_${text.length}`);
+  if (text.length < 150 || text.length > 320) problems.push(`length_${text.length}`);
   if (!text.includes(opts.wish)) problems.push("no_wish");
   if (opts.judgement && overlapRatio(text, opts.judgement) >= 0.6) problems.push("overlap");
   return problems;

@@ -10,6 +10,7 @@ import { isPage, pathOf, prevStep, restorableStep, stepFromPath, type Progress, 
 import { KOREA_REGIONS } from "@/lib/astro/places";
 import type { FreeResult } from "@/lib/report/freeResult";
 import { getRealSession } from "@/lib/supabase/browser";
+import { b14, useCopy } from "@/lib/copy/useCopy";
 import { apiHeaders } from "@/lib/guest/client";
 import CitySearch, { type PickedCity } from "./CitySearch";
 import ConsentStep from "./ConsentStep";
@@ -149,13 +150,14 @@ export default function TestFlow() {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [candidateGrade, setCandidateGrade] = useState<string>("B");
   // 결과 전 화면의 고정 문구(해석 DB A15). 못 받아 와도 화면은 그대로 진행한다.
-  const [copy, setCopy] = useState<{ FIX_LOADING?: string; FIX_PRIVACY_NOTE?: string }>({});
+  const copy = useCopy();
+  // 계산 화면 문구(B14 EMPTY_LOADING_1~3)를 차례로 바꿔 보여 준다
+  const [loadingIdx, setLoadingIdx] = useState(0);
   useEffect(() => {
-    fetch("/api/copy")
-      .then((r) => (r.ok ? r.json() : {}))
-      .then(setCopy)
-      .catch(() => {});
-  }, []);
+    if (step !== "loading") return;
+    const t = setInterval(() => setLoadingIdx((i) => (i + 1) % 3), 1500);
+    return () => clearInterval(t);
+  }, [step]);
   const [result, setResult] = useState<FreeResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const agreeRef = useRef<HTMLFieldSetElement>(null);
@@ -307,7 +309,7 @@ export default function TestFlow() {
     } catch {
       await wait();
       setStep("birth");
-      setErrs({ place: "계산 중 문제가 생겼어요. 입력을 확인해 주세요." });
+      setErrs({ place: b14(copy, "ERR_CALC", "alt", "계산 중 문제가 생겼어요. 입력을 확인해 주세요.") });
     }
   }
 
@@ -676,7 +678,7 @@ export default function TestFlow() {
             <h1 className="big" id="loading-title">
               별의 위치를 계산하는 중…
             </h1>
-            <p className="small">{copy.FIX_LOADING ?? ""}</p>
+            <p className="small">{b14(copy, `EMPTY_LOADING_${loadingIdx + 1}`, "title", copy.FIX_LOADING ?? "", nickname)}</p>
           </div>
         </section>
       )}

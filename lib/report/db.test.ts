@@ -12,7 +12,7 @@ import { ELEMENT_ID, POINT_ID, SIGN_ID, fillTemplate, firstSentence, pad2, row, 
 import { c1Hits, compileC1, type C1Row } from "./validate.ts";
 import { buildFreeResult, candidateCards } from "./freeResult.ts";
 
-const db: AstroDb = JSON.parse(readFileSync(new URL("../../data/astro/db/astro_db_v1.3.json", import.meta.url), "utf8"));
+const db: AstroDb = JSON.parse(readFileSync(new URL("../../data/astro/db/astro_db_v1.4.json", import.meta.url), "utf8"));
 const ref: CalibrationTable = JSON.parse(readFileSync(new URL("../../data/astro/calibration.json", import.meta.url), "utf8"));
 const has = (t: string, id: string) => assert.ok(row(db, t, id), `${t} ${id} 없음`);
 
@@ -64,8 +64,8 @@ test("DB: 엔진이 만드는 ID가 모두 있다", () => {
   for (const id of ["TP_SATURN_RETURN_1", "TP_SATURN_RETURN_2", "TP_JUPITER_RETURN", "TP_URANUS_OPPOSITION", "TP_NEPTUNE_SQUARE", "TP_URANUS_INTO_ASC_SIGN", "TP_SATURN_INTO_ASC_SIGN", "TP_QUIET_YEAR", "TP_SOLAR_ECLIPSE_ON_POINT", "TP_LUNAR_ECLIPSE_ON_POINT"]) has("A18", id);
 });
 
-const SKIP_KEYS = new Set(["id", "review_note", "dates", "image_file", "house", "house_label", "period_label", "event", "name", "minutes", "houses", "planets", "scene_hint", "in_service_range", "section", "note", "slot", "variant", "level", "wish", "word"]); // validate_text.py 2026-10-09와 같게
-const DIGIT_OK_ROWS = new Set(["FIX_PAYWALL_BOX", "FIX_SOWELLA_3DAY"]);
+const SKIP_KEYS = new Set(["id", "review_note", "dates", "image_file", "house", "house_label", "period_label", "event", "name", "minutes", "houses", "planets", "scene_hint", "in_service_range", "section", "note", "slot", "situation", "when", "variant", "level", "wish", "word"]); // validate_text.py 2026-10-10과 같게
+const DIGIT_OK_ROWS = new Set(["FIX_PAYWALL_BOX", "FIX_SOWELLA_3DAY", "ERR_DATE_RANGE", "EMPTY_REPORT_GEN", "BLUR_S7_09"]);
 
 test("DB: 화면 문장이 C1 금지어 사전과 숫자 규칙을 통과한다(validate_text.py와 같은 기준)", () => {
   const rules = compileC1(db.dbs.C1.rows as unknown as C1Row[]);

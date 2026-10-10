@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { pickTheme, themeTable } from "./theme2026.ts";
 import type { AstroDb } from "./db.ts";
 
-const db: AstroDb = JSON.parse(readFileSync(new URL("../../data/astro/db/astro_db_v1.3.json", import.meta.url), "utf8"));
+const db: AstroDb = JSON.parse(readFileSync(new URL("../../data/astro/db/astro_db_v1.4.json", import.meta.url), "utf8"));
 const table = themeTable(db);
 const z = { WEIGHT: 0, SHIFT: 0, GROWTH: 0, RELEASE: 0, REVIEW: 0 };
 

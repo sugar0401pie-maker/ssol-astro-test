@@ -12,14 +12,17 @@ export default function SaveSuggestion({
   paid = false,
   prefill,
   onSaved,
+  tempPay,
 }: {
+  /** 결제한 임시 계정 안내(B11 PAY_TEMP_BANNER·LOGIN_BIG_PAID) — 있으면 이 문구를 쓴다 */
+  tempPay?: { banner: string; loginBigPaid: string };
   resultId: string | null;
   /** 결제 후에는 가입을 더 분명히 권한다(쏘웰라 3일 이용권도 계정이 있어야 쓸 수 있음) */
   paid?: boolean;
   prefill?: { birthDate?: string; nickname?: string };
   onSaved?: () => void;
 }) {
-  const [open, setOpen] = useState(paid);
+  const [open, setOpen] = useState(paid && !tempPay?.banner);
   const [saved, setSaved] = useState(false);
 
   async function afterSignIn() {
@@ -32,12 +35,33 @@ export default function SaveSuggestion({
 
   if (saved) return <p className="rounded-2xl border border-gold px-4 py-3 text-center text-sm text-cream">계정에 저장했어요. 이제 어느 기기에서든 &lsquo;내 결과&rsquo;에서 다시 볼 수 있어요.</p>;
 
+  if (paid && tempPay?.banner)
+    // 프로토타입 .temp-banner: 결제 직후 리포트 위 — 버튼 → 가입 화면(LOGIN_BIG_PAID) → 같은 자리로
+    return (
+      <div className="temp-banner">
+        <p>{tempPay.banner}</p>
+        {!open ? (
+          <button type="button" className="btn block small-btn" onClick={() => setOpen(true)}>
+            회원가입하고 보관하기
+          </button>
+        ) : (
+          <AuthStep
+            title={tempPay.loginBigPaid || undefined}
+            initialMode="signup"
+            oauthRedirect={typeof window !== "undefined" && resultId ? `${window.location.origin}/results/${resultId}` : undefined}
+            prefill={prefill}
+            onSignedIn={() => void afterSignIn()}
+          />
+        )}
+      </div>
+    );
+
   return (
     <div className="flex flex-col gap-3 rounded-2xl border border-gold px-4 py-4 text-cream">
       <p className="font-bold">{paid ? "결제가 완료됐어요. 가입하고 리포트를 보관해 주세요." : "이 결과는 아직 이 기기에만 저장돼 있어요."}</p>
       <p className="text-sm leading-relaxed text-cream/85">
         {paid
-          ? "가입하면 이 리포트가 계정에 저장되고, 쏘웰라 3일 이용권도 쓸 수 있어요. 가입하지 않으면 1년 뒤 자동으로 지워져요."
+          ? "가입하면 이 리포트가 계정에 저장되고, 쏘웰라 3일 이용권도 쓸 수 있어요. 가입하지 않으면 30일 뒤 자동으로 지워져요."
           : "가입하거나 로그인하면 어느 기기에서든 다시 볼 수 있어요. 저장하지 않으면 30일 뒤 자동으로 지워져요."}
       </p>
       {!open ? (

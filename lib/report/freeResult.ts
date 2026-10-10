@@ -125,6 +125,8 @@ export interface FreeResult {
   payPopup: string;
   /** 저장·로그인 화면 문구(B11 SAVE_DONE·LOGIN_BIG·LOGIN_SMALL·LOGIN_DONE) */
   saveCopy: { saveDone: string; loginBig: string; loginSmall: string; loginDone: string };
+  /** 임시 계정(로그인 안 함) 결제 안내(B11, 2026-10-10): 결제 팝업 아래 작은 글씨 · 결제 직후 리포트 위 배너 · 그때의 가입 화면 제목 */
+  tempPay: { note: string; banner: string; loginBigPaid: string };
   disclaimer: string;
   paidSections: typeof PAID_SECTION_TITLES;
 }
@@ -586,6 +588,12 @@ export function buildFreeResult(args: {
       loginBig: fillSummary(b11(db, "LOGIN_BIG"), { 닉네임: nickname }) ?? "",
       loginSmall: b11(db, "LOGIN_SMALL"),
       loginDone: b11(db, "LOGIN_DONE"),
+    },
+    tempPay: {
+      note: b11(db, "PAY_TEMP_NOTE"),
+      // 버튼 표기 "[회원가입하고 보관하기]"는 화면 버튼으로 따로 그린다
+      banner: b11(db, "PAY_TEMP_BANNER").replace(/\s*\[[^\]]*\]\s*$/, ""),
+      loginBigPaid: fillSummary(b11(db, "LOGIN_BIG_PAID"), { 닉네임: nickname }) ?? "",
     },
     disclaimer: text(db, "A15", "FIX_DISCLAIMER", "text"),
     paidSections: PAID_SECTION_TITLES,

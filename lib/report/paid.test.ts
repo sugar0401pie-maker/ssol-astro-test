@@ -17,7 +17,7 @@ import { fillSystemPrompt, partUserMessage, processPartOutput, splitSections } f
 import { SYSTEM_PROMPT_TEMPLATE } from "./systemPrompt.ts";
 import { compileC1, type C1Row } from "./validate.ts";
 
-const db: AstroDb = JSON.parse(readFileSync(new URL("../../data/astro/db/astro_db_v1.3.json", import.meta.url), "utf8"));
+const db: AstroDb = JSON.parse(readFileSync(new URL("../../data/astro/db/astro_db_v1.4.json", import.meta.url), "utf8"));
 const ref: CalibrationTable = JSON.parse(readFileSync(new URL("../../data/astro/calibration.json", import.meta.url), "utf8"));
 const c1 = compileC1(db.dbs.C1.rows as unknown as C1Row[]);
 const NOW = new Date("2026-10-07T03:00:00Z");
@@ -231,4 +231,13 @@ test("DB 뼈대: 5·6번에 B12 대체 문장(흐름근거·바라던해 채움)
   assert.ok(skeleton.sections[2].body.some((b) => b.t === "bridge" && b.text.includes("2028년")));
   assert.equal(skeleton.sections[2].summary, "지우님이 바라는 안정이 활짝 열리는 해(순풍)는 2028년입니다.");
   assert.ok(skeleton.sections[3].summary?.startsWith("지우님께 별이 드리는 질문은"));
+});
+
+test("블러 자리는 해석 DB B13 가짜 문장으로 채운다(섹션별, 닉네임 치환, 모자라면 반복)", async () => {
+  const { blurFiller } = await import("./prepare.ts");
+  const f4 = blurFiller(db, 4, "지우", 300);
+  assert.ok(f4.length >= 300);
+  assert.ok(f4.includes("지우님"));
+  assert.ok(!f4.includes("{닉네임}"));
+  assert.equal(blurFiller(db, 9, "지우"), "");
 });

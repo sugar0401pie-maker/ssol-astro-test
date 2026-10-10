@@ -64,6 +64,8 @@ export default function AuthStep({
   // 프로토타입 #scr-login: [카카오로 계속하기][네이버로 계속하기][이메일로 계속하기] — 이메일 칸은 누른 뒤에 연다
   const [emailOpen, setEmailOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // 가입하려던 이메일이 이미 있으면 비밀번호 찾기로 보내면서 그 이메일을 채워 둔다(owner 2026-10-10)
+  const [resetEmail, setResetEmail] = useState<string | null>(null);
   const configured = !!getBrowserClient();
   // 가입·비밀번호 재설정은 인증번호 확인 순간 로그인 상태가 되지만, 비밀번호·정보 저장이 끝날 때까지 다음 화면으로 넘어가지 않는다.
   const holdSignIn = useRef(false);
@@ -101,7 +103,7 @@ export default function AuthStep({
   return (
     <div className="flex flex-col gap-5">
       <h1 className="big">
-        {mode === "signup" ? "계정 만들기" : mode === "reset" ? "비밀번호 재설정" : title ?? "결과를 저장하고 보려면 로그인해 주세요."}
+        {mode === "signup" ? "계정 만들기" : mode === "reset" ? "비밀번호 찾기" : title ?? "결과를 저장하고 보려면 로그인해 주세요."}
       </h1>
       <p className="small">{mode === "signin" && subtitle ? subtitle : "쏠 웰니스 하우스(쏘웰라·디저트 테스트)와 같은 계정이에요. 한 번 가입하면 모든 곳에서 쓸 수 있어요."}</p>
       {!configured && <p className="err">설정 오류로 로그인을 사용할 수 없어요. 잠시 후 다시 시도해 주세요.</p>}
@@ -136,6 +138,10 @@ export default function AuthStep({
           error={error}
           setError={setError}
           prefill={prefill}
+          onDuplicate={(email) => {
+            setResetEmail(email);
+            go("reset");
+          }}
           onStart={() => (holdSignIn.current = true)}
           onDone={(ok) => {
             holdSignIn.current = false;
@@ -145,6 +151,7 @@ export default function AuthStep({
       )}
       {mode === "reset" && (
         <ResetForm
+          initialEmail={resetEmail ?? undefined}
           configured={configured}
           error={error}
           setError={setError}
@@ -210,8 +217,8 @@ function SignInForm({ configured, error, setError, onForgot }: FormProps & { onF
 }
 
 function SignUpForm({
-  configured, error, setError, prefill, onStart, onDone,
-}: FormProps & { prefill?: { birthDate?: string; nickname?: string }; onStart: () => void; onDone: (ok: boolean) => void }) {
+  configured, error, setError, prefill, onDuplicate, onStart, onDone,
+}: FormProps & { prefill?: { birthDate?: string; nickname?: string }; onDuplicate: (email: string) => void; onStart: () => void; onDone: (ok: boolean) => void }) {
   const [name, setName] = useState("");
   const [nickname, setNickname] = useState(prefill?.nickname ?? "");
   const [birthDate, setBirthDate] = useState(prefill?.birthDate ?? "");
@@ -233,8 +240,9 @@ function SignUpForm({
     setError(null);
     const avail = await checkEmailAvailable(email.trim());
     if (!avail.available) {
+      // 이미 있는 계정: 가입을 막고 비밀번호 찾기로 안내(이메일을 채워서). 문구는 ResetForm이 보여 준다.
       setBusy(false);
-      setError("이미 가입된 이메일이에요. 로그인해 주세요.");
+      onDuplicate(email.trim());
       return;
     }
     const r = await sendSignupOtp(email.trim(), { display_name: name.trim(), birth_date: birthDate });
@@ -360,8 +368,8 @@ function SignUpForm({
   );
 }
 
-function ResetForm({ configured, error, setError, onStart, onDone }: FormProps & { onStart: () => void; onDone: (ok: boolean) => void }) {
-  const [email, setEmail] = useState("");
+function ResetForm({ configured, error, setError, onStart, onDone, initialEmail }: FormProps & { onStart: () => void; onDone: (ok: boolean) => void; initialEmail?: string }) {
+  const [email, setEmail] = useState(initialEmail ?? "");
   const [sent, setSent] = useState(false);
   const [code, setCode] = useState("");
   const [password, setPassword] = useState("");
@@ -406,6 +414,11 @@ function ResetForm({ configured, error, setError, onStart, onDone }: FormProps &
 
   return !sent ? (
     <form className="flex flex-col gap-2" onSubmit={request}>
+      {initialEmail && (
+        <p className="rounded-2xl border border-gold px-4 py-3 text-sm leading-relaxed text-cream">
+          ‘{initialEmail}’ 이메일로 이미 가입된 아이디가 있는 것 같아요. 비밀번호가 기억나지 않으면 여기서 새로 정할 수 있어요.
+        </p>
+      )}
       <p className="text-sm text-cream/80">가입한 이메일로 인증번호를 보내드려요. 아이디는 이메일 주소예요 — 이메일이 기억나지 않으면 contact@ssolwellness.com으로 문의해 주세요.</p>
       <input className={field} type="email" autoComplete="email" placeholder="이메일" value={email} onChange={(e) => setEmail(e.target.value)} aria-label="이메일" />
       {error && <p className="text-sm text-cream">{error}</p>}

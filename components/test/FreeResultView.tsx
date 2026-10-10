@@ -112,10 +112,15 @@ export default function FreeResultView({
   const [toast, setToast] = useToast();
   const [switching, setSwitching] = useState(false);
   // 결제 전: 유료 섹션의 요약 + 앞부분(서버가 DB 뼈대에서 일부만 보냄)
-  const [preview, setPreview] = useState<Record<number, { first: string; parts: Array<{ head?: string; text?: string }> }>>({});
+  const [preview, setPreview] = useState<Record<number, { first: string; parts: Array<{ head?: string; text?: string }>; filler?: string }>>({});
   const lockedRef = useRef<HTMLDivElement>(null);
   const [lockedVisible, setLockedVisible] = useState(false);
   const unpaid = !paidContent && !paidPending && !!resultId;
+  // 로그인하지 않은(임시 계정) 사람에게만 결제 팝업 아래 B11 PAY_TEMP_NOTE
+  const [loggedIn, setLoggedIn] = useState(true);
+  useEffect(() => {
+    void getRealSession().then((s) => setLoggedIn(!!s));
+  }, []);
   const wantPreview = !paidContent && !!resultId;
   useEffect(() => {
     if (!wantPreview) return;
@@ -124,8 +129,8 @@ export default function FreeResultView({
       .then(async (session) => {
         const res = await fetch(`/api/results/${resultId}/preview`, { headers: apiHeaders(session) });
         if (!res.ok || !alive) return;
-        const data = (await res.json()) as { sections: Array<{ no: number; first: string; parts?: Array<{ head?: string; text?: string }> }> };
-        setPreview(Object.fromEntries(data.sections.map((x) => [x.no, { first: x.first, parts: x.parts ?? [] }])));
+        const data = (await res.json()) as { sections: Array<{ no: number; first: string; parts?: Array<{ head?: string; text?: string }>; filler?: string }> };
+        setPreview(Object.fromEntries(data.sections.map((x) => [x.no, { first: x.first, parts: x.parts ?? [], filler: x.filler }])));
       })
       .catch(() => {});
     return () => {
@@ -478,8 +483,9 @@ export default function FreeResultView({
                         </p>
                       ) : (
                         <p key={i} className={`lp${paidPending ? " animate-pulse motion-reduce:animate-none" : ""}`}>
-                          {x.text}
-                          {"　".repeat(40)}
+                          {x.text}{" "}
+                          {/* 흐려지는 자리: 실제 본문이 아니라 해석 DB B13 가짜 문장(결제 전에는 실제 유료 본문을 보내지 않는다) */}
+                          {pv?.filler ? pv.filler.slice((i * 37) % Math.max(1, pv.filler.length - 80)) : "　".repeat(40)}
                         </p>
                       ),
                     )}
@@ -534,6 +540,7 @@ export default function FreeResultView({
             <div className="pf-txt">
               <p className="pp-t">{popup.message}</p>
               {popup.sub && <p className="pp-s">{popup.sub}</p>}
+              {!loggedIn && result.tempPay?.note && <p className="pp-temp">{result.tempPay.note}</p>}
             </div>
             <Link href={`/checkout/${resultId}`} className="btn block">
               {popup.button || `${REPORT_PRICE.toLocaleString("ko-KR")}원 결제하기`}

@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import type { AstroDb } from "./db.ts";
 import { a12Variant, a13Variant, b11, fillSummary, hashPick } from "./variants.ts";
 
-const db: AstroDb = JSON.parse(readFileSync(new URL("../../data/astro/db/astro_db_v1.3.json", import.meta.url), "utf8"));
+const db: AstroDb = JSON.parse(readFileSync(new URL("../../data/astro/db/astro_db_v1.4.json", import.meta.url), "utf8"));
 
 test("FNV-1a 해시: 같은 열쇠는 늘 같은 값, 범위 안", () => {
   assert.equal(hashPick("1996|4|1", 5, "A12IM버텨"), hashPick("1996|4|1", 5, "A12IM버텨"));

@@ -14,9 +14,10 @@ export function hashGuestToken(token: string): string {
   return createHash("sha256").update(`astro-guest:${token}`).digest("hex");
 }
 
-/** 익명 결과 보관 기간(owner 확정 전 초안): 결제 전 30일, 결제 후 1년. 그 전에 가입·로그인하면 계정으로 옮겨져 기한이 없어진다. */
+/** 임시(비회원) 결과 보관 기간 — 2026-10-10 패키지에서 확정: 30일(결제하면 결제일로부터 30일, B11 PAY_TEMP_NOTE).
+ *  그 전에 가입·로그인하면 계정으로 옮겨져 기한이 없어진다. */
 export const GUEST_KEEP_DAYS = 30;
-export const GUEST_PAID_KEEP_DAYS = 365;
+export const GUEST_PAID_KEEP_DAYS = 30;
 
 export function guestExpiry(now: Date, paid: boolean): string {
   return new Date(now.getTime() + (paid ? GUEST_PAID_KEEP_DAYS : GUEST_KEEP_DAYS) * 86_400_000).toISOString();

@@ -185,7 +185,7 @@ export async function markResultPaid(resultId: string): Promise<void> {
   const db = createAdminClient();
   const { error } = await db.from(TABLE).update({ paid_at: new Date().toISOString() }).eq("id", resultId).is("paid_at", null);
   if (error) throw new Error(`결과 결제 표시 실패: ${error.code}`);
-  // 아직 계정이 없는 결제 결과는 보관 기한을 1년으로 늘린다(그 전에 가입하면 기한이 없어짐).
+  // 아직 계정이 없는 결제 결과는 결제일로부터 다시 30일(그 전에 가입하면 기한이 없어짐).
   const { error: e2 } = await db.from(TABLE).update({ expires_at: guestExpiry(new Date(), true) }).eq("id", resultId).is("user_id", null);
   if (e2) throw new Error(`보관 기한 갱신 실패: ${e2.code}`);
 }

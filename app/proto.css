@@ -292,6 +292,10 @@ h3.sub-h{font-size:18px;font-weight:700;color:var(--navy);margin:22px 0 4px;font
 .pay-float{position:fixed;left:0;right:0;bottom:0;z-index:30;padding:0 12px calc(12px + env(safe-area-inset-bottom));background:none;border:0;backdrop-filter:none;-webkit-backdrop-filter:none;pointer-events:none}
 .pf-in{pointer-events:auto;max-width:440px;margin:0 auto;background:#0B1E3F;color:var(--cream);border:1px solid var(--gold);border-radius:18px;padding:14px 16px;box-shadow:0 14px 40px rgba(0,0,0,.55);text-align:center}
 .pf-in .pp-t{margin:0 0 2px;font-family:var(--f-head);font-weight:700;font-size:1rem;line-height:1.45}
+/* 2026-10-10 패키지: 임시 계정 결제 안내 */
+.pp-temp{margin:4px 0 0;font-size:.74rem;opacity:.8;line-height:1.45}
+.temp-banner{background:rgba(203,178,122,.16);border:1px solid rgba(203,178,122,.55);border-radius:14px;padding:12px 14px;margin:0 0 14px;color:var(--cream)}
+.temp-banner p{margin:0 0 8px;font-size:.88rem;line-height:1.55}
 .pf-in .pp-s{margin:0 0 10px;font-size:.8rem;color:var(--cream-70)}
 .pf-in .btn{min-height:46px}
 

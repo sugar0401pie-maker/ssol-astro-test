@@ -4,10 +4,10 @@ import type { Competency, PlanetKey } from "./constants.ts";
 
 export const Q1_OPTIONS = ["직업·커리어", "진로·자기계발", "연애", "가족", "교우·사회관계", "재정·생활안정"] as const;
 export const Q2_OPTIONS = ["버텨", "배움", "변화", "멈춤", "성취", "이별", "고생", "그만하자", "시작", "설렘"] as const;
-export const Q3_ALL = ["안정", "도약", "회복", "사랑", "좋은 사람들", "여유", "건강한 생활", "경제적 여유", "인정", "나다움", "새로운 시작"] as const;
-/** '새로운 시작'은 추가 후보(마스터스펙 4장, owner 결정 대기) — 엔진·DB에는 반영돼 있고 화면에만 숨긴다. 넣기로 하면 true. */
-export const SHOW_NEW_START_OPTION = false;
-export const Q3_OPTIONS: readonly Q3Wish[] = Q3_ALL.filter((o) => SHOW_NEW_START_OPTION || o !== "새로운 시작");
+export const Q3_ALL = ["안정", "도약", "회복", "사랑", "좋은 사람들", "여유", "건강한 생활", "경제적 여유", "인정", "나다움", "시작"] as const;
+/** Q3 11개 확정(2026-10-10, 마스터스펙 4장): 추가 후보였던 '새로운 시작'을 화면 이름·키 모두 '시작'으로 넣는다.
+ *  Q2(2026 한 단어)에도 '시작'이 있어 서버는 늘 q2_word / q3_wish 칸으로 구분한다. */
+export const Q3_OPTIONS: readonly Q3Wish[] = Q3_ALL;
 
 export type Q1Domain = (typeof Q1_OPTIONS)[number];
 export type Q2Word = (typeof Q2_OPTIONS)[number];
@@ -59,11 +59,11 @@ export const WISH_MAP: Record<Q3Wish, { houses: number[]; natural: WishNatural[]
   여유: { houses: [12, 5], natural: ["moon", "venus"], competency: "회복하기" },
   // 루틴·습관으로만 해석, 질병·몸 상태 예측 금지
   "건강한 생활": { houses: [1, 6], natural: ["moon"], competency: "선 지키기" },
-  "새로운 시작": { houses: [1, 9], natural: ["asc", "sun", "jupiter"], competency: "선 지키기" },
+  시작: { houses: [1, 9], natural: ["asc", "sun", "jupiter"], competency: "선 지키기" },
 };
 
 /** 변화를 바라는 바람 — 움직이는 해에 이루어짐 +1(C2 W_047). */
-export const CHANGE_WISHES: ReadonlySet<Q3Wish> = new Set(["도약", "나다움", "새로운 시작"]);
+export const CHANGE_WISHES: ReadonlySet<Q3Wish> = new Set(["도약", "나다움", "시작"]);
 
 export function isAnswers(v: unknown): v is Answers {
   if (!v || typeof v !== "object") return false;

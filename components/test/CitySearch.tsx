@@ -4,6 +4,7 @@
 // 검색은 우리 서버(/api/cities)에서만 한다 — 외부 지도 API로 입력이 나가지 않는다.
 import { useEffect, useRef, useState } from "react";
 import { CITY_ATTRIBUTION } from "@/lib/astro/cities";
+import { b14, useCopy } from "@/lib/copy/useCopy";
 
 export interface PickedCity {
   id: number;
@@ -25,6 +26,7 @@ export default function CitySearch({ value, onChange, autoFocus }: { value: Pick
   const [searched, setSearched] = useState(false);
   const [active, setActive] = useState(-1);
   const input = useRef<HTMLInputElement>(null);
+  const copy = useCopy();
 
   // '한국이 아니에요'를 누르면 검색칸으로(프로토타입)
   useEffect(() => {
@@ -104,7 +106,7 @@ export default function CitySearch({ value, onChange, autoFocus }: { value: Pick
               </li>
             ))
           ) : (
-            <li>목록에 없어요. 가장 가까운 큰 도시를 골라 주세요.</li>
+            <li>{b14(copy, "ERR_CITY_NONE", "alt", "목록에 없어요. 가장 가까운 큰 도시를 골라 주세요.")}</li>
           )}
         </ul>
       )}

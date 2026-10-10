@@ -11,10 +11,12 @@ import FreeResultView from "@/components/test/FreeResultView";
 import type { FreeResult } from "@/lib/report/freeResult";
 import { useRealSession } from "./useSession";
 import PaidReportView from "./PaidReportView";
+import { b14, useCopy } from "@/lib/copy/useCopy";
 import type { PaidReport } from "@/lib/report/aiReport";
 
 export default function ResultView({ id }: { id: string }) {
   const session = useRealSession();
+  const copy = useCopy();
   const router = useRouter();
   const [data, setData] = useState<{ nickname: string; firstTime: boolean; paid: boolean; guest?: boolean; result: FreeResult } | null>(null);
   const [notFound, setNotFound] = useState(false);
@@ -63,14 +65,23 @@ export default function ResultView({ id }: { id: string }) {
   if (session === undefined) return <p className="text-center text-cream/70">확인하는 중…</p>;
   // 이 기기의 비회원 결과도 계정 결과도 아니면: 다른 기기·계정에서 저장한 결과일 수 있다.
   if (notFound && !session) return <AuthStep title="이 결과를 보려면 저장한 계정으로 로그인해 주세요." onSignedIn={() => location.reload()} />;
-  if (notFound) return <p className="rounded-xl bg-cream px-3 py-2 text-sm text-navy">결과를 찾을 수 없어요. 다른 계정으로 저장한 결과일 수 있어요.</p>;
+  if (notFound)
+    return (
+      <div className="box">
+        <p className="lead">{b14(copy, "ERR_RESULT_NONE", "title", "결과를 찾을 수 없어요.")}</p>
+        <p>{b14(copy, "ERR_RESULT_NONE", "body", "다른 계정으로 저장한 결과일 수 있어요.")}</p>
+        <Link href="/test" className="btn block mt-3">
+          {b14(copy, "ERR_RESULT_NONE", "button", "새로 시작하기")}
+        </Link>
+      </div>
+    );
   if (error) return <p className="rounded-xl bg-cream px-3 py-2 text-sm text-navy">{error}</p>;
   if (!data) return <p className="text-center text-cream/70">불러오는 중…</p>;
   return (
     <div className="flex flex-col gap-6">
       <Link href="/results" className="text-sm text-cream/80 underline">← 내 결과</Link>
       {/* 비회원: 저장은 [저장하기] 버튼이 맡는다. 결제한 비회원에게만 보관(가입) 카드를 함께 보여 준다(쏘웰라 이용권은 계정이 있어야 씀). */}
-      {data.guest && !session && data.paid && <SaveSuggestion resultId={id} paid onSaved={() => location.reload()} />}
+      {data.guest && !session && data.paid && <SaveSuggestion resultId={id} paid tempPay={data.result.tempPay} onSaved={() => location.reload()} />}
       <FreeResultView
         result={data.result}
         nickname={data.nickname}
@@ -83,8 +94,8 @@ export default function ResultView({ id }: { id: string }) {
         paidPending={
           data.paid && !report
             ? waitedTooLong
-              ? "리포트를 만드는 데 시간이 걸리고 있어요. 잠시 뒤 새로고침해 주세요."
-              : "결제가 확인됐어요. 연말부터 앞으로 5년까지, 전체 리포트를 쓰고 있어요(20~60초)."
+              ? `${b14(copy, "ERR_AI_SLOW", "title", "", data.nickname)} ${b14(copy, "ERR_AI_SLOW", "body", "리포트를 만드는 데 시간이 걸리고 있어요. 잠시 뒤 새로고침해 주세요.", data.nickname)}`.trim()
+              : `${b14(copy, "EMPTY_REPORT_GEN", "title", "", data.nickname)} ${b14(copy, "EMPTY_REPORT_GEN", "body", "결제가 확인됐어요. 연말부터 앞으로 5년까지, 전체 리포트를 쓰고 있어요(20~60초).", data.nickname)}`.trim()
             : undefined
         }
       />

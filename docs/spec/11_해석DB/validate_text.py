@@ -24,11 +24,11 @@ SKIP_KEYS = {
     'id', 'review_note', 'dates', 'image_file', 'house', 'house_label',
     'period_label', 'event', 'name', 'minutes', 'houses', 'planets',
     'scene_hint', 'in_service_range',
-    'section', 'note', 'slot', 'variant', 'level', 'wish', 'word',
+    'section', 'note', 'slot', 'situation', 'when', 'variant', 'level', 'wish', 'word',
 }
 SKIP_KEY_RE = re.compile(r'(_theory|^p\d+_id$)')
-DIGIT_OK_ROWS = {'FIX_PAYWALL_BOX', 'FIX_SOWELLA_3DAY'}
-SKIP_FILES = {'C1.json', 'C2.json', 'B11.json'}  # 사전 자체(데이터)
+DIGIT_OK_ROWS = {'FIX_PAYWALL_BOX', 'FIX_SOWELLA_3DAY', 'ERR_DATE_RANGE', 'EMPTY_REPORT_GEN', 'BLUR_S7_09'}
+SKIP_FILES = {'C1.json', 'C2.json', 'B11.json', 'A12t.json'}  # 사전 자체(데이터)
 
 _rules = None
 

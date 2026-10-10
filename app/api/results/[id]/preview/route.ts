@@ -2,7 +2,7 @@ import { resolveOwner } from "@/lib/results/owner";
 import { NextRequest, NextResponse } from "next/server";
 import { wishContextOf } from "@/lib/astro/wish";
 import { ASTRO_DB } from "@/lib/report/dbData";
-import { prepareSkeleton, previewLines } from "@/lib/report/prepare";
+import { blurFiller, prepareSkeleton, previewLines } from "@/lib/report/prepare";
 import { birthKeyOf } from "@/lib/report/variants";
 import { computeFree } from "@/lib/results/compute";
 import { getResult, isUuid } from "@/lib/results/store";
@@ -30,7 +30,9 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/results/[id]
       birthKey: birthKeyOf(row.birth_input),
       now: new Date(),
     });
-    return NextResponse.json({ sections: previewLines(skeleton) });
+    // 블러 자리는 B13 가짜 문장(실제 본문 아님) — 섹션마다 한 덩어리, 화면이 부분마다 이어 붙인다.
+    const sections = previewLines(skeleton).map((x) => ({ ...x, filler: blurFiller(ASTRO_DB, x.no, row.nickname) }));
+    return NextResponse.json({ sections });
   } catch (e) {
     console.error(e instanceof Error ? e.message : "미리보기 실패");
     return NextResponse.json({ error: "미리보기를 불러오지 못했어요." }, { status: 500 });

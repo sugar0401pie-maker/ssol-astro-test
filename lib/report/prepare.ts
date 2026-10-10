@@ -54,3 +54,17 @@ export function previewLines(
 /** 잠긴 섹션 미리보기: 조각 수와 조각마다 보내는 글자 수(2.7줄 남짓 — 화면에서 흐려지는 만큼만) */
 const PREVIEW_PARTS = 6;
 const PREVIEW_CHARS = 70;
+
+/**
+ * 블러 영역을 채울 가짜 문장(해석 DB B13, 2026-10-10 패키지): 결제 전에는 실제 유료 본문을 보내지 않으므로,
+ * 각 부분의 앞 2줄(실제) 아래 흐려지는 자리를 샘플 리포트에서 날짜·이름을 지운 문장으로 채운다.
+ * 같은 섹션 문장을 순서대로 이어 붙이고, 모자라면 처음부터 반복한다(minChars까지).
+ */
+export function blurFiller(db: AstroDb, section: number, nickname: string, minChars = 160): string {
+  const rows = (db.dbs.B13?.rows ?? []).filter((r) => String(r.section) === String(section)).sort((a, b) => a.id.localeCompare(b.id));
+  if (!rows.length) return "";
+  const texts = rows.map((r) => r.text.replaceAll("{닉네임}", nickname));
+  let out = "";
+  for (let i = 0; out.length < minChars; i++) out += (out ? " " : "") + texts[i % texts.length];
+  return out;
+}

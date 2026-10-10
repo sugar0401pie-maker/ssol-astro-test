@@ -6,10 +6,12 @@ import { useEffect, useRef, useState } from "react";
 import SaveSuggestion from "@/components/results/SaveSuggestion";
 import { apiHeaders } from "@/lib/guest/client";
 import { getRealSession } from "@/lib/supabase/browser";
+import { b14, useCopy } from "@/lib/copy/useCopy";
 
 export default function CheckoutSuccess() {
   const params = useSearchParams();
   const router = useRouter();
+  const copy = useCopy();
   const [error, setError] = useState<string | null>(null);
   // 비회원 결제: 결과로 가기 전에 가입을 권한다(owner 결정 — 결제 후에 실제로 가입). 건너뛸 수도 있다.
   const [guestPaid, setGuestPaid] = useState<string | null>(null);
@@ -57,7 +59,7 @@ export default function CheckoutSuccess() {
           <p className="text-xs text-cream/70">이미 결제가 됐는데 이 화면이 보이면, 결제한 기기·브라우저에서 다시 열어 보시거나 하단 문의 메일로 알려 주세요.</p>
         </>
       ) : (
-        <p>결제를 확인하고 있어요…</p>
+        <p>{b14(copy, "ERR_PAY_PENDING", "title", "결제를 확인하고 있어요…")}</p>
       )}
     </div>
   );

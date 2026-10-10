@@ -9,6 +9,7 @@ import AuthStep from "@/components/auth/AuthStep";
 import { claimGuestResults } from "@/lib/guest/client";
 import { getRealSession } from "@/lib/supabase/browser";
 import ShareSheet, { type ShareProps } from "./ShareSheet";
+import { b14, useCopy } from "@/lib/copy/useCopy";
 
 export interface SaveCopy {
   saveDone: string;
@@ -45,6 +46,7 @@ export default function ActionRow({
   const [login, setLogin] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const back = useRef<{ y: number; el: HTMLElement | null }>({ y: 0, el: null });
+  const copyB14 = useCopy();
 
   useEffect(() => {
     if (!toast) return;
@@ -54,7 +56,7 @@ export default function ActionRow({
 
   async function save(e: React.MouseEvent<HTMLButtonElement>) {
     if (!resultId) {
-      setToast("결과를 저장하지 못했어요. 잠시 뒤 다시 시도해 주세요.");
+      setToast(b14(copyB14, "ERR_SAVE", "alt", "결과를 저장하지 못했어요. 잠시 뒤 다시 시도해 주세요."));
       return;
     }
     const btn = e.currentTarget;

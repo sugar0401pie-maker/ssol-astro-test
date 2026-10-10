@@ -8,7 +8,7 @@ import {
 } from "./scoringConfig.ts";
 import { TRANSIT_ORB, NATAL_ORB, COMPETENCY_TIE_GAP } from "./constants.ts";
 
-const db = JSON.parse(readFileSync(new URL("../../data/astro/db/astro_db_v1.3.json", import.meta.url), "utf8"));
+const db = JSON.parse(readFileSync(new URL("../../data/astro/db/astro_db_v1.4.json", import.meta.url), "utf8"));
 const c2 = new Map<string, string>(db.dbs.C2.rows.map((r: { id: string; value: string }) => [r.id, r.value]));
 const num = (id: string) => Number(String(c2.get(id)).replace(/[^\d.\-−+]/g, "").replace("−", "-"));
 
