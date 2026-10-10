@@ -13,8 +13,8 @@ test("비회원 열쇠: 모양 검사·해시(열쇠 자체는 저장하지 않�
   assert.notEqual(hashGuestToken(t), hashGuestToken("B".repeat(43)));
 });
 
-test("비회원 결과 보관 기한: 결제 전 30일, 결제 후 1년", () => {
+test("비회원(임시 계정) 결과 보관 기한: 30일, 결제하면 결제일로부터 30일(2026-10-10 확정)", () => {
   const now = new Date("2026-10-08T00:00:00Z");
   assert.equal(guestExpiry(now, false), "2026-11-07T00:00:00.000Z");
-  assert.equal(guestExpiry(now, true), "2027-10-08T00:00:00.000Z");
+  assert.equal(guestExpiry(now, true), "2026-11-07T00:00:00.000Z");
 });
