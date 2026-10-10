@@ -98,6 +98,8 @@ export interface FreeResult {
     /** A6 역량·방식 쉬운 정의(유형 설명 바탕 — 마스터스펙 6장, 06 프롬프트 v3) */
     competencyLine: string | null;
     styleLine: string | null;
+    /** 2번 섹션 '웰니스 유형으로 분류하면…' 문단(A6 역량·방식 정의를 풀어 쓴 한 문단) */
+    wellnessLine: string | null;
   };
   big3: Array<{ key: "sun" | "moon" | "asc"; label: string; sign: string; house: number | null; line: string }>;
   sunSign: string;
@@ -186,6 +188,22 @@ function planetSheet(db: AstroDb, key: PointKey, chart: NatalChart, retro: reado
 }
 
 /** A6 '쉬운 정의' 한 줄(역량·방식). */
+/**
+ * '웰니스 유형으로 분류하면…' 문단(owner 2026-10-10: 역량·방식 두 줄 대신 풀어 쓴 한 문단). A6 정의 문장에서
+ * 이름·어미를 떼어 잇는다 — 문장은 DB 그대로, 연결 말만 코드. 유형의 역량은 '에너지가 많이 드는' 역량(가장 긴장을 받는
+ * 행성)이라 '높다'고 쓰지 않는다. 형식이 맞지 않으면 null(그 문단을 빼고 보여 준다).
+ */
+export function wellnessTypeLine(db: AstroDb, competency: string, style: string): string | null {
+  const comp = a6Line(db, "역량", competency);
+  const sty = a6Line(db, "방식", style);
+  if (!comp || !sty) return null;
+  const strip = (t: string, head: string, tail: RegExp) => (t.startsWith(head) && tail.test(t) ? t.slice(head.length).replace(tail, "").trim() : null);
+  const compDesc = strip(comp, `${competency}는 `, /(입니다|이에요)\.$/) ?? strip(comp, `${competency}은 `, /(입니다|이에요)\.$/);
+  const styleDesc = strip(sty, `${style}는 마음이 흔들릴 때 `, /\s*방식(입니다|이에요)\.$/) ?? strip(sty, `${style}은 마음이 흔들릴 때 `, /\s*방식(입니다|이에요)\.$/);
+  if (!compDesc || !styleDesc) return null;
+  return `웰니스 유형으로 분류하면, ${compDesc}에 에너지가 많이 드는 편이에요. 그리고 마음이 흔들릴 때는 ${styleDesc} 쪽을 고르는 성향입니다.`;
+}
+
 export function a6Line(db: AstroDb, kind: "역량" | "방식", name: string): string | null {
   return findRow(db, "A6", (r) => r.kind === kind && r.name === name)?.plain || null;
 }
@@ -583,7 +601,9 @@ export function buildFreeResult(args: {
     wheelTips: [1, 2, 3].map((i) => text(db, "A15", `FIX_WHEEL_TIP_${i}`, "text")).filter(Boolean),
     planetReading: planetReading(db, chart),
     character: {
-      summary: fillSummary(b11(db, "SUM_TYPE"), { 태양별자리: sunSign, 닉네임: nickname, 유형문장: charRow.type_line, 역량: character.competency, 방식: character.style }),
+      // owner 2026-10-10: B11 SUM_TYPE에서 '별이 본'과 '(역량 × 방식)'을 뺀 줄 — "{태양별자리} · {닉네임}님은 {유형문장}입니다."
+      // (엑셀 B11 SUM_TYPE도 같은 문장으로 고치면 코드와 맞는다)
+      summary: charRow.type_line ? `${sunSign} · ${nickname}님은 ${charRow.type_line}입니다.` : null,
       name: SHOW_CHARACTER ? character.name : null,
       typeLine: charRow.type_line,
       competency: character.competency,
@@ -596,6 +616,7 @@ export function buildFreeResult(args: {
       sunMoonLine: tryFill(temp?.sun_moon_line, { 태양별자리: sunSign, 달별자리: moonSign }),
       competencyLine: a6Line(db, "역량", character.competency),
       styleLine: a6Line(db, "방식", character.style),
+      wellnessLine: wellnessTypeLine(db, character.competency, character.style),
     },
     big3: (["sun", "moon", "asc"] as const)
       .filter((k) => chart.planets[k])

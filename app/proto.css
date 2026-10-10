@@ -363,3 +363,4 @@ details.why ul{list-style:disc}
 .pg-nav .next{flex-direction:column;gap:2px}
 .pg-nav .next small{font-size:.74rem;font-weight:400;opacity:.8;margin:0}
 .pg-nav .next .nx-title{font-size:1rem;font-weight:700;line-height:1.35}
+.pg-nav .next .nx-title{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}

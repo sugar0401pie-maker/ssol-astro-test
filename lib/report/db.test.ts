@@ -10,7 +10,7 @@ import { computeNatal } from "../astro/natal.ts";
 import { judgeCharacter, type CalibrationTable } from "../astro/character.ts";
 import { ELEMENT_ID, POINT_ID, SIGN_ID, fillTemplate, firstSentence, pad2, row, tryFill, type AstroDb } from "./db.ts";
 import { c1Hits, compileC1, type C1Row } from "./validate.ts";
-import { buildFreeResult, candidateCards } from "./freeResult.ts";
+import { buildFreeResult, candidateCards, wellnessTypeLine } from "./freeResult.ts";
 
 const db: AstroDb = JSON.parse(readFileSync(new URL("../../data/astro/db/astro_db_v1.4.json", import.meta.url), "utf8"));
 const ref: CalibrationTable = JSON.parse(readFileSync(new URL("../../data/astro/calibration.json", import.meta.url), "utf8"));
@@ -111,6 +111,14 @@ function sample(answers: Answers = { q1: "직업·커리어", q2: "변화", q3: 
   return buildFreeResult({ db, chart, longitudes: L, character, answers, nickname: "지우", birthYear: 1996, now: new Date("2026-10-07T03:00:00Z") });
 }
 
+test("웰니스 유형 문단: 역량 5 × 방식 4 조합이 모두 만들어진다(A6 문장 형식)", () => {
+  for (const c of ["기대기", "믿기", "선 지키기", "말하기", "회복하기"])
+    for (const st of ["다가가기", "맞춰주기", "거리두기", "조율하기"]) {
+      const t = wellnessTypeLine(db, c, st);
+      assert.ok(t && t.startsWith("웰니스 유형으로 분류하면, ") && !t.includes(c + "는") && !/ 방식/.test(t), `${c}×${st}: ${t}`);
+    }
+});
+
 test("샘플: 캐릭터·태양달 대비·원소가 샘플 리포트와 같은 DB 문장", () => {
   const r = sample();
   // 당분간 동물 이름은 브라우저에 보내지 않고 유형 한 줄로(show_character=false, 마스터스펙 6장)
@@ -121,6 +129,12 @@ test("샘플: 캐릭터·태양달 대비·원소가 샘플 리포트와 같은 
   assert.equal(r.character.why, row(db, "A5", "CHAR_01_OTTER")!.why_text);
   assert.equal(r.character.competencyLine, row(db, "A6", "COMP_LEAN")!.plain);
   assert.equal(r.character.styleLine, row(db, "A6", "STYLE_APPROACH")!.plain);
+  // 2번 섹션 문단(owner 2026-10-10): 굵은 요약에서 '별이 본'·'(역량 × 방식)'을 빼고, 역량·방식은 풀어 쓴 한 문단
+  assert.equal(r.character.summary, `양자리 · 지우님은 ${row(db, "A5", "CHAR_01_OTTER")!.type_line}입니다.`);
+  assert.equal(
+    r.character.wellnessLine,
+    "웰니스 유형으로 분류하면, 가까운 사람에게 마음을 기대고 위로를 주고받는 친밀감의 역량에 에너지가 많이 드는 편이에요. 그리고 마음이 흔들릴 때는 기다리기보다 먼저 연락하고 움직여 거리를 좁히는 쪽을 고르는 성향입니다.",
+  );
   // 샘플: "겉은 빠르고 당당한 양자리 태양이지만, 속은 차근차근 정리해야 편한 처녀자리 달이에요."
   assert.ok(r.character.sunMoonLine?.startsWith("겉은 빠르고 당당한 양자리 태양이지만, 속은 차근차근 정리해야 편한 처녀자리 달이에요."));
   // 프로토타입 renderSky: 가장 강한 원소 = 불, 1점 이하인 원소마다 '부족할 때'

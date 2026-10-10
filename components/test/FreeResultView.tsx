@@ -22,6 +22,8 @@ import type { PointKey } from "@/lib/astro/constants";
 import type { FreeResult, WheelSheet } from "@/lib/report/freeResult";
 
 const SESSION_URL = "https://app.ssolwellnesshouse.com/session-reserve";
+/** [다음 이야기 ›] 버튼의 짧은 주제 이름(owner 2026-10-10: 긴 섹션 제목 대신 한 줄로) */
+const NAV_TITLES = ["태어난 순간의 하늘", "별이 본 나의 유형", "2026년 돌아보기", "연말까지 조심할 것", "2027년 마음가짐", "앞으로 5년", "별이 주는 질문"];
 /** 3장 웰니스 상담 기본 안내(부드러운 톤이 아닐 때) — Claude 초안, owner 검토 가능. 공포·재촉 표현 없이 */
 const WELLNESS_SESSION_NOTE =
   "별 리포트로 돌아본 한 해를 사람과 함께 천천히 이야기해 보고 싶다면, 쏠 웰니스 하우스의 웰니스 상담을 이용해 보세요. {닉네임}님의 지금 마음을 함께 살펴보고, 나에게 맞는 속도를 찾는 시간이 될 거예요.";
@@ -459,8 +461,8 @@ export default function FreeResultView({
               <p style={{ marginTop: 14 }}>{character.why}</p>
               {character.sunMoonLine && <p>{character.sunMoonLine}</p>}
               {/* A6 역량·방식 쉬운 정의(owner 2026-10-10: 프로토타입에 없지만 유지) */}
-              {character.competencyLine && <p>• 역량 — {character.competencyLine}</p>}
-              {character.styleLine && <p>• 방식 — {character.styleLine}</p>}
+              {/* owner 2026-10-10: 역량·방식 두 줄 대신 '웰니스 유형으로 분류하면…' 한 문단 */}
+              {character.wellnessLine && <p>{character.wellnessLine}</p>}
               <table className="tbl">
                 <caption className="sr-only">태양·달·상승궁 한 줄 해석</caption>
                 <thead>
@@ -606,7 +608,7 @@ export default function FreeResultView({
           {next ? (
             <button type="button" className="btn next" onClick={() => go(next)}>
               <small>다음 이야기 ›</small>
-              <span className="nx-title">{titles[next - 1]}</span>
+              <span className="nx-title">{NAV_TITLES[next - 1]}</span>
             </button>
           ) : (
             <button type="button" className="btn ghost next" onClick={() => go(1)}>
