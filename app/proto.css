@@ -355,3 +355,7 @@ details.why ul{list-style:disc}
 .guide-art.small{max-width:140px;margin:0 auto 14px;border-radius:16px}
 /* 받은 결과 그림이 정사각형(1080×1080)이라 그림이 있으면 1:1로 — 4:5로 자르면 캐릭터 양옆이 잘린다 */
 .page-art.has-img{aspect-ratio:1/1}
+/* owner 2026-10-10: 그림은 모바일 화면 가로에 꽉 차게 — 본문 좌우 여백(16px)을 넘어 화면 끝까지, 모서리 없음.
+   04·05 화면의 '작게'(.small)도 같은 크기로 */
+.guide-art,.guide-art.small{width:calc(100% + 32px);max-width:none;margin:4px -16px 20px;border-radius:0;box-shadow:none}
+.page-art{margin:4px -16px 18px;border-radius:0;border-left:0;border-right:0}
