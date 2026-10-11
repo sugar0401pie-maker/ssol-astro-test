@@ -699,7 +699,7 @@ export default function TestFlow() {
       {step === "questions" && (
         <section className="screen on" id="scr-q" aria-labelledby="q-big">
           <h1 className="big" id="q-big" tabIndex={-1}>
-            {name}님에 대해서 딱 3가지 더 여쭤보겠습니다.
+            {name}님, 딱 세 가지만 더 물어볼게요.
           </h1>
           <GuideArt id="05" small />
           {QUESTIONS.map((q) => (
