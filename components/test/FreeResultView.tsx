@@ -485,9 +485,12 @@ export default function FreeResultView({
                         <td>
                           {b.label}
                           <span className="sub">{sub}</span>
-                          {firstTime && result.terms[i] && <span className="sub">{result.terms[i].line}</span>}
                         </td>
-                        <td>{b.line}</td>
+                        <td>
+                          {/* 처음인 사람용 용어 설명(A16)은 owner 2026-10-11 요청으로 오른쪽 해석 앞에, 같은 글자 크기로 */}
+                          {firstTime && result.terms[i] && <span style={{ display: "block", marginBottom: 8 }}>{result.terms[i].line}</span>}
+                          {b.line}
+                        </td>
                       </tr>
                     );
                   })}
