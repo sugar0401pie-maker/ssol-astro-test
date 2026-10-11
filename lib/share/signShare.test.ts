@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
-import { kakaoArtUrl, pickSignArt, signArtChoices, signShareMessage, signShareTexts } from "./signShare.ts";
+import { balancedTwoLines, kakaoArtUrl, pickSignArt, signArtChoices, signShareMessage, signShareTexts } from "./signShare.ts";
 
 test("별자리 공유: 그 별자리 그림 7장 중 하나, 잠긴 그림은 빼고, 파일이 실제로 있다", () => {
   const list = signArtChoices(0);
@@ -26,4 +26,9 @@ test("별자리 공유 글자: 이름·소개(최대 2줄)·사이트, 출생 �
 test("카카오 카드 그림: 같은 그림의 jpg 사본(절대 주소), 12별자리 모두 있다", () => {
   assert.equal(kakaoArtUrl("/art/aries/art_02_type.webp"), "https://astro.ssolwellnesshouse.com/art/aries/kakao/art_02_type.jpg");
   for (let i = 0; i < 12; i++) for (const p of signArtChoices(i)) assert.ok(existsSync(`public${kakaoArtUrl(p, "")}`), p);
+});
+
+test("카카오 카드 설명 두 줄: 양자리는 '부딪히며' 뒤에서 줄바꿈", () => {
+  assert.equal(balancedTwoLines("먼저 불을 붙이고 부딪히며 길을 여는 별자리예요."), "먼저 불을 붙이고 부딪히며\n길을 여는 별자리예요.");
+  assert.equal(balancedTwoLines("한마디"), "한마디");
 });

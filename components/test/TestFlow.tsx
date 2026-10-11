@@ -15,7 +15,6 @@ import { track } from "@/lib/analytics/track";
 import { apiHeaders } from "@/lib/guest/client";
 import GuideArt from "./GuideArt";
 import CitySearch, { type PickedCity } from "./CitySearch";
-import ConsentStep from "./ConsentStep";
 import { allConsented, CONSENT_ERROR, CONSENT_VERSION, consentItemsFor, type ConsentItemId } from "@/lib/results/consent";
 import FreeResultView from "./FreeResultView";
 import SiteFooter from "@/components/SiteFooter";
@@ -791,7 +790,13 @@ export default function TestFlow() {
 
       {step === "consent" && (
         <section className="screen on">
-          <ConsentStep onAgree={saveAndShow} busy={saving} error={error} />
+          {/* 저장이 막혔을 때 다시 시도하는 자리(동의는 출생 정보 화면에서 이미 받았으므로 여기서 다시 묻지 않는다 — owner 2026-10-11) */}
+          <h1 className="big">{b14(copy, "ERR_SAVE", "title", "저장하는 동안 별이 깜빡였어요")}</h1>
+          <p className="small">{b14(copy, "ERR_SAVE", "body", "입력하신 정보는 그대로 있어요. 잠시 뒤 다시 시도해 주세요.")}</p>
+          {error && <p className="err">{error}</p>}
+          <button type="button" className="btn block" disabled={saving} onClick={() => void saveAndShow()}>
+            {saving ? "저장하는 중…" : b14(copy, "ERR_SAVE", "button", "다시 시도하기")}
+          </button>
           {footerCtrl}
         </section>
       )}

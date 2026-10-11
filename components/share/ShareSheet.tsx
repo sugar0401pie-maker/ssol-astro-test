@@ -13,7 +13,7 @@ import BottomSheet from "@/components/ui/BottomSheet";
 import { BRAND_PATHS } from "./brandIcons";
 import { composeSignShare } from "./shareImage";
 import KakaoTalkLogo from "./KakaoTalkLogo";
-import { kakaoArtUrl, pickSignArt, signShareMessage, signShareTexts } from "@/lib/share/signShare";
+import { balancedTwoLines, kakaoArtUrl, pickSignArt, signShareMessage, signShareTexts } from "@/lib/share/signShare";
 import { KAKAO_CARD_ENABLED, preloadKakao, shareKakaoCard } from "./kakaoShare";
 
 export const SITE_URL = "https://astro.ssolwellnesshouse.com";
@@ -123,7 +123,7 @@ export default function ShareSheet({ open, onClose, ...props }: ShareProps & { o
         return copyLink();
       case "kakao":
         // 카카오 카드(그림·별자리 소개·[나도 별 리포트 보기] 버튼) — JavaScript 키와 도메인 등록이 돼 있을 때만, 아니면 기기 공유창
-        if (artPath && props.sunSignIntro && (await shareKakaoCard({ title: `${props.sunSign} — 쏠 아스트로 하우스`, description: props.sunSignIntro.oneLiner, imageUrl: kakaoArtUrl(artPath), url: SITE_URL }))) return;
+        if (artPath && props.sunSignIntro && (await shareKakaoCard({ title: `${props.sunSign} — 쏠 아스트로 하우스`, description: balancedTwoLines(props.sunSignIntro.oneLiner), imageUrl: kakaoArtUrl(artPath), url: SITE_URL }))) return;
         if (await shareFile()) return;
         if (navigator.share) {
           try {

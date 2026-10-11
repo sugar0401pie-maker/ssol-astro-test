@@ -58,3 +58,23 @@ export function signShareMessage(sunSign: string, intro: { oneLiner: string; key
 export function kakaoArtUrl(artPath: string, site = "https://astro.ssolwellnesshouse.com"): string {
   return site + artPath.replace(/\/([a-z_0-9]+)\.webp$/, "/kakao/$1.jpg");
 }
+
+/** 이어 주는 말로 끝나는 어절(~며·~고·~도록·~면·~서·~어 …) 뒤는 줄을 바꿔도 뜻이 끊기지 않는다 */
+const GOOD_BREAK = /(며|고|도록|면|서|여|어|해|씩|과|와|,)$/;
+
+/**
+ * 두 줄로 나누기(카카오 카드 설명, owner 2026-10-11 "부딪히며 하고 나서 줄바꿈"): 이어 주는 말 뒤 중에서 두 줄이 가장 고른 곳,
+ * 그런 곳이 없거나 한쪽이 너무 길면(전체의 70% 넘음) 어절 경계 중 가장 고른 곳. 예) "먼저 불을 붙이고 부딪히며\n길을 여는 별자리예요."
+ */
+export function balancedTwoLines(text: string): string {
+  const words = text.split(/\s+/).filter(Boolean);
+  if (words.length < 2) return text;
+  const total = words.join(" ").length;
+  const widest = (i: number) => Math.max(words.slice(0, i).join(" ").length, words.slice(i).join(" ").length);
+  const pick = (cands: number[]) => cands.reduce((b, i) => (widest(i) < widest(b) ? i : b), cands[0]);
+  const all = words.slice(1).map((_, k) => k + 1);
+  const good = all.filter((i) => GOOD_BREAK.test(words[i - 1]));
+  let best = good.length ? pick(good) : pick(all);
+  if (widest(best) > total * 0.7) best = pick(all);
+  return `${words.slice(0, best).join(" ")}\n${words.slice(best).join(" ")}`;
+}

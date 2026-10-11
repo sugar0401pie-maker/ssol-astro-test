@@ -47,8 +47,9 @@ export async function POST(req: NextRequest) {
       birth: computed.birth,
       chatSummary: chatSummaryFor(computed, parsed.answers, null, parsed.nickname),
     });
-    // 출생 정보 화면의 필수 동의 4가지(화면이 모두 체크해야 넘어가고, 서버도 consent:true를 확인했다)
-    await recordConsents(owner, ["age", "privacy", "terms", "store"], CONSENT_VERSION, { resultId: id });
+    // 출생 정보 화면의 필수 동의(화면이 모두 체크해야 넘어가고, 서버도 consent:true를 확인했다)
+    // 로그인 없이(비회원)는 3가지(임시 계정은 이용약관에 포함), 로그인하면 결과 저장까지 4가지
+    await recordConsents(owner, owner.kind === "user" ? ["age", "privacy", "terms", "store"] : ["age", "privacy", "terms"], CONSENT_VERSION, { resultId: id });
     return NextResponse.json({ id, result: computed.result });
   } catch (e) {
     // 저장에 실패해도 결과는 보여 준다(저장은 편의 기능 — 안전과 무관). 화면에 '저장하지 못했어요'를 알린다.
