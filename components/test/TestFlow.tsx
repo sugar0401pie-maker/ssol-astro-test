@@ -311,12 +311,16 @@ export default function TestFlow() {
 
   // 차트 미리 계산(6-1 화면 5 '차트 계산은 이 동안 백그라운드에서'): 출생 정보 화면을 넘기는 순간 시작해 두고,
   // 질문을 마치면 그 답을 쓴다. 후보 판정은 출생 정보로만 정해져서 임시 답으로 미리 물어도 결과가 같다.
-  const prefetch = useRef<{ key: string; promise: Promise<{ ok: boolean; data: Record<string, unknown> }> } | null>(null);
+  const prefetch = useRef<{ key: string; promise: Promise<{ ok: boolean; status: number; data: Record<string, unknown> }> } | null>(null);
+  // 계산 실패(B14 ERR_CALC): 입력은 그대로 두고 같은 요청을 다시 보낼 수 있게 마지막 요청을 기억한다
+  const lastCalc = useRef<{ a: Answers; chosen?: string } | null>(null);
+  const [calcFailed, setCalcFailed] = useState(false);
   const tempAnswers = { q1: Q1_OPTIONS[0], q2: Q2_OPTIONS[0], q3: Q3_OPTIONS[0] } as Answers;
   const birthKey = () => JSON.stringify(requestBody(tempAnswers, null).birth);
   const postResult = (body: unknown) =>
     fetch("/api/result", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }).then(async (res) => ({
       ok: res.ok,
+      status: res.status,
       data: (await res.json()) as Record<string, unknown>,
     }));
   function startPrefetch() {
@@ -329,14 +333,23 @@ export default function TestFlow() {
 
   /** 계산 중 화면(프로토타입 runLoading): 최소 1.5초, 실패하면 출생 정보 화면으로 돌아가 안내 */
   async function fetchResult(a: Answers, chosen?: string) {
+    lastCalc.current = { a, chosen };
+    setCalcFailed(false);
     setStep("loading");
     setError(null);
     const t0 = Date.now();
     const wait = () => new Promise((r) => setTimeout(r, Math.max(0, 1500 - (Date.now() - t0))));
     try {
       const cached = !chosen && prefetch.current?.key === birthKey() ? await prefetch.current.promise.catch(() => null) : null;
-      const { ok, data } = cached?.ok ? cached : await postResult(requestBody(a, chosen ?? null));
-      if (!ok) throw new Error((data.error as string) ?? "계산 중 문제가 생겼어요.");
+      const { ok, status, data } = cached?.ok ? cached : await postResult(requestBody(a, chosen ?? null));
+      // 입력 문제(400)는 출생 정보 화면으로 돌아가 고치게 하고, 그 밖의 실패만 '다시 계산하기'(ERR_CALC)
+      if (!ok && status === 400) {
+        await wait();
+        setStep("birth");
+        setErrs({ place: (data.error as string) ?? b14(copy, "ERR_CALC", "alt", "입력을 다시 확인해 주세요.") });
+        return;
+      }
+      if (!ok) throw new Error("calc");
       if (data.candidates) {
         await wait();
         setCandidates(data.candidates as Candidate[]);
@@ -349,8 +362,7 @@ export default function TestFlow() {
       await saveAndShow();
     } catch {
       await wait();
-      setStep("birth");
-      setErrs({ place: b14(copy, "ERR_CALC", "alt", "계산 중 문제가 생겼어요. 입력을 확인해 주세요.") });
+      setCalcFailed(true);
     }
   }
 
@@ -371,7 +383,7 @@ export default function TestFlow() {
     }
     const e: typeof errs = {};
     if (!year || !month || !day) e.date = "연도·월·일을 모두 골라 주세요.";
-    else if (`${year}-${pad(month)}-${pad(day)}` > todayKst()) e.date = "오늘 이후의 날짜는 고를 수 없어요.";
+    else if (`${year}-${pad(month)}-${pad(day)}` > todayKst()) e.date = b14(copy, "ERR_DATE_RANGE", "alt", "이 날짜는 계산할 수 있는 범위를 벗어났어요. 생년월일을 다시 확인해 주세요.");
     if (!unknownTime && (hour === null || minute === null)) e.time = "태어난 시와 분을 골라 주세요. 모르면 ‘정확한 시간을 몰라요’를 눌러 주세요.";
     if (unknownTime && !band) e.time = "가장 가까운 시간대를 하나 골라 주세요.";
     if (!overseas && !region) e.place = "태어난 시·도를 골라 주세요.";
@@ -710,7 +722,7 @@ export default function TestFlow() {
       {step === "loading" && (
         <section className="screen on" id="scr-loading" aria-live="polite" aria-labelledby="loading-title">
           <div className="loading">
-            <div className="orbit" aria-hidden="true">
+            <div className="orbit" aria-hidden="true" hidden={calcFailed}>
               <svg viewBox="0 0 120 120">
                 <circle cx="60" cy="60" r="44" fill="none" stroke="rgba(203,178,122,.35)" strokeWidth="1" />
                 <circle cx="60" cy="60" r="26" fill="none" stroke="rgba(253,246,233,.2)" strokeWidth="1" />
@@ -721,11 +733,25 @@ export default function TestFlow() {
                 </g>
               </svg>
             </div>
-            <h1 className="big" id="loading-title" tabIndex={-1}>
-              별의 위치를 계산하는 중…
-            </h1>
-            <p className="small">{copy.FIX_LOADING ?? ""}</p>
-            <GuideArt id="08" />
+            {calcFailed ? (
+              <>
+                <h1 className="big" id="loading-title" tabIndex={-1}>
+                  {b14(copy, "ERR_CALC", "title", "별자리 지도를 그리다 별 하나를 놓쳤어요")}
+                </h1>
+                <p className="small">{b14(copy, "ERR_CALC", "body", "입력하신 정보는 그대로 있으니 다시 한번 그려 볼게요.")}</p>
+                <button type="button" className="btn block" onClick={() => lastCalc.current && void fetchResult(lastCalc.current.a, lastCalc.current.chosen)}>
+                  {b14(copy, "ERR_CALC", "button", "다시 계산하기")}
+                </button>
+              </>
+            ) : (
+              <>
+                <h1 className="big" id="loading-title" tabIndex={-1}>
+                  별의 위치를 계산하는 중…
+                </h1>
+                <p className="small">{copy.FIX_LOADING ?? ""}</p>
+                <GuideArt id="08" />
+              </>
+            )}
           </div>
         </section>
       )}

@@ -122,7 +122,6 @@ export interface FreeResult {
   };
   /** 부드러운 톤(Q2 그만하자·이별·고생)일 때 결과 하단 카드 */
   care: { note: string; card: string } | null;
-  paywallBox: string;
   /** 결제 팝업 문구(B11 PAY_POPUP, "안내 · 덧붙임 · [버튼]") */
   payPopup: string;
   /** 4~7번 페이지 공유 줄 위 안내(결제 전, B11 SHARE_NOTE_LOCKED) */
@@ -645,7 +644,6 @@ export function buildFreeResult(args: {
     care: soft
       ? { note: q2?.care_note ?? "", card: text(db, "A15", "FIX_CARE_CARD", "text").replace(/\s*→\s*\[.*\]\s*$/, "") }
       : null,
-    paywallBox: text(db, "A15", "FIX_PAYWALL_BOX", "text").replace(/\s*→\s*\[.*\]\s*$/, ""),
     payPopup: b11(db, "PAY_POPUP"),
     shareNoteLocked: b11(db, "SHARE_NOTE_LOCKED"),
     saveCopy: {

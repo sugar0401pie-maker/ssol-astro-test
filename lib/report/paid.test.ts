@@ -172,7 +172,9 @@ test("쏘웰라 채팅 요약: 별자리·유형·바라는 것·5년·2026 회�
   assert.ok(freeOnly.includes("[3. 2026년 회고] 2026년을 한 단어로: 변화."));
   assert.ok(!freeOnly.includes("[8."));
   for (const banned of ["1996", "경기", "10:17", "수달"]) assert.ok(!freeOnly.includes(banned), banned);
-  assert.equal(freeOnly.split("\n").length, 3);
+  assert.equal(freeOnly.split("\n").length, 4); // 1·2·3 + 9(대화 시작 정보)
+  assert.ok(freeOnly.endsWith("") && freeOnly.includes("[9. 대화 시작 정보] 정확도 A등급. 부드러운 톤: 아니요. 첫 인사: GREET_DEFAULT."));
+  assert.ok(buildChatSummary({ db, free, answers, wish, nickname: "지우" }).includes("첫 인사 문장: 지우님, 반가워요!"));
   const withPaid = buildChatSummary({ db, free, answers, wish, paid: skeleton });
   assert.ok(withPaid.includes("[8. 별이 주는 질문과 웰니스 제안]"));
   assert.ok(withPaid.includes("[4. 연말까지 조심하면 좋을 것]"));
@@ -258,4 +260,21 @@ test("AI 검증: 패키지 15_AI검증의 나쁜 예(판정 한쪽만·수입 �
   assert.ok(codes("| 연도 | 판정 |\n| a | b |").includes("table"));
   const bridge = "사랑을 바라는 지우님에게 이 해는 마음을 천천히 여는 해예요. {{흐름근거}} 무렵부터는 표현이 한결 수월해지기 쉬워 고마운 사람에게 짧게라도 마음을 전해 보기 좋습니다. 다만 서두르기보다 내가 편안한 속도를 먼저 알아 두는 편이 좋아요. 이번 주에는 가까운 사람에게 어떤 말을 전해 볼까요?";
   assert.ok(checkBridge(bridge, { wish: "사랑", judgement: "", values: { 흐름근거: "7월 말 목성이 마음의 자리로 들어오는" } }).includes("question_end"));
+});
+
+test("쏘웰라 첫 인사(16_쏘웰라연결 §4): SOFT > HEAD > OPEN > NOTIME > QUESTION > DEFAULT, 받침 조사", async () => {
+  const { greetingIdFor, fillGreeting } = await import("./chatSummary.ts");
+  assert.equal(greetingIdFor({ q2: "이별", level2027: "역풍", accuracy: "C", hasQuestions: true }), "GREET_SOFT");
+  assert.equal(greetingIdFor({ q2: "배움", level2027: "역풍", accuracy: "A", hasQuestions: true }), "GREET_HEAD");
+  assert.equal(greetingIdFor({ q2: "배움", level2027: "순풍", accuracy: "A", hasQuestions: false }), "GREET_OPEN");
+  assert.equal(greetingIdFor({ q2: "배움", level2027: "보통", accuracy: "C", hasQuestions: true }), "GREET_NOTIME");
+  assert.equal(greetingIdFor({ q2: "배움", level2027: "보통", accuracy: "A", hasQuestions: true }), "GREET_QUESTION");
+  assert.equal(greetingIdFor({ q2: "배움", level2027: "보통", accuracy: "B", hasQuestions: false }), "GREET_DEFAULT");
+  const soft = db.dbs.B15.rows.find((r) => r.id === "GREET_SOFT")!.text;
+  assert.ok(fillGreeting(soft, { nickname: "지우", sunSign: "양자리", wish: "안정", word: "고생" })!.includes("‘고생’이라고"));
+  assert.ok(fillGreeting(soft, { nickname: "지우", sunSign: "양자리", wish: "안정", word: "그만" })!.includes("‘그만’이라고"));
+  const open = db.dbs.B15.rows.find((r) => r.id === "GREET_OPEN")!.text;
+  assert.ok(fillGreeting(open, { nickname: "지우", sunSign: "양자리", wish: "여유", word: "배움" })!.includes("여유가 활짝"));
+  const q = db.dbs.B15.rows.find((r) => r.id === "GREET_QUESTION")!.text;
+  assert.equal(fillGreeting(q, { nickname: "지우", sunSign: "양자리", wish: "안정", word: "배움" }), null); // 질문이 없으면 못 채움
 });

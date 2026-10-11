@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { apiHeaders } from "@/lib/guest/client";
 import { useRealSession } from "@/components/results/useSession";
+import { b11, useCopy } from "@/lib/copy/useCopy";
 
 const TOSS_CLIENT_KEY = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY;
 
@@ -22,6 +23,7 @@ type Widget = Awaited<ReturnType<typeof import("@tosspayments/payment-widget-sdk
 export default function CheckoutPage({ resultId, page }: { resultId: string; page: number }) {
   const router = useRouter();
   const session = useRealSession();
+  const copy = useCopy();
   const [order, setOrder] = useState<Order | null>(null);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -84,7 +86,9 @@ export default function CheckoutPage({ resultId, page }: { resultId: string; pag
       {order && (
         <div className="rounded-2xl border border-gold px-4 py-3 text-cream">
           <p className="font-bold">{order.orderName}</p>
-          <p className="text-sm text-cream/80">{order.amount.toLocaleString()}원 · 쏘웰라 3일 이용권 안내 포함</p>
+          <p className="text-sm text-cream/80">{order.amount.toLocaleString()}원</p>
+          {/* 쏘웰라는 로그인한 계정만 쓸 수 있다(패키지 v3) — 비회원에게는 임시 계정 보관 안내(B11 PAY_TEMP_NOTE)를 */}
+          {!session && b11(copy, "PAY_TEMP_NOTE", "") && <p className="mt-1 text-xs text-cream/70">{b11(copy, "PAY_TEMP_NOTE", "")}</p>}
         </div>
       )}
       {!TOSS_CLIENT_KEY && <p className="rounded-xl bg-cream px-3 py-2 text-sm text-navy">결제 설정이 아직 준비되지 않았어요.</p>}

@@ -182,6 +182,7 @@ export function processPartOutput(
     headwind2027: part === "B" && built.headwind2027,
     c1Rules,
     wish: built.input.answers.q3_wish_2027,
+    word2026: built.input.answers.q2_word_2026,
   });
   for (const w of bannedWords) if (text.includes(w)) issues.push({ code: "character_name", detail: w });
   const failures = issues.filter((i) => i.severity !== "경고");

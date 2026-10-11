@@ -19,7 +19,7 @@ export async function runReportGeneration(resultId: string): Promise<void> {
     const report = await generatePaidReport({ db: ASTRO_DB, resolved: c.birth.resolved, wishContext: wishContextOf(c.birth.stored, c.birth.accuracy), answers: row.answers, nickname: row.nickname, birthKey: birthKeyOf(row.birth_input), onPart: (partial) => savePartialReport(resultId, partial) });
     await saveReport(resultId, report);
     // 쏘웰라 채팅이 참고할 요약을 리포트 본문·제안까지 넣어 다시 만든다.
-    await saveChatSummary(resultId, chatSummaryFor(c, row.answers, report));
+    await saveChatSummary(resultId, chatSummaryFor(c, row.answers, report, row.nickname));
   } catch (e) {
     console.error("유료 리포트 생성 실패:", e instanceof Error ? e.message : "unknown");
     await saveReport(resultId, null).catch(() => {});

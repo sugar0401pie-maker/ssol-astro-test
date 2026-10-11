@@ -68,13 +68,13 @@ function SheetBody({ sheet }: { sheet: WheelSheet }) {
   );
 }
 
-// 휠 읽는 법(프로토타입 showTip): 아직 안 본 사람 모두에게, 이 탭에서 한 번(sessionStorage)
+// 휠 읽는 법(프로토타입 showTip): 처음인 사람에게 한 번 — 닫으면 이 기기에 기억(localStorage, 스펙 "한 번 닫으면 다시 안 뜸")
 const TIPS_KEY = "sol_wheel_tips";
 const TIP_STEP = ["", "바깥 고리 = 별자리", "동그라미 = 행성", "선 = 행성끼리의 관계"];
 const TIP_TOP = ["", "-4px", "30%", "58%"];
 function tipsSeen(): boolean {
   try {
-    return sessionStorage.getItem(TIPS_KEY) === "1";
+    return localStorage.getItem(TIPS_KEY) === "1";
   } catch {
     return false;
   }
@@ -203,7 +203,7 @@ export default function FreeResultView({
   function endTips() {
     setTip(0);
     try {
-      sessionStorage.setItem(TIPS_KEY, "1");
+      localStorage.setItem(TIPS_KEY, "1");
     } catch {
       /* 저장소를 못 쓰면 다음에 다시 보여도 괜찮다 */
     }

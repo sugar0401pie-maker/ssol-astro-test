@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
       input: parsed.input,
       answers: parsed.answers,
       birth: computed.birth,
-      chatSummary: chatSummaryFor(computed, parsed.answers),
+      chatSummary: chatSummaryFor(computed, parsed.answers, null, parsed.nickname),
     });
     return NextResponse.json({ id, result: computed.result });
   } catch (e) {

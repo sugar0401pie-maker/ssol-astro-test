@@ -13,6 +13,7 @@ export interface ValidationIssue {
     | "table"
     | "label_single"
     | "money_predict"
+    | "start_overlap"
     | "banned_phrase"
     | "theory_name"
     | "markdown_bold"
@@ -116,6 +117,8 @@ export interface ValidateOptions {
   c1Rules?: C1Rule[];
   /** 사용자의 2027 바람(경제적 여유면 수입·수익 예측을 막는다 — 패키지 15_AI검증 MONEY_PREDICT) */
   wish?: string;
+  /** 2026 한 단어(Q2). Q2·Q3가 둘 다 '시작'이면 한 문단에 '시작'이 두 번 이상 나오지 않게 한다(마스터스펙 5-1, Q3 확정 메모) */
+  word2026?: string;
 }
 
 // 2026-10-10 패키지 15_AI검증(validateAi.mjs)과 같은 규칙: 판정 이름은 두 말로 함께("활짝 열리는 해(순풍)"),
@@ -225,6 +228,11 @@ export function validateReport(text: string, opts: ValidateOptions): ValidationI
     if (formal > 0.65 || formal < 0.35) issues.push({ code: "ending_ratio", detail: `입니다체 ${Math.round(formal * 100)}%` });
   }
   if (opts.c1Rules) issues.push(...c1Hits(text, opts.c1Rules, "AI"));
+  if (opts.word2026 === "시작" && opts.wish === "시작") {
+    // 두 질문의 '시작'이 한 문단에 섞이면 무엇이 2026이고 무엇이 2027 바람인지 헷갈린다 — 그런 문단은 실패(→ 재생성 → DB 뼈대)
+    const mixed = text.split(/\n\s*\n/).find((para) => (para.match(/시작/g) ?? []).length >= 2);
+    if (mixed) issues.push({ code: "start_overlap", detail: mixed.slice(0, 30) });
+  }
   return issues;
 }
 

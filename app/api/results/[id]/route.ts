@@ -76,7 +76,7 @@ export async function PATCH(req: NextRequest, ctx: RouteContext<"/api/results/[i
     const c = computeFree(input, row.answers, row.nickname);
     if (c.kind !== "result") return NextResponse.json({ error: "결과를 다시 계산하지 못했어요." }, { status: 500 });
     const ch = c.birth.resolved.character;
-    await updateResultPick(owner, id, { input, character: ch.name, competency: ch.competency, style: ch.style, chatSummary: chatSummaryFor(c, row.answers) });
+    await updateResultPick(owner, id, { input, character: ch.name, competency: ch.competency, style: ch.style, chatSummary: chatSummaryFor(c, row.answers, null, row.nickname) });
     return NextResponse.json({ result: c.result });
   } catch (e) {
     console.error(e instanceof Error ? e.message : "유형 바꾸기 실패");

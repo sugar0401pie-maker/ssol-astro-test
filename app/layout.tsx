@@ -15,9 +15,23 @@ const gowunBatang = Gowun_Batang({ variable: "--font-gowun-batang", weight: ["40
 const notoSymbols = Noto_Sans_Symbols({ variable: "--font-noto-symbols", subsets: ["symbols"] });
 const notoSymbols2 = Noto_Sans_Symbols_2({ variable: "--font-noto-symbols-2", weight: "400", subsets: ["symbols"] });
 
+const DESCRIPTION = "출생차트로 나를 돌아보는 쏠 웰니스 하우스의 자기성찰 콘텐츠. 예측 도구가 아니며 진단·상담을 대신하지 않습니다.";
+// 공유 미리보기(카카오톡·X 등): 사이트 첫 화면 정보만. 결과 주소는 본인 전용이라 결과별 미리보기는 만들지 않는다.
+// 미리보기 그림은 전용 이미지를 받기 전까지 인트로 그림(관측소)을 쓴다.
 export const metadata: Metadata = {
+  metadataBase: new URL("https://astro.ssolwellnesshouse.com"),
   title: "쏠 아스트로 하우스",
-  description: "출생차트로 나를 돌아보는 쏠 웰니스 하우스의 자기성찰 콘텐츠. 예측 도구가 아니며 진단·상담을 대신하지 않습니다.",
+  description: DESCRIPTION,
+  openGraph: {
+    type: "website",
+    siteName: "쏠 아스트로 하우스",
+    title: "쏠 아스트로 하우스",
+    description: DESCRIPTION,
+    url: "/",
+    locale: "ko_KR",
+    images: [{ url: "/intro/observatory.jpg", alt: "밤하늘 아래 관측소" }],
+  },
+  twitter: { card: "summary_large_image", title: "쏠 아스트로 하우스", description: DESCRIPTION, images: ["/intro/observatory.jpg"] },
 };
 
 export const viewport: Viewport = {

@@ -103,3 +103,11 @@ test("리포트 입력 조립: 날짜는 토큰으로만, 판정·근거는 서�
   assert.equal(soft.input.soft_tone, true);
 });
 
+
+test("Q2·Q3가 둘 다 '시작'이면 한 문단에 '시작'이 겹치면 실패", () => {
+  const opts = { allowedTokens: [], allowedNames: [] };
+  const mixed = "올해를 시작이라고 골랐어요. 내년에도 새로운 시작을 바라요.";
+  assert.ok(validateReport(mixed, { ...opts, wish: "시작", word2026: "시작" }).some((i) => i.code === "start_overlap"));
+  assert.ok(!validateReport("올해를 시작이라고 골랐어요.\n\n내년에는 새로운 시작을 바라요.", { ...opts, wish: "시작", word2026: "시작" }).some((i) => i.code === "start_overlap"));
+  assert.ok(!validateReport(mixed, { ...opts, wish: "시작", word2026: "설렘" }).some((i) => i.code === "start_overlap"));
+});

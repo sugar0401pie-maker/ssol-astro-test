@@ -8,11 +8,11 @@ import { buildChatSummary } from "@/lib/report/chatSummary";
 import { ASTRO_DB } from "@/lib/report/dbData";
 import type { Computed } from "./compute";
 
-export function chatSummaryFor(computed: Extract<Computed, { kind: "result" }>, answers: Answers, paid?: PaidReport | null): string | null {
+export function chatSummaryFor(computed: Extract<Computed, { kind: "result" }>, answers: Answers, paid?: PaidReport | null, nickname?: string): string | null {
   try {
     const b = computed.birth;
     const wish = computeWish(b.resolved.longitudes, answers.q3, wishContextOf(b.stored, b.accuracy));
-    return buildChatSummary({ db: ASTRO_DB, free: computed.result, answers, wish, paid: paid ?? null });
+    return buildChatSummary({ db: ASTRO_DB, free: computed.result, answers, wish, paid: paid ?? null, nickname });
   } catch (e) {
     console.warn("채팅 요약 만들기 실패:", e instanceof Error ? e.name : "unknown");
     return null;
