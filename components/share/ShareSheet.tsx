@@ -4,6 +4,7 @@
 // 결과 주소는 본인만 열 수 있어서 공유하지 않는다 — 사이트 첫 화면 주소와, 출생 정보가 없는 공유 이미지(단순판 휠 + 유형 문구)만.
 // 카카오톡은 기기 공유창(그 안의 카카오톡)으로 보낸다 — 카카오 SDK 앱 키 없이 되는 방법. 공유창이 없으면 주소를 복사해 안내.
 // 인스타그램·유튜브는 웹에서 바로 올리는 주소가 없어, 공유 이미지를 기기 공유창으로 넘기거나 저장한 뒤 앱에서 올리도록 안내한다.
+import { track } from "@/lib/analytics/track";
 import { useEffect, useState } from "react";
 import type { NatalChart } from "@/lib/astro/natal";
 import BottomSheet from "@/components/ui/BottomSheet";
@@ -92,6 +93,7 @@ export default function ShareSheet({ open, onClose, ...props }: ShareProps & { o
 
   async function share(key: ShareKey) {
     setNote(null);
+    track("share_done", { channel: key });
     const enc = encodeURIComponent;
     switch (key) {
       case "link":

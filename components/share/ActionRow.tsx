@@ -9,6 +9,7 @@ import AuthStep from "@/components/auth/AuthStep";
 import GuideArt from "@/components/test/GuideArt";
 import { claimGuestResults } from "@/lib/guest/client";
 import { getRealSession } from "@/lib/supabase/browser";
+import { track } from "@/lib/analytics/track";
 import ShareSheet, { type ShareProps } from "./ShareSheet";
 import { b14, useCopy } from "@/lib/copy/useCopy";
 
@@ -59,6 +60,7 @@ export default function ActionRow({
   }, [toast]);
 
   async function save(e: React.MouseEvent<HTMLButtonElement>) {
+    track("save_click");
     if (!resultId) {
       // 저장이 실패한 결과: 한 번 더 저장해 본다(B14 ERR_SAVE '잠시 뒤 [저장하기]를 한 번 더')
       if (onRetrySave && (await onRetrySave())) return;
@@ -97,7 +99,7 @@ export default function ActionRow({
     <>
       {/* 프로토타입 actRow: .act-row 반반, 56px */}
       <div className="act-row">
-        <button type="button" className="btn kakao act-btn" onClick={() => setShareOpen(true)}>
+        <button type="button" className="btn kakao act-btn" onClick={() => { setShareOpen(true); track("share_open"); }}>
           {KAKAO_ICON}
           SNS 공유하기
         </button>

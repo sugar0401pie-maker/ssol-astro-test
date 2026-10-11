@@ -3,6 +3,8 @@ import { computeFree, parseResultRequest } from "@/lib/results/compute";
 import { listResults, saveResult } from "@/lib/results/store";
 import { resolveOwner } from "@/lib/results/owner";
 import { chatSummaryFor } from "@/lib/results/chatSummary";
+import { recordConsents } from "@/lib/results/consentLog";
+import { CONSENT_VERSION } from "@/lib/results/consent";
 import { characterLabel } from "@/lib/report/characterDisplay";
 import { ASTRO_DB } from "@/lib/report/dbData";
 
@@ -45,6 +47,8 @@ export async function POST(req: NextRequest) {
       birth: computed.birth,
       chatSummary: chatSummaryFor(computed, parsed.answers, null, parsed.nickname),
     });
+    // 출생 정보 화면의 필수 동의 4가지(화면이 모두 체크해야 넘어가고, 서버도 consent:true를 확인했다)
+    await recordConsents(owner, ["age", "privacy", "terms", "store"], CONSENT_VERSION, { resultId: id });
     return NextResponse.json({ id, result: computed.result });
   } catch (e) {
     // 저장에 실패해도 결과는 보여 준다(저장은 편의 기능 — 안전과 무관). 화면에 '저장하지 못했어요'를 알린다.

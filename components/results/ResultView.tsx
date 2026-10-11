@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 import FreeResultView from "@/components/test/FreeResultView";
 import type { FreeResult } from "@/lib/report/freeResult";
 import { useRealSession } from "./useSession";
+import { track } from "@/lib/analytics/track";
 import PaidReportView from "./PaidReportView";
 import { b14, useCopy } from "@/lib/copy/useCopy";
 import type { PaidReport } from "@/lib/report/aiReport";
@@ -59,7 +60,10 @@ export default function ResultView({ id, page }: { id: string; page?: number }) 
         const res = await fetch(`/api/results/${id}/report`, { headers: apiHeaders(session), cache: "no-store" });
         const d = await res.json();
         if (stop) return;
-        if (d.status === "ready") return setReport(d.report);
+        if (d.status === "ready") {
+          track("report_ready", {}, `report_ready:${id}`);
+          return setReport(d.report);
+        }
         // 쓰는 중: 다 쓴 섹션부터 보여 주고 계속 기다린다
         if (d.report) setReport(d.report);
       } catch {

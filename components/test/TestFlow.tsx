@@ -11,6 +11,7 @@ import { KOREA_REGIONS } from "@/lib/astro/places";
 import type { FreeResult } from "@/lib/report/freeResult";
 import { getRealSession } from "@/lib/supabase/browser";
 import { b14, useCopy } from "@/lib/copy/useCopy";
+import { track } from "@/lib/analytics/track";
 import { apiHeaders } from "@/lib/guest/client";
 import GuideArt from "./GuideArt";
 import CitySearch, { type PickedCity } from "./CitySearch";
@@ -363,8 +364,15 @@ export default function TestFlow() {
     } catch {
       await wait();
       setCalcFailed(true);
+      track("calc_fail");
     }
   }
+
+  // 이용 흐름 기록: 각 화면에 처음 들어올 때 한 번(앞 화면을 마쳤다는 뜻)
+  useEffect(() => {
+    const ev = ({ welcome: "start", experience: "nickname_done", birth: "experience_done", questions: "birth_done", loading: "questions_done" } as const)[step as "welcome"];
+    if (ev) track(ev, {}, `test:${ev}`);
+  }, [step]);
 
   function submitNick() {
     if (!name) {

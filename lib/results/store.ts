@@ -136,13 +136,13 @@ export async function getPayState(owner: Owner, resultId: string): Promise<(PayS
   return { paid: !!data.paid_at, reportStatus: data.report_status, reportStartedAt: data.report_started_at, report: data.report };
 }
 
-export async function createOrder(owner: Owner, resultId: string, amount: number): Promise<string> {
+export async function createOrder(owner: Owner, resultId: string, amount: number, withdrawalVersion: string): Promise<string> {
   const who = owner.kind === "user" ? { user_id: owner.userId } : { user_id: null, guest_token_hash: owner.tokenHash };
-  const { data, error } = await createAdminClient()
-    .from("astro_orders")
-    .insert({ ...who, result_id: resultId, amount, status: "pending" })
-    .select("id")
-    .single();
+  const row = { ...who, result_id: resultId, amount, status: "pending" };
+  const insert = (r: object) => createAdminClient().from("astro_orders").insert(r).select("id").single();
+  let { data, error } = await insert({ ...row, withdrawal_notice_at: new Date().toISOString(), withdrawal_notice_version: withdrawalVersion });
+  // 동의 기록 마이그레이션(20261011000000) 전이면 칸이 없다(42703) — 결제는 막지 않고 칸 없이 다시(동의는 astro_consents에도 남김 시도)
+  if (error?.code === "42703") ({ data, error } = await insert(row));
   if (error || !data) throw new Error(`주문 생성 실패: ${error?.code ?? "no data"}`);
   return data.id as string;
 }

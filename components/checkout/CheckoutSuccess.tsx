@@ -7,6 +7,7 @@ import { apiHeaders } from "@/lib/guest/client";
 import { getRealSession } from "@/lib/supabase/browser";
 import { b14, useCopy } from "@/lib/copy/useCopy";
 import { clampPage } from "@/lib/results/lastPage";
+import { track } from "@/lib/analytics/track";
 
 export default function CheckoutSuccess() {
   const params = useSearchParams();
@@ -34,6 +35,7 @@ export default function CheckoutSuccess() {
       });
       const d = await res.json().catch(() => ({}));
       // 결제를 누른 그 페이지로 바로(프로토타입 unlock — 비회원이면 그 페이지 맨 위에 보관 안내가 뜬다)
+      track(res.ok ? "pay_success" : "pay_fail", { page: clampPage(params.get("page")) });
       if (res.ok && d.resultId) router.replace(`/results/${d.resultId}/${clampPage(params.get("page"))}`);
       else setError(d.error ?? "결제를 확인하지 못했어요.");
     })();

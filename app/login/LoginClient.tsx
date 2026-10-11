@@ -4,6 +4,7 @@
 // 카카오로 로그인하기 / 네이버로 로그인하기 / 이메일로 계속하기 중에 고르고, 그 아래 작은 글씨 '로그인 없이 테스트하기'.
 // ?next=/test(첫 화면) · /results(내 결과)로 돌아갈 곳을 받는다 — 사이트 안 경로만(safeNextPath). 없으면 내 결과.
 // 이 기기에 로그인 없이 저장해 둔 결과는 로그인 뒤 계정으로 옮겨진다(useRealSession → claimGuestResults).
+import { track } from "@/lib/analytics/track";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import AuthStep from "@/components/auth/AuthStep";
@@ -25,6 +26,7 @@ export default function LoginClient() {
   const doneMsg = b11(copy, "LOGIN_DONE", "로그인되었어요. 결과가 내 계정에 저장됐어요.");
   // 로그인 뒤 돌아간 화면에서 보여 줄 안내(프로토타입 backToResult): 쏘웰라에서 왔으면 쏘웰라 안내, 결과에서 왔으면 LOGIN_DONE
   const goNext = useCallback(() => {
+    track("login_done", { from: isSowella ? "sowella" : next.startsWith("/test") ? "test" : "results" });
     if (isSowella) setFlash("로그인되었어요. 이제 쏘웰라와 대화할 수 있어요.");
     else if (next.startsWith("/results/") && !next.startsWith("/results/latest")) setFlash(doneMsg);
     router.replace(next);

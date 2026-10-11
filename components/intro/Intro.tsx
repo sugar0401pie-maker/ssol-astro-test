@@ -6,6 +6,7 @@
 // 참여자 수는 실제 숫자가 아니면 표시하지 않는다(프로토타입의 숫자는 '예시'라고 적혀 있음 — 가짜 사회적 증거 금지).
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { track } from "@/lib/analytics/track";
 import SiteFooter from "@/components/SiteFooter";
 import AuthFooterLink from "@/components/auth/AuthFooterLink";
 import { getRealSession } from "@/lib/supabase/browser";
@@ -21,6 +22,7 @@ export default function Intro() {
 
   useEffect(() => {
     void getRealSession().then((s) => setLoggedIn(!!s));
+    track("intro_view", {}, "intro_view");
   }, []);
 
   useEffect(() => {

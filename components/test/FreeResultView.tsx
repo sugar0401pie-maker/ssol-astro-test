@@ -10,6 +10,7 @@ import { RESULT_PAGES, rememberPage } from "@/lib/results/lastPage";
 import Link from "next/link";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
+import { track } from "@/lib/analytics/track";
 import { REPORT_PRICE } from "@/lib/billing/pricing";
 import { apiHeaders } from "@/lib/guest/client";
 import { getRealSession } from "@/lib/supabase/browser";
@@ -158,6 +159,11 @@ export default function FreeResultView({
   // portal은 브라우저에서만(서버에서 그린 화면과 어긋나지 않게)
   const mounted = useSyncExternalStore(noopSubscribe, () => true, () => false);
   const [page, setPage] = useState(() => Math.min(Math.max(1, initialPage ?? 1), RESULT_PAGES));
+  // 이용 흐름 기록: 어느 장까지 읽는지(장마다 한 번), 결제 카드가 보였는지
+  useEffect(() => {
+    track("result_view", { page }, `result_view:${resultId ?? "unsaved"}:${page}`);
+    if (page >= 4 && !paidSection) track("paywall_view", { page }, `paywall_view:${resultId ?? "unsaved"}`);
+  }, [page, resultId, paidSection]);
   useEffect(() => {
     if (!resultId) return;
     const t = setTimeout(() => {
@@ -550,9 +556,12 @@ export default function FreeResultView({
               <p>{WELLNESS_SESSION_NOTE.replace("{닉네임}", nickname)}</p>
             )}
             <div className="flex flex-wrap gap-2">
-              <a className="btn ghost small-btn" href={SESSION_URL}>
-                웰니스 상담 알아보기
-              </a>
+              {/* owner 2026-10-11: 기본 안내에서는 [쏘웰라와 이야기 나누기]만. 부드러운 톤(그만·이별·고생)은 안전 원칙(전문 상담 연결 안내)대로 상담 버튼을 남긴다 */}
+              {result.care && (
+                <a className="btn ghost small-btn" href={SESSION_URL}>
+                  웰니스 상담 알아보기
+                </a>
+              )}
               <SowellaButton label="쏘웰라와 이야기 나누기" className="btn ghost small-btn" resultId={resultId} page={3} keepLabel />
             </div>
           </div>

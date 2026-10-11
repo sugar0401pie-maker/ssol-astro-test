@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { b14, useCopy } from "@/lib/copy/useCopy";
 import { clampPage } from "@/lib/results/lastPage";
+import { useEffect } from "react";
+import { track } from "@/lib/analytics/track";
 
 const CANCEL_CODES = new Set(["PAY_PROCESS_CANCELED", "USER_CANCEL"]);
 
@@ -15,6 +17,7 @@ export default function CheckoutFail() {
   const page = clampPage(params.get("page"));
   const id = CANCEL_CODES.has(params.get("code") ?? "") ? "ERR_PAY_CANCEL" : "ERR_PAY_FAIL";
   const cancel = id === "ERR_PAY_CANCEL";
+  useEffect(() => track("pay_fail", { page, from: cancel ? "cancel" : "error" }, "pay_fail"), [page, cancel]);
   return (
     <div className="flex flex-col gap-4 text-cream">
       <h1 className="big">{b14(copy, id, "title", cancel ? "결제를 멈췄어요" : "결제가 완료되지 않았어요")}</h1>
