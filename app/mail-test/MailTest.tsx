@@ -39,7 +39,7 @@ export default function MailTest() {
   return (
     <>
       <h1 className="big">리포트 메일 시험</h1>
-      <p className="small">지금 로그인한 계정의 메일로 &apos;지우&apos;님 목업 리포트를 보내요. 다른 주소로는 보낼 수 없어요.</p>
+      <p className="small">지금 로그인한 계정의 메일로 &apos;지우&apos;님(양자리) 리포트 알림 메일 목업을 보내요. 다른 주소로는 보낼 수 없어요.</p>
       <button type="button" className="btn block" disabled={busy} onClick={() => void send()}>
         {busy ? "보내는 중…" : "시험 메일 보내기"}
       </button>

@@ -11,27 +11,40 @@ import { claimReportEmail, claimReportGeneration, getAccountEmail, getResultForR
 import { findRow } from "@/lib/report/db";
 import { buildReportEmail } from "@/lib/report/reportEmail";
 import { sendEmail } from "@/lib/email/resend";
-import type { PaidReport } from "@/lib/report/aiReport";
+import { kakaoArtUrl, pickSignArt, signArtChoices } from "@/lib/share/signShare";
 
 const SITE_URL = "https://astro.ssolwellnesshouse.com";
 
 /**
- * 리포트 완성 메일(owner 2026-10-11). 계정이 있고 메일 주소를 알 때만, 결과마다 한 번만.
- * 로그인하지 않은(비회원) 결과는 보낼 주소가 없어 보내지 않는다. 실패해도 리포트에는 영향 없다.
+ * 리포트 완성 알림 메일(owner 2026-10-11: 본문 대신 카카오 공유 카드와 같은 별자리 카드 + 첫 장 링크).
+ * 계정이 있고 메일 주소를 알 때만, 결과마다 한 번만. 로그인하지 않은(비회원) 결과는 보낼 주소가 없어 보내지 않는다.
+ * 실패해도 리포트에는 영향 없다.
  */
-async function emailReport(resultId: string, userId: string | null, nickname: string, report: PaidReport): Promise<void> {
+async function emailReport(resultId: string, userId: string | null, nickname: string, card: { sunSign: string; sunSignIndex: number; oneLiner: string | null }): Promise<void> {
   // 메일 키가 없으면 자리를 잡지 않는다 — 키를 나중에 넣으면 그때 보낼 수 있게
   if (!userId || !process.env.RESEND_API_KEY) return;
   try {
     const to = await getAccountEmail(userId);
     if (!to || !(await claimReportEmail(resultId))) return;
-    const disclaimer = findRow(ASTRO_DB, "A15", (r) => r.id === "FIX_DISCLAIMER")?.text ?? "";
-    const mail = buildReportEmail({ nickname, report, resultUrl: `${SITE_URL}/results/${resultId}/4`, disclaimer });
+    const art = pickSignArt(card.sunSignIndex) ?? signArtChoices(0)[0];
+    const mail = buildReportEmail({
+      nickname,
+      sunSign: card.sunSign,
+      oneLiner: card.oneLiner,
+      imageUrl: kakaoArtUrl(art, SITE_URL),
+      resultUrl: `${SITE_URL}/results/${resultId}/1`,
+      disclaimer: findRow(ASTRO_DB, "A15", (r) => r.id === "FIX_DISCLAIMER")?.text ?? "",
+    });
     const sent = await sendEmail({ to, ...mail });
     if (!sent.ok) await releaseReportEmail(resultId);
   } catch (e) {
     console.warn("리포트 메일 실패:", e instanceof Error ? e.name : "unknown");
   }
+}
+
+/** 결과(계산값)에서 메일 카드 정보 */
+function cardOf(c: Extract<ReturnType<typeof computeFree>, { kind: "result" }>) {
+  return { sunSign: c.result.sunSign, sunSignIndex: c.result.sunSignIndex, oneLiner: c.result.sunSignIntro?.oneLiner ?? null };
 }
 
 /** 재시도(화면이 30초 동안 아무것도 못 받았을 때)면 30초 넘게 멈춘 생성도 다시 시작한다(평소엔 5분). */
@@ -46,7 +59,7 @@ export async function runReportGeneration(resultId: string, opts: { retry?: bool
     if (c.kind !== "result") throw new Error("결과를 다시 계산하지 못함");
     const report = await generatePaidReport({ db: ASTRO_DB, resolved: c.birth.resolved, wishContext: wishContextOf(c.birth.stored, c.birth.accuracy), answers: row.answers, nickname: row.nickname, birthKey: birthKeyOf(row.birth_input), onPart: (partial) => savePartialReport(resultId, partial) });
     await saveReport(resultId, report);
-    await emailReport(resultId, row.user_id, row.nickname, report);
+    await emailReport(resultId, row.user_id, row.nickname, cardOf(c));
     // 쏘웰라 채팅이 참고할 요약을 리포트 본문·제안까지 넣어 다시 만든다.
     await saveChatSummary(resultId, chatSummaryFor(c, row.answers, report, row.nickname));
   } catch (e) {
@@ -60,7 +73,9 @@ export async function emailReportIfReady(resultId: string): Promise<void> {
   try {
     const row = await getResultForReport(resultId);
     if (!row || row.report_status !== "ready" || !row.report) return;
-    await emailReport(resultId, row.user_id, row.nickname, row.report as PaidReport);
+    const c = computeFree(row.birth_input, row.answers, row.nickname);
+    if (c.kind !== "result") return;
+    await emailReport(resultId, row.user_id, row.nickname, cardOf(c));
   } catch (e) {
     console.warn("리포트 메일 확인 실패:", e instanceof Error ? e.name : "unknown");
   }
