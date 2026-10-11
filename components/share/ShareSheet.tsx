@@ -1,7 +1,9 @@
 "use client";
 
 // 공유 시트(마스터스펙 6-1 화면 9, 2026-10-09 프로토타입 shareSheet): 카카오톡 · 링크 복사 · 네이버 블로그 · X(트위터) · 인스타그램 · 유튜브.
-// 결과 주소는 본인만 열 수 있어서 공유하지 않는다 — 사이트 첫 화면 주소와, 출생 정보가 없는 공유 이미지(단순판 휠 + 유형 문구)만.
+// 결과 주소는 본인만 열 수 있어서 공유하지 않는다 — 사이트 첫 화면 주소와, 출생 정보가 없는 공유 이미지만.
+// 공유 이미지(owner 2026-10-11): 내 태양 별자리 그림 하나(무작위) + 별자리 이름·소개(A1). 휴대폰은 공유창으로 그림까지,
+// 컴퓨터의 X는 글·링크만(웹 주소로는 그림을 못 넘김).
 // 카카오톡은 기기 공유창(그 안의 카카오톡)으로 보낸다 — 카카오 SDK 앱 키 없이 되는 방법. 공유창이 없으면 주소를 복사해 안내.
 // 인스타그램·유튜브는 웹에서 바로 올리는 주소가 없어, 공유 이미지를 기기 공유창으로 넘기거나 저장한 뒤 앱에서 올리도록 안내한다.
 import { track } from "@/lib/analytics/track";
@@ -9,10 +11,11 @@ import { useEffect, useState } from "react";
 import type { NatalChart } from "@/lib/astro/natal";
 import BottomSheet from "@/components/ui/BottomSheet";
 import { BRAND_PATHS } from "./brandIcons";
-import { buildShareSvg, svgToPng } from "./shareImage";
+import { composeSignShare } from "./shareImage";
+import KakaoTalkLogo from "./KakaoTalkLogo";
+import { pickSignArt, signShareMessage, signShareTexts } from "@/lib/share/signShare";
 
 export const SITE_URL = "https://astro.ssolwellnesshouse.com";
-const SHARE_TEXT = "출생차트로 나를 돌아보는 쏠 아스트로 하우스";
 
 export interface ShareProps {
   chart: NatalChart;
@@ -22,6 +25,8 @@ export interface ShareProps {
   competency: string;
   style: string;
   nickname: string;
+  /** 공유 이미지·글에 넣을 태양 별자리 소개(A1) */
+  sunSignIntro: { oneLiner: string; keywords: string } | null;
 }
 
 type ShareKey = "kakao" | "link" | "blog" | "x" | "insta" | "youtube";
@@ -36,7 +41,7 @@ const brand = (k: keyof typeof BRAND_PATHS, fill: string, size: number) => (
   </svg>
 );
 const SHARES: Array<{ key: ShareKey; label: string; bg: string; icon: React.ReactNode }> = [
-  { key: "kakao", label: "카카오톡", bg: "#FEE500", icon: brand("kakaotalk", "#191919", 28) },
+  { key: "kakao", label: "카카오톡", bg: "#FEE500", icon: <KakaoTalkLogo size={34} /> },
   { key: "link", label: "링크 복사", bg: "#E9E3D6", icon: LINK_ICON },
   { key: "blog", label: "네이버 블로그", bg: "#03C75A", icon: brand("naver", "#fff", 20) },
   { key: "x", label: "X(트위터)", bg: "#000", icon: brand("x", "#fff", 20) },
@@ -52,11 +57,13 @@ export default function ShareSheet({ open, onClose, ...props }: ShareProps & { o
   useEffect(() => {
     if (!open || png) return;
     let alive = true;
-    const { svg, texts } = buildShareSvg(props);
-    void svgToPng(svg, texts).then((b) => {
+    // 별자리 그림 하나(무작위) + 별자리 소개(owner 2026-10-11). 그림을 못 불러오면 미리보기 없이 글·링크만 공유된다.
+    const art = pickSignArt(props.sunSignIndex);
+    if (!art) return;
+    void composeSignShare(art, signShareTexts(props.sunSign, props.sunSignIntro)).then((b) => {
       if (!alive) return;
       setPng(b);
-      setPreview(b ? URL.createObjectURL(b) : `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`);
+      setPreview(b ? URL.createObjectURL(b) : null);
     });
     return () => {
       alive = false;
@@ -95,36 +102,44 @@ export default function ShareSheet({ open, onClose, ...props }: ShareProps & { o
     setNote(null);
     track("share_done", { channel: key });
     const enc = encodeURIComponent;
+    // 공유 글: 내 태양 별자리 + 소개 한 줄(owner 2026-10-11). 출생 날짜·시간·장소·닉네임은 넣지 않는다.
+    const message = signShareMessage(props.sunSign, props.sunSignIntro);
+    /** 휴대폰 공유창으로 그림+글 보내기(카카오톡·X·인스타그램 앱이 그림을 받는다). 됐으면 true. */
+    const shareFile = async () => {
+      if (!canShareFile || !file) return false;
+      try {
+        await navigator.share({ files: [file], text: `${message}\n${SITE_URL}` });
+      } catch {
+        /* 사용자가 공유를 취소 */
+      }
+      return true;
+    };
     switch (key) {
       case "link":
         return copyLink();
       case "kakao":
+        if (await shareFile()) return;
         if (navigator.share) {
           try {
-            await navigator.share({ title: "쏠 아스트로 하우스", text: SHARE_TEXT, url: SITE_URL });
-          } catch {
-            /* 사용자가 공유를 취소 */
-          }
-          return;
-        }
-        return copyLink("링크를 복사했어요. 카카오톡 대화창에 붙여 넣어 보내 주세요.");
-      case "blog":
-        window.open(`https://share.naver.com/web/shareView?url=${enc(SITE_URL)}&title=${enc(SHARE_TEXT)}`, "_blank", "noopener");
-        return;
-      case "x":
-        window.open(`https://twitter.com/intent/tweet?text=${enc(SHARE_TEXT)}&url=${enc(SITE_URL)}`, "_blank", "noopener");
-        return;
-      case "insta":
-      case "youtube": {
-        const app = key === "insta" ? "인스타그램" : "유튜브";
-        if (canShareFile && file) {
-          try {
-            await navigator.share({ files: [file], text: `${SHARE_TEXT} ${SITE_URL}` });
+            await navigator.share({ title: "쏠 아스트로 하우스", text: message, url: SITE_URL });
           } catch {
             /* 취소 */
           }
           return;
         }
+        return copyLink("링크를 복사했어요. 카카오톡 대화창에 붙여 넣어 보내 주세요.");
+      case "blog":
+        window.open(`https://share.naver.com/web/shareView?url=${enc(SITE_URL)}&title=${enc(message.split("\n")[0])}`, "_blank", "noopener");
+        return;
+      case "x":
+        // 휴대폰이면 그림까지(공유창 → X 앱), 컴퓨터면 글·링크만(X 웹 주소는 그림을 받지 못한다)
+        if (await shareFile()) return;
+        window.open(`https://twitter.com/intent/tweet?text=${enc(message)}&url=${enc(SITE_URL)}`, "_blank", "noopener");
+        return;
+      case "insta":
+      case "youtube": {
+        const app = key === "insta" ? "인스타그램" : "유튜브";
+        if (await shareFile()) return;
         if (saveImage()) setNote(`공유 이미지를 저장했어요. ${app}에서 이 이미지를 올려 주세요.`);
         else setNote("이미지를 만드는 중이에요. 잠시 뒤 다시 눌러 주세요.");
         return;
@@ -151,7 +166,7 @@ export default function ShareSheet({ open, onClose, ...props }: ShareProps & { o
         </p>
       )}
       {/* eslint-disable-next-line @next/next/no-img-element -- 브라우저에서 만든 이미지(blob)라 next/image를 쓰지 않는다 */}
-      {preview ? <img src={preview} alt="공유 이미지 미리보기: 출생차트와 유형 문구" className="mx-auto mt-2 max-h-[34vh] rounded-2xl" /> : <p className="muted">이미지를 만드는 중…</p>}
+      {preview ? <img src={preview} alt={`공유 이미지 미리보기: ${props.sunSign} 그림과 소개`} className="mx-auto mt-2 max-h-[34vh] rounded-2xl" /> : <p className="muted">이미지를 만드는 중…</p>}
       <button type="button" className="btn block mt-3" disabled={!png} onClick={saveImage}>
         공유 이미지 저장하기
       </button>

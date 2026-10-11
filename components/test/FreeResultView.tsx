@@ -196,7 +196,7 @@ export default function FreeResultView({
   const P = chart.planets;
   const withTime = !!P.asc;
   const popup = splitPayPopup(result.payPopup ?? "");
-  const share = { chart, sunSign: result.sunSign, sunSignIndex: result.sunSignIndex, typeLine: character.name ?? character.typeLine, competency: character.competency, style: character.style, nickname };
+  const share = { chart, sunSign: result.sunSign, sunSignIndex: result.sunSignIndex, typeLine: character.name ?? character.typeLine, competency: character.competency, style: character.style, nickname, sunSignIntro: result.sunSignIntro ?? null };
 
   const sheet: WheelSheet | null = !sheetKey
     ? null

@@ -10,6 +10,7 @@ import GuideArt from "@/components/test/GuideArt";
 import { claimGuestResults } from "@/lib/guest/client";
 import { getRealSession } from "@/lib/supabase/browser";
 import { track } from "@/lib/analytics/track";
+import KakaoTalkLogo from "./KakaoTalkLogo";
 import ShareSheet, { type ShareProps } from "./ShareSheet";
 import { b14, useCopy } from "@/lib/copy/useCopy";
 
@@ -20,11 +21,8 @@ export interface SaveCopy {
   loginDone: string;
 }
 
-const KAKAO_ICON = (
-  <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
-    <path fill="#191919" d="M12 3C6.48 3 2 6.58 2 11c0 2.85 1.86 5.35 4.67 6.77l-.95 3.48c-.08.3.26.54.52.37l4.15-2.75c.53.07 1.07.11 1.61.11 5.52 0 10-3.58 10-8S17.52 3 12 3z" />
-  </svg>
-);
+// 카카오톡 로고(owner 2026-10-11: 실제 카카오톡 로고로)
+const KAKAO_ICON = <KakaoTalkLogo size={24} />;
 const SAVE_ICON = (
   <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
     <path d="M6 3.5h12a1 1 0 0 1 1 1V21l-7-4.5L5 21V4.5a1 1 0 0 1 1-1z" fill="none" stroke="#013566" strokeWidth="2" strokeLinejoin="round" />

@@ -105,6 +105,8 @@ export interface FreeResult {
   sunSign: string;
   /** 휠 가운데 별자리 기호용(0=양자리) */
   sunSignIndex: number;
+  /** 공유 이미지용 태양 별자리 소개(A1 one_liner·keywords) — 출생 정보 없이 별자리 이름과 소개만 */
+  sunSignIntro: { oneLiner: string; keywords: string } | null;
   softTone: boolean;
   year2026: {
     /** 굵은 한 줄 요약(B11 SUM_2026) */
@@ -628,6 +630,10 @@ export function buildFreeResult(args: {
       })),
     sunSign,
     sunSignIndex: SIGNS.indexOf(sunSign as (typeof SIGNS)[number]),
+    sunSignIntro: (() => {
+      const r = row(db, "A1", `SIGN_${SIGN_ID[sunSign as (typeof SIGNS)[number]]}`);
+      return r ? { oneLiner: r.one_liner, keywords: r.keywords } : null;
+    })(),
     softTone: soft,
     year2026: {
       summary: fillSummary(b11(db, "SUM_2026"), nick),
