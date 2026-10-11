@@ -114,7 +114,7 @@ export default function FreeResultView({
   onRetrySave?: () => Promise<boolean>;
   /** 처음 열 페이지(1~7, 패키지 v3 웹툰식 결과) */
   initialPage?: number;
-  /** B·C등급 '태어난 시간 추가하기' */
+  /** B·C등급 태어난 시간 [수정] */
   onAddTime?: () => void;
   /** 결제는 끝났고 리포트를 쓰는 중 — 잠긴 자리를 그대로 두고 안내만 바꾼다 */
   paidPending?: string;
@@ -273,23 +273,15 @@ export default function FreeResultView({
 
             {/* ===== 1. 태어난 순간의 하늘 ===== */}
           <Section no={1} title={`${nickname}님이 태어난 순간의 하늘`} art={<PageArt page={1} signIndex={result.sunSignIndex} />}>
-            {/* 정확도 배지: owner 2026-10-10 A등급은 숨김(B·C는 차트의 한계를 알려야 해서 그대로) */}
-            {result.accuracy !== "A" && (
-            <div className="grade" id="grade-badge">
-              <b aria-label={`정확도 ${result.accuracy}등급`}>{result.accuracy}</b>
-              <div>
-                <strong style={{ color: "var(--cream)" }}>정확도 {result.accuracy}등급</strong>
-                <br />
-                {result.gradeNote}
-              </div>
-            </div>
-            )}
+            {/* 정확도 배지: owner 2026-10-11 모든 등급 숨김(시간을 모를 때는 아래 안내와 [수정]이 한계를 알린다) */}
+            {/* 서머타임 경계(시간은 알지만 1시간 차이가 날 수 있음)는 [수정] 안내가 없으므로 등급 글자 없이 안내 문장만 */}
+            {!result.addTimeNote && result.accuracy !== "A" && result.gradeNote && <p className="small">{result.gradeNote}</p>}
             {result.addTimeNote && (
               <div className="grade" style={{ alignItems: "center" }}>
                 <div>{result.addTimeNote}</div>
                 {onAddTime && (
-                  <button className="btn ghost small-btn" type="button" onClick={onAddTime}>
-                    태어난 시간 추가하기
+                  <button className="btn ghost small-btn" type="button" onClick={onAddTime} style={{ whiteSpace: "nowrap", flexShrink: 0 }} aria-label="태어난 시간 수정">
+                    수정
                   </button>
                 )}
               </div>
