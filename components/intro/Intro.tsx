@@ -65,7 +65,7 @@ export default function Intro() {
             <Link href={loggedIn ? "/test" : "/login?next=/test"} className="btn block">
               테스트 하기
             </Link>
-            <Link href={loggedIn ? "/results/latest" : "/login?next=/results/latest"} className="btn block ghost">
+            <Link href={loggedIn ? "/results" : "/login?next=/results"} className="btn block ghost">
               내 결과 보기
             </Link>
           </div>

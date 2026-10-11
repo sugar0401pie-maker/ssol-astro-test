@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
+import { emailReportIfReady } from "@/lib/results/report";
 import { guestHashFrom } from "@/lib/results/owner";
 import { claimGuestResults } from "@/lib/results/store";
 import { claimGuestConsents } from "@/lib/results/consentLog";
@@ -13,9 +14,11 @@ export async function POST(req: NextRequest) {
   const hash = guestHashFrom(req.headers);
   if (!hash) return NextResponse.json({ claimed: 0 });
   try {
-    const claimed = await claimGuestResults(userId, hash);
+    const ids = await claimGuestResults(userId, hash);
     await claimGuestConsents(userId, hash);
-    return NextResponse.json({ claimed });
+    // 비회원 때 결제한 리포트는 보낼 주소가 없었다 — 계정으로 옮긴 지금 메일로 보낸다(이미 보냈으면 건너뜀)
+    if (ids.length) after(() => Promise.all(ids.map(emailReportIfReady)).then(() => {}));
+    return NextResponse.json({ claimed: ids.length });
   } catch (e) {
     console.error(e instanceof Error ? e.message : "결과 옮기기 실패");
     return NextResponse.json({ error: "결과를 계정으로 옮기지 못했어요. 잠시 후 다시 시도해 주세요." }, { status: 500 });

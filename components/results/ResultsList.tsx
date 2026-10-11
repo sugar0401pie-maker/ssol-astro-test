@@ -16,6 +16,8 @@ interface Row {
   character: string;
   sun_sign: string;
   accuracy: string;
+  paid_at?: string | null;
+  last_page?: number | null;
 }
 
 const dateKo = (iso: string) => {
@@ -81,9 +83,14 @@ export default function ResultsList() {
       <ul className="flex flex-col gap-2">
         {rows?.map((r) => (
           <li key={r.id} className="flex items-center justify-between gap-3 rounded-2xl border border-cream/30 px-4 py-3 text-cream">
-            <Link href={`/results/${r.id}`} className="flex flex-1 flex-col">
-              <span className="font-bold">{r.sun_sign} · {r.character}</span>
-              <span className="text-xs text-cream/70">{dateKo(r.created_at)} · {r.nickname}님 · 정확도 {r.accuracy}</span>
+            {/* 한 계정에 결과 여러 개(owner 2026-10-11 — 가족·친구 생년월일로 한 테스트 포함). 누구의 결과인지 닉네임을 앞에. 정확도 등급은 화면에서 숨김(10-11) */}
+            <Link href={`/results/${r.id}/${r.last_page ?? 1}`} className="flex flex-1 flex-col">
+              <span className="font-bold">{r.nickname}님 · {r.sun_sign}</span>
+              <span className="text-sm text-cream/85">{r.character}</span>
+              <span className="text-xs text-cream/70">
+                {dateKo(r.created_at)}
+                {r.paid_at ? " · 전체 리포트 결제함" : ""}
+              </span>
             </Link>
             <button className="shrink-0 text-xs text-cream/70 underline" onClick={() => remove(r.id)}>
               지우기

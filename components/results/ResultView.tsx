@@ -18,6 +18,11 @@ import { b14, useCopy } from "@/lib/copy/useCopy";
 import type { PaidReport } from "@/lib/report/aiReport";
 import { lastPage } from "@/lib/results/lastPage";
 
+/** 리포트가 30초 동안 아무것도 안 오면 한 번 다시 만들기 요청(owner 2026-10-11) */
+const REPORT_RETRY_MS = 30_000;
+/** 그래도 안 뜰 때 고객센터 안내(Claude 초안, owner 검토 가능) */
+const REPORT_SUPPORT_NOTE = "그래도 리포트가 보이지 않으면 contact@ssolwellness.com으로 알려 주세요. 결제 내역을 확인해 바로 도와드릴게요.";
+
 export default function ResultView({ id, page }: { id: string; page?: number }) {
   const session = useRealSession();
   const copy = useCopy();
@@ -48,16 +53,23 @@ export default function ResultView({ id, page }: { id: string; page?: number }) 
       .catch(() => setError("결과를 불러오지 못했어요."));
   }, [session, id]);
 
-  // 결제했으면 유료 리포트를 받아 온다. 아직 만드는 중이면 4초마다 다시 묻는다(최대 3분 — 그 뒤엔 새로고침 안내).
+  // 결제했으면 유료 리포트를 받아 온다. 아직 만드는 중이면 4초마다 다시 묻는다.
+  // owner 2026-10-11: 30초 동안 아무것도 못 받으면 한 번 다시 만들기를 요청하고, 그래도(60초) 안 뜨면 고객센터 안내.
+  // 안내를 띄운 뒤에도 3분까지는 계속 물어서, 늦게라도 완성되면 그대로 보여 준다.
   const paid = data?.paid === true;
   const [waitedTooLong, setWaitedTooLong] = useState(false);
   useEffect(() => {
     if (session === undefined || !paid) return;
     let stop = false;
     const started = Date.now();
+    let retried = false;
+    let gotAny = false;
     const tick = async () => {
+      const elapsed = Date.now() - started;
+      const retry = !retried && !gotAny && elapsed >= REPORT_RETRY_MS;
+      if (retry) retried = true;
       try {
-        const res = await fetch(`/api/results/${id}/report`, { headers: apiHeaders(session), cache: "no-store" });
+        const res = await fetch(`/api/results/${id}/report${retry ? "?retry=1" : ""}`, { headers: apiHeaders(session), cache: "no-store" });
         const d = await res.json();
         if (stop) return;
         if (d.status === "ready") {
@@ -65,12 +77,18 @@ export default function ResultView({ id, page }: { id: string; page?: number }) 
           return setReport(d.report);
         }
         // 쓰는 중: 다 쓴 섹션부터 보여 주고 계속 기다린다
-        if (d.report) setReport(d.report);
+        if (d.report) {
+          gotAny = true;
+          setReport(d.report);
+        }
       } catch {
         /* 다음 차례에 다시 */
       }
       if (stop) return;
-      if (Date.now() - started > 180_000) return setWaitedTooLong(true);
+      const now = Date.now() - started;
+      // 재시도 뒤 30초(=60초)까지 아무것도 없거나, 일부만 온 채 2분이 지나면 고객센터 안내
+      if ((!gotAny && now >= REPORT_RETRY_MS * 2) || now >= 120_000) setWaitedTooLong(true);
+      if (now > 180_000) return;
       setTimeout(tick, 4000);
     };
     void tick();
@@ -117,7 +135,7 @@ export default function ResultView({ id, page }: { id: string; page?: number }) 
         paidPending={
           data.paid && (!report || report.partial)
             ? waitedTooLong
-              ? `${b14(copy, "ERR_AI_SLOW", "title", "", data.nickname)} ${b14(copy, "ERR_AI_SLOW", "body", "리포트를 만드는 데 시간이 걸리고 있어요. 잠시 뒤 새로고침해 주세요.", data.nickname)}`.trim()
+              ? `${b14(copy, "ERR_AI_SLOW", "title", "", data.nickname)} ${b14(copy, "ERR_AI_SLOW", "body", "리포트를 만드는 데 시간이 걸리고 있어요. 잠시 뒤 새로고침해 주세요.", data.nickname)} ${REPORT_SUPPORT_NOTE}`.trim()
               : `${b14(copy, "EMPTY_REPORT_GEN", "title", "", data.nickname)} ${b14(copy, "EMPTY_REPORT_GEN", "body", "결제가 확인됐어요. 연말부터 앞으로 5년까지, 전체 리포트를 쓰고 있어요(20~60초).", data.nickname)}`.trim()
             : undefined
         }

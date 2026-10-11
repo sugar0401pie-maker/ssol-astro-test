@@ -53,3 +53,8 @@ export function signShareTexts(sunSign: string, intro: { oneLiner: string; keywo
 export function signShareMessage(sunSign: string, intro: { oneLiner: string; keywords: string } | null): string {
   return intro ? `${sunSign} — ${intro.oneLiner} (${intro.keywords})\n출생차트로 나를 돌아보는 쏠 아스트로 하우스` : `${sunSign}\n출생차트로 나를 돌아보는 쏠 아스트로 하우스`;
 }
+
+/** 카카오톡 카드용 그림(같은 그림의 800px jpg — 카카오는 webp를 못 읽을 수 있어 jpg 사본을 둔다). 사이트 절대 주소. */
+export function kakaoArtUrl(artPath: string, site = "https://astro.ssolwellnesshouse.com"): string {
+  return site + artPath.replace(/\/([a-z_0-9]+)\.webp$/, "/kakao/$1.jpg");
+}

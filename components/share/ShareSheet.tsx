@@ -13,7 +13,8 @@ import BottomSheet from "@/components/ui/BottomSheet";
 import { BRAND_PATHS } from "./brandIcons";
 import { composeSignShare } from "./shareImage";
 import KakaoTalkLogo from "./KakaoTalkLogo";
-import { pickSignArt, signShareMessage, signShareTexts } from "@/lib/share/signShare";
+import { kakaoArtUrl, pickSignArt, signShareMessage, signShareTexts } from "@/lib/share/signShare";
+import { KAKAO_CARD_ENABLED, preloadKakao, shareKakaoCard } from "./kakaoShare";
 
 export const SITE_URL = "https://astro.ssolwellnesshouse.com";
 
@@ -53,13 +54,16 @@ export default function ShareSheet({ open, onClose, ...props }: ShareProps & { o
   const [note, setNote] = useState<string | null>(null);
   const [png, setPng] = useState<Blob | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  // 별자리 그림 하나(무작위, 시트가 처음 만들어질 때 한 번) — 화면에 그리는 값이 아니라 이미지 합성·카카오 카드에만 쓴다
+  const [artPath] = useState(() => pickSignArt(props.sunSignIndex));
 
   useEffect(() => {
     if (!open || png) return;
     let alive = true;
     // 별자리 그림 하나(무작위) + 별자리 소개(owner 2026-10-11). 그림을 못 불러오면 미리보기 없이 글·링크만 공유된다.
-    const art = pickSignArt(props.sunSignIndex);
+    const art = artPath;
     if (!art) return;
+    if (KAKAO_CARD_ENABLED) preloadKakao();
     void composeSignShare(art, signShareTexts(props.sunSign, props.sunSignIntro)).then((b) => {
       if (!alive) return;
       setPng(b);
@@ -118,6 +122,8 @@ export default function ShareSheet({ open, onClose, ...props }: ShareProps & { o
       case "link":
         return copyLink();
       case "kakao":
+        // 카카오 카드(그림·별자리 소개·[나도 별 리포트 보기] 버튼) — JavaScript 키와 도메인 등록이 돼 있을 때만, 아니면 기기 공유창
+        if (artPath && props.sunSignIntro && (await shareKakaoCard({ title: `${props.sunSign} — 쏠 아스트로 하우스`, description: props.sunSignIntro.oneLiner, imageUrl: kakaoArtUrl(artPath), url: SITE_URL }))) return;
         if (await shareFile()) return;
         if (navigator.share) {
           try {

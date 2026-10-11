@@ -75,12 +75,14 @@ export async function saveResult(args: {
 
 export async function listResults(
   owner: Owner,
-): Promise<Array<Pick<StoredResult, "id" | "created_at" | "nickname" | "character" | "sun_sign" | "accuracy"> & { consent_version?: string; last_page?: number | null }>> {
+): Promise<Array<Pick<StoredResult, "id" | "created_at" | "nickname" | "character" | "sun_sign" | "accuracy"> & { consent_version?: string; last_page?: number | null; paid_at?: string | null }>> {
   // consent_version: 같은 약관 버전에 이미 동의한 계정은 다음 테스트에서 동의를 체크된 상태로 보여 준다(패키지 v3)
   // last_page: 마지막으로 보던 장(마이그레이션 20261010000000 전이면 칸이 없어 빼고 다시 읽는다 — 42703)
   const base = "id, created_at, nickname, character, sun_sign, accuracy, consent_version";
   const q = (cols: string) => byOwner(createAdminClient().from(TABLE).select(cols), owner).order("created_at", { ascending: false }).limit(50);
-  let { data, error } = await q(`${base}, last_page`);
+  // paid_at: 목록에 '리포트 결제함' 표시(owner 2026-10-11 — 한 계정에 결과 여러 개, 가족·친구 생년월일 포함)
+  let { data, error } = await q(`${base}, last_page, paid_at`);
+  if (error?.code === "42703") ({ data, error } = await q(`${base}, paid_at`));
   if (error?.code === "42703") ({ data, error } = await q(base));
   if (error) throw new Error(`결과 목록 실패: ${error.code}`);
   return (data ?? []) as unknown as Awaited<ReturnType<typeof listResults>>;
@@ -196,10 +198,10 @@ export async function markResultPaid(resultId: string): Promise<void> {
 }
 
 /**
- * 비회원 결과·주문을 계정으로 옮긴다(가입·로그인 직후, 같은 브라우저의 열쇠로). 옮긴 결과 수를 돌려준다.
+ * 비회원 결과·주문을 계정으로 옮긴다(가입·로그인 직후, 같은 브라우저의 열쇠로). 옮긴 결과 id들을 돌려준다.
  * 열쇠는 그 자리에서 지워져 다시 쓸 수 없다.
  */
-export async function claimGuestResults(userId: string, tokenHash: string): Promise<number> {
+export async function claimGuestResults(userId: string, tokenHash: string): Promise<string[]> {
   const db = createAdminClient();
   const { data, error } = await db
     .from(TABLE)
@@ -210,7 +212,7 @@ export async function claimGuestResults(userId: string, tokenHash: string): Prom
   if (error) throw new Error(`결과 옮기기 실패: ${error.code}`);
   const { error: e2 } = await db.from("astro_orders").update({ user_id: userId, guest_token_hash: null }).is("user_id", null).eq("guest_token_hash", tokenHash);
   if (e2) throw new Error(`주문 옮기기 실패: ${e2.code}`);
-  return data?.length ?? 0;
+  return (data ?? []).map((r) => r.id as string);
 }
 
 /** 기한이 지난 비회원 결과를 지운다(결제 기록은 astro_orders에 남는다). 지운 수. */
@@ -224,8 +226,8 @@ export async function deleteExpiredGuestResults(now = new Date()): Promise<numbe
  * 리포트 생성 자리를 잡는다: 아직 없거나 실패했거나, 생성 중인데 너무 오래(5분) 멈춰 있으면 'generating'으로 바꾸고 true.
  * 이미 누가 만들고 있으면 false — 같은 리포트를 동시에 두 번 만들지 않게.
  */
-export async function claimReportGeneration(resultId: string): Promise<boolean> {
-  const staleBefore = new Date(Date.now() - 5 * 60_000).toISOString();
+export async function claimReportGeneration(resultId: string, staleMs = 5 * 60_000): Promise<boolean> {
+  const staleBefore = new Date(Date.now() - staleMs).toISOString();
   const { data, error } = await createAdminClient()
     .from(TABLE)
     .update({ report_status: "generating", report_started_at: new Date().toISOString() })
@@ -267,9 +269,42 @@ export async function saveChatSummary(resultId: string, summary: string | null):
 export async function getResultForReport(resultId: string) {
   const { data, error } = await createAdminClient()
     .from(TABLE)
-    .select("id, user_id, nickname, birth_input, answers, report")
+    .select("id, user_id, nickname, birth_input, answers, report, report_status")
     .eq("id", resultId)
     .maybeSingle();
   if (error) throw new Error(`결과 조회 실패: ${error.code}`);
-  return data as { id: string; user_id: string | null; nickname: string; birth_input: BirthInput; answers: Answers; report: unknown } | null;
+  return data as { id: string; user_id: string | null; nickname: string; birth_input: BirthInput; answers: Answers; report: unknown; report_status?: string } | null;
+}
+
+/**
+ * 리포트 완성 메일 보낼 자리를 잡는다(한 번만): report_emailed_at이 비어 있을 때만 채우고 true.
+ * 칸이 없으면(마이그레이션 20261011000100 전) false — 중복 메일보다 안 보내는 쪽을 택한다.
+ */
+export async function claimReportEmail(resultId: string): Promise<boolean> {
+  const { data, error } = await createAdminClient()
+    .from(TABLE)
+    .update({ report_emailed_at: new Date().toISOString() })
+    .eq("id", resultId)
+    .is("report_emailed_at", null)
+    .select("id");
+  if (error) {
+    console.warn("리포트 메일 자리 잡기 실패:", error.code);
+    return false;
+  }
+  return (data?.length ?? 0) > 0;
+}
+
+/** 보내는 데 실패하면 자리를 되돌려 다음 기회(재시도·다시 열기)에 보낼 수 있게 한다. */
+export async function releaseReportEmail(resultId: string): Promise<void> {
+  const { error } = await createAdminClient().from(TABLE).update({ report_emailed_at: null }).eq("id", resultId);
+  if (error) console.warn("리포트 메일 자리 되돌리기 실패:", error.code);
+}
+
+/** 계정의 메일 주소(이메일 가입·카카오는 email, 네이버는 이메일 없이 로그인해 user_metadata.contact_email). 없으면 null. */
+export async function getAccountEmail(userId: string): Promise<string | null> {
+  const { data, error } = await createAdminClient().auth.admin.getUserById(userId);
+  if (error || !data.user) return null;
+  const meta = (data.user.user_metadata ?? {}) as Record<string, unknown>;
+  const email = data.user.email || (typeof meta.contact_email === "string" ? meta.contact_email : "") || (typeof meta.email === "string" ? meta.email : "");
+  return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) ? email : null;
 }

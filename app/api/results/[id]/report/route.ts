@@ -19,7 +19,11 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/results/[id]
     if (!s.paid) return NextResponse.json({ error: "결제 후 볼 수 있어요." }, { status: 402 });
     if (s.reportStatus === "ready" && s.report) return NextResponse.json({ status: "ready", report: forBrowser(s.report) });
     // 없음·실패·오래 멈춘 생성 → 다시 시작(이미 진행 중이면 runReportGeneration이 알아서 건너뜀)
-    after(() => runReportGeneration(id));
+    // ?retry=1: 화면이 30초 동안 아무것도 받지 못했다(owner 2026-10-11 '30초 지나면 재시도') — 30초 넘게 멈춘 생성도 다시 시작.
+    // 다 쓴 섹션이 하나라도 있으면 진행 중으로 보고 재시도하지 않는다(같은 리포트를 두 번 만들지 않게).
+    const hasPartial = !!(s.report as { partial?: boolean } | null)?.partial;
+    const retry = req.nextUrl.searchParams.get("retry") === "1" && !hasPartial;
+    after(() => runReportGeneration(id, { retry }));
     // 쓰는 중이면 다 쓴 섹션까지(partial) 함께 보낸다 — 결제한 본인에게만
     const partial = s.reportStatus === "generating" && (s.report as { partial?: boolean } | null)?.partial ? s.report : undefined;
     return NextResponse.json({ status: "generating", ...(partial ? { report: forBrowser(partial) } : {}) });
