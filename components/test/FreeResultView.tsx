@@ -215,12 +215,12 @@ export default function FreeResultView({
     }
   }
 
-  async function chooseType(comp: string) {
+  async function chooseType(comp: string, style: string) {
     if (!resultId || switching) return;
     setSwitching(true);
     try {
       const session = await getRealSession();
-      const res = await fetch(`/api/results/${resultId}`, { method: "PATCH", headers: apiHeaders(session, { "content-type": "application/json" }), body: JSON.stringify({ competencyPick: comp }) });
+      const res = await fetch(`/api/results/${resultId}`, { method: "PATCH", headers: apiHeaders(session, { "content-type": "application/json" }), body: JSON.stringify({ typePick: { competency: comp, style } }) });
       const data = await res.json();
       if (!res.ok || !data.result) throw new Error(data.error ?? "바꾸지 못했어요.");
       const y = (document.getElementById("sec-2")?.getBoundingClientRect().top ?? 0) + window.scrollY;
@@ -455,11 +455,11 @@ export default function FreeResultView({
                 <>
                   <h3>요즘의 나와 더 가까운 건?</h3>
                   <p className="muted" style={{ fontSize: ".9rem" }}>
-                    출생차트에서 두 유형이 거의 같은 무게로 나왔어요. 마음이 가는 쪽을 골라 주세요.
+                    {result.tie.intro}
                   </p>
                   <div className="choice">
                     {result.tie.options.map((o, i) => (
-                      <button key={o.competency} type="button" id={`choice-${i}`} aria-pressed={o.selected} disabled={switching} onClick={() => !o.selected && void chooseType(o.competency)}>
+                      <button key={`${o.competency}-${o.style}`} type="button" id={`choice-${i}`} aria-pressed={o.selected} disabled={switching} onClick={() => !o.selected && void chooseType(o.competency, o.style)}>
                         <b>
                           {o.competency} × {o.style}
                         </b>

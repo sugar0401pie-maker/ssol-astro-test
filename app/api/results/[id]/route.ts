@@ -3,7 +3,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { computeFree } from "@/lib/results/compute";
 import { deleteResult, getPayState, getResult, isUuid, saveLastPage, updateResultPick } from "@/lib/results/store";
 import { chatSummaryFor } from "@/lib/results/chatSummary";
-import { CHARACTER_GRID, type Competency } from "@/lib/astro/constants";
+import { CHARACTER_GRID, STYLES, type Competency, type Style } from "@/lib/astro/constants";
+import { findOption } from "@/lib/astro/typeChoice";
+import type { BirthInput } from "@/lib/astro/birth";
 
 // 저장한 결과 다시 보기(저장된 입력으로 다시 계산 — 해석 DB가 고쳐지면 새 문장으로 보인다) / 지우기. 본인 것만.
 export const runtime = "nodejs";
@@ -66,13 +68,31 @@ export async function PATCH(req: NextRequest, ctx: RouteContext<"/api/results/[i
       return NextResponse.json({ error: "저장하지 못했어요." }, { status: 500 });
     }
   }
-  const pick = body?.competencyPick;
-  if (typeof pick !== "string" || !Object.keys(CHARACTER_GRID).includes(pick)) return NextResponse.json({ error: "고른 유형을 다시 확인해 주세요." }, { status: 400 });
+  // 4개 중 고르기(owner 2026-10-11): {typePick:{competency, style}}. 예전 화면의 {competencyPick}도 받는다.
+  const tp = body?.typePick as { competency?: unknown; style?: unknown } | undefined;
+  const legacy = body?.competencyPick;
+  const typePick =
+    tp && typeof tp.competency === "string" && Object.keys(CHARACTER_GRID).includes(tp.competency) && typeof tp.style === "string" && (STYLES as readonly string[]).includes(tp.style)
+      ? { competency: tp.competency as Competency, style: tp.style as Style }
+      : null;
+  if (!typePick && (typeof legacy !== "string" || !Object.keys(CHARACTER_GRID).includes(legacy))) return NextResponse.json({ error: "고른 유형을 다시 확인해 주세요." }, { status: 400 });
   try {
     const row = await getResult(owner, id);
     if (!row) return NextResponse.json({ error: "결과를 찾을 수 없어요." }, { status: 404 });
     if (row.paid_at || (await getPayState(owner, id).catch(() => null))?.paid) return NextResponse.json({ error: "리포트가 이미 만들어진 결과는 유형을 바꿀 수 없어요." }, { status: 409 });
-    const input = { ...row.birth_input, competencyPick: pick as Competency };
+    let input: BirthInput;
+    if (typePick) {
+      // 지금 결과의 선택지 안에 있는지 확인하고, 시간을 몰라 고른 후보라면 그 선택지의 대표 시각으로 다시 계산한다
+      const now = computeFree(row.birth_input, row.answers, row.nickname);
+      const opt = now.kind === "result" ? findOption(now.birth.resolved.character.options, typePick) : undefined;
+      if (!opt) return NextResponse.json({ error: "고를 수 있는 유형이 아니에요." }, { status: 400 });
+      const { competencyPick: _old, ...rest } = row.birth_input;
+      void _old;
+      const time = opt.pick && row.birth_input.time.kind !== "exact" ? { ...row.birth_input.time, pick: opt.pick } : row.birth_input.time;
+      input = { ...rest, time, typePick };
+    } else {
+      input = { ...row.birth_input, competencyPick: legacy as Competency };
+    }
     const c = computeFree(input, row.answers, row.nickname);
     if (c.kind !== "result") return NextResponse.json({ error: "결과를 다시 계산하지 못했어요." }, { status: 500 });
     const ch = c.birth.resolved.character;

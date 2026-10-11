@@ -3,8 +3,9 @@
 //   B  시간대(새벽/오전/오후/저녁) → 구간 안 30분 간격으로 캐릭터 계산, 하나로 모이면 그대로,
 //      갈리면 후보 2~3개를 사용자가 고른다(무작위 선택 금지)
 //   C  모름 → 12:00 기준, 상승궁·하우스 미사용, 하루 전체 30분 간격에서 가장 오래 나오는 후보 2~3개
-import { judgeCharacter, withCompetencyPick, type CalibrationTable, type CharacterResult } from "./character.ts";
-import type { Competency } from "./constants.ts";
+import { judgeCharacter, withCompetencyPick, withTypePick, type CalibrationTable, type CharacterResult } from "./character.ts";
+import type { Competency, Element } from "./constants.ts";
+import { candidateTypeOptions, tieTypeOptions, type TypeOption, type TypePick } from "./typeChoice.ts";
 import { computeNatal, type Accuracy, type Longitudes, type NatalChart } from "./natal.ts";
 import { dstBoundary, localToUtc, type LocalDateTime } from "./time.ts";
 import { computeStationsAndIngress, computeTransits, type Ingress, type Station, type TransitEvent } from "./transits.ts";
@@ -34,6 +35,8 @@ export interface BirthInput {
   place: Place;
   /** 역량 동점 확인 화면에서 고른 역량(1·2위 중 하나). 다시 보기에서도 같은 결과가 나오게 저장값에 함께 둔다. */
   competencyPick?: Competency;
+  /** 4개 중 고른 유형(역량·방식, owner 2026-10-11). 선택지 안에 있을 때만 반영. 저장값에 함께 둔다. */
+  typePick?: TypePick;
 }
 
 export interface CharacterCandidate {
@@ -44,6 +47,10 @@ export interface CharacterCandidate {
   share: number;
   /** 다시 요청할 때 time.pick으로 넘길 현지 시각 */
   pick: string;
+  /** 그 시각의 2위 역량·원소 점수·태양 별자리(4개 중 고르기 선택지를 만들 때) */
+  runnerUp: Competency;
+  elements: Record<Element, number>;
+  sunSign: string;
 }
 
 export interface BirthResult {
@@ -64,6 +71,8 @@ export interface BirthResult {
     ingress: Ingress[];
   };
   candidates: CharacterCandidate[];
+  /** 후보가 갈렸을 때 화면에 보여 줄 4개 선택지(역량 2 × 방식 2) */
+  options?: TypeOption[];
 }
 
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -83,26 +92,29 @@ function localAt(input: BirthInput, minutes: number): LocalDateTime {
 
 /** 구간 [start, end) 안 30분 간격 표본으로 캐릭터 후보를 센다. 많이 나온 순, 동률이면 먼저 나온 순. */
 export function sampleCandidates(input: BirthInput, startMin: number, endMin: number, ref: CalibrationTable): CharacterCandidate[] {
-  const groups = new Map<string, { c: CharacterResult; times: number[] }>();
+  const groups = new Map<string, { c: CharacterResult; times: number[]; elements: Record<Element, number>; sunSign: string }>();
   let total = 0;
   for (let m = startMin; m < endMin; m += 30) {
     const utc = localToUtc(localAt(input, m), input.place.timeZone);
     const { chart, L } = computeNatal(utc, input.place.lat, input.place.lng, false);
     const c = judgeCharacter(L, chart.elements, ref);
-    const g = groups.get(c.name) ?? { c, times: [] };
+    const g = groups.get(c.name) ?? { c, times: [], elements: chart.elements, sunSign: chart.planets.sun!.sign };
     g.times.push(m);
     groups.set(c.name, g);
     total++;
   }
   return [...groups.values()]
     .sort((a, b) => b.times.length - a.times.length)
-    .map(({ c, times }) => ({
+    .map(({ c, times, elements, sunSign }) => ({
       name: c.name,
       competency: c.competency,
       style: c.style,
       share: Math.round((times.length / total) * 100) / 100,
       // 그 캐릭터가 나온 표본의 가운데 시각을 대표로 쓴다.
       pick: hhmm(times[Math.floor(times.length / 2)]),
+      runnerUp: c.runner_up,
+      elements,
+      sunSign,
     }));
 }
 
@@ -164,7 +176,7 @@ function stored(input: BirthInput, minutes: number) {
 function unresolved(input: BirthInput, minutes: number, accuracy: Accuracy, candidates: CharacterCandidate[]): BirthResult {
   const { utcDate: _u, ...s } = stored(input, minutes);
   void _u;
-  return { engineVersion: ENGINE_VERSION, stored: s, accuracy, resolved: null, candidates };
+  return { engineVersion: ENGINE_VERSION, stored: s, accuracy, resolved: null, candidates, options: candidateTypeOptions(candidates) };
 }
 
 function resolve(
@@ -187,7 +199,18 @@ function resolve(
     const c = computeNatal(cu, input.place.lat, input.place.lng, false);
     character = judgeCharacter(c.L, c.chart.elements, ref);
   }
-  character = withCompetencyPick(character, input.competencyPick);
+  // 4개 중 고르기 선택지(owner 2026-10-11): B·C는 후보가 갈렸을 때, A는 역량 동점일 때. 고른 유형(typePick)이 있으면 반영,
+  // 예전에 저장된 결과는 competencyPick(역량만)으로 그대로 다시 본다.
+  const options =
+    accuracy === "A"
+      ? character.needs_confirm
+        ? tieTypeOptions({ competency: character.competency, runnerUp: character.runner_up, style: character.style, elements: chart.elements, sunSign: chart.planets.sun!.sign })
+        : undefined
+      : candidates.length > 1
+        ? candidateTypeOptions(candidates)
+        : undefined;
+  if (options) character = { ...character, options };
+  character = input.typePick ? withTypePick(character, input.typePick) : withCompetencyPick(character, input.competencyPick);
   const dst = accuracy === "A" ? dstBoundary(localAt(input, chartMinutes), input.place.timeZone) : null;
   return {
     engineVersion: ENGINE_VERSION,

@@ -6,6 +6,7 @@ import {
   type Competency, type CompetencyPlanet, type Element, type PlanetKey, type Style,
 } from "./constants.ts";
 import { round, sep } from "./natal.ts";
+import { elementOfStyle, findOption, type StyleSource, type TypeOption, type TypePick } from "./typeChoice.ts";
 
 /** 행성별 긴장 점수 분포(오름차순). data/astro/calibration.json — scripts/gen_fixtures.py로 생성. */
 export type CalibrationTable = Record<CompetencyPlanet, number[]>;
@@ -20,6 +21,12 @@ export interface CharacterResult {
   element_tie: boolean;
   /** 확인 화면에 보여줄 2위 역량(needs_confirm일 때만 의미 있음) */
   runner_up: Competency;
+  /** 4개 중 고르기 선택지(A등급 역량 동점·B/C 후보, owner 2026-10-11) — 고른 뒤에도 다시 바꿀 수 있게 원래 계산 기준으로 */
+  options?: TypeOption[];
+  /** 고른 방식이 어디서 왔는지(없으면 1등 원소) — '왜 이 유형인가' 마지막 문장용 */
+  style_source?: StyleSource;
+  /** 차트에서 가장 강한 원소(고른 방식이 1등 원소가 아닐 때 문장에 씀) */
+  strong_element?: Element;
 }
 
 /** 높을수록 편안, 낮을수록 긴장. 품위(도메인 등)는 출생년도 편중 때문에 쓰지 않는다. */
@@ -105,4 +112,22 @@ export function withCompetencyPick(c: CharacterResult, pick: Competency | undefi
   // 고른 뒤에도 needs_confirm은 그대로 둔다 — 결과 2번 섹션에서 두 유형 사이를 다시 바꿀 수 있게(프로토타입, owner 2026-10-10).
   if (pick === c.competency) return c;
   return { ...c, competency: pick, runner_up: c.competency, name: characterName(pick, c.style) };
+}
+
+/**
+ * 4개 중 고른 유형 반영(owner 2026-10-11). 선택지 안에 있을 때만 받아들이고, 아니면 판정 그대로.
+ * 2위 역량은 고른 역량이 아닌 쪽으로 바꿔 둔다(채팅 요약 등에서 '다른 후보'로 쓰임).
+ */
+export function withTypePick(c: CharacterResult, pick: TypePick | undefined): CharacterResult {
+  const opt = findOption(c.options, pick);
+  if (!opt || (opt.competency === c.competency && opt.style === c.style)) return c;
+  const other = c.options!.find((o) => o.competency !== opt.competency)?.competency ?? c.runner_up;
+  return {
+    ...c,
+    competency: opt.competency,
+    style: opt.style,
+    name: characterName(opt.competency, opt.style),
+    runner_up: other,
+    ...(opt.source !== "dominant" ? { style_source: opt.source, strong_element: elementOfStyle(c.style) } : {}),
+  };
 }

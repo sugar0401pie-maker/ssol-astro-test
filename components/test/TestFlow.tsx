@@ -38,6 +38,8 @@ interface SavedProgress {
   city: PickedCity | null;
   answers: Partial<Answers>;
   pick: string | null;
+  /** 4개 중 고른 유형(owner 2026-10-11) */
+  typePick?: { competency: string; style: string } | null;
   consents?: Partial<Record<ConsentItemId, boolean>>;
   savedId?: string | null;
 }
@@ -88,8 +90,8 @@ interface Candidate {
   label: string;
   competency: string;
   style: string;
-  share: number;
-  pick: string;
+  /** 이 선택지를 계산할 대표 시각(시간 모름·시간대) */
+  pick?: string;
 }
 
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -162,6 +164,7 @@ export default function TestFlow() {
   const [errs, setErrs] = useState<{ nick?: string; date?: string; time?: string; place?: string; agree?: string; q?: string }>({});
   // 유형 후보를 고른 경우 그 대표 시각 — 저장 요청에도 그대로 보낸다.
   const [pick, setPick] = useState<string | null>(restored?.pick ?? null);
+  const [typePick, setTypePick] = useState<{ competency: string; style: string } | null>(restored?.typePick ?? null);
   const [saving, setSaving] = useState(false);
   const [saveNote, setSaveNote] = useState<string | null>(null);
   const [savedId, setSavedId] = useState<string | null>(null);
@@ -244,8 +247,8 @@ export default function TestFlow() {
   // 진행 상태를 이 탭에 담아 둔다(새로고침해도 이어 가기). 결과를 저장한 뒤에는 결과 id만.
   useEffect(() => {
     if (savedId) storeProgress({ savedId });
-    else if (step !== "result") storeProgress({ nickname, firstTime, year, month, day, hour, minute, unknownTime, band, region, overseas, city, answers, pick, consents });
-  }, [savedId, step, nickname, firstTime, year, month, day, hour, minute, unknownTime, band, region, overseas, city, answers, pick, consents]);
+    else if (step !== "result") storeProgress({ nickname, firstTime, year, month, day, hour, minute, unknownTime, band, region, overseas, city, answers, pick, typePick, consents });
+  }, [savedId, step, nickname, firstTime, year, month, day, hour, minute, unknownTime, band, region, overseas, city, answers, pick, typePick, consents]);
 
   const birthTime = () => {
     if (!unknownTime) return { kind: "exact", hour: hour ?? 0, minute: minute ?? 0 } as const;
@@ -253,19 +256,22 @@ export default function TestFlow() {
     return { kind: "band", band } as const;
   };
 
-  const requestBody = (a: Answers, p: string | null) => ({
+  const requestBody = (a: Answers, p: string | null, tp: { competency: string; style: string } | null = null) => ({
     birth: {
       year,
       month,
       day,
       time: p ? { ...birthTime(), pick: p } : birthTime(),
       place: overseas && city ? { cityId: city.id } : { region },
+      ...(tp ? { typePick: tp } : {}),
     },
     answers: a,
     nickname: name,
   });
 
-  async function saveAndShow() {
+  // 고른 시각·유형은 인자로 받는다 — 방금 setPick한 값은 이 렌더의 pick 변수에 아직 반영되지 않아서
+  // (예전엔 후보를 고른 직후 저장이 '고르기 전' 값으로 나가 실패하고 저장 재시도 화면이 뜨던 버그, 2026-10-11 수정)
+  async function saveAndShow(p: string | null = pick, tp: { competency: string; style: string } | null = typePick) {
     setSaving(true);
     setError(null);
     try {
@@ -274,7 +280,7 @@ export default function TestFlow() {
       const res = await fetch("/api/results", {
         method: "POST",
         headers: apiHeaders(session, { "content-type": "application/json" }),
-        body: JSON.stringify({ ...requestBody(answers as Answers, pick), consent: true, firstTime: firstTime === true }),
+        body: JSON.stringify({ ...requestBody(answers as Answers, p, tp), consent: true, firstTime: firstTime === true }),
       });
       const data = await res.json();
       if (!res.ok || !data.result) throw new Error(data.error ?? "저장하지 못했어요.");
@@ -297,7 +303,7 @@ export default function TestFlow() {
       const res = await fetch("/api/results", {
         method: "POST",
         headers: apiHeaders(session, { "content-type": "application/json" }),
-        body: JSON.stringify({ ...requestBody(answers as Answers, pick), consent: true, firstTime: firstTime === true }),
+        body: JSON.stringify({ ...requestBody(answers as Answers, pick, typePick), consent: true, firstTime: firstTime === true }),
       });
       const data = await res.json();
       if (!res.ok || !data.id) return false;
@@ -313,7 +319,7 @@ export default function TestFlow() {
   // 질문을 마치면 그 답을 쓴다. 후보 판정은 출생 정보로만 정해져서 임시 답으로 미리 물어도 결과가 같다.
   const prefetch = useRef<{ key: string; promise: Promise<{ ok: boolean; status: number; data: Record<string, unknown> }> } | null>(null);
   // 계산 실패(B14 ERR_CALC): 입력은 그대로 두고 같은 요청을 다시 보낼 수 있게 마지막 요청을 기억한다
-  const lastCalc = useRef<{ a: Answers; chosen?: string } | null>(null);
+  const lastCalc = useRef<{ a: Answers; chosen?: string; tp?: { competency: string; style: string } } | null>(null);
   const [calcFailed, setCalcFailed] = useState(false);
   const tempAnswers = { q1: Q1_OPTIONS[0], q2: Q2_OPTIONS[0], q3: Q3_OPTIONS[0] } as Answers;
   const birthKey = () => JSON.stringify(requestBody(tempAnswers, null).birth);
@@ -332,16 +338,16 @@ export default function TestFlow() {
   }
 
   /** 계산 중 화면(프로토타입 runLoading): 최소 1.5초, 실패하면 출생 정보 화면으로 돌아가 안내 */
-  async function fetchResult(a: Answers, chosen?: string) {
-    lastCalc.current = { a, chosen };
+  async function fetchResult(a: Answers, chosen?: string, tp?: { competency: string; style: string }) {
+    lastCalc.current = { a, chosen, tp };
     setCalcFailed(false);
     setStep("loading");
     setError(null);
     const t0 = Date.now();
     const wait = () => new Promise((r) => setTimeout(r, Math.max(0, 1500 - (Date.now() - t0))));
     try {
-      const cached = !chosen && prefetch.current?.key === birthKey() ? await prefetch.current.promise.catch(() => null) : null;
-      const { ok, status, data } = cached?.ok ? cached : await postResult(requestBody(a, chosen ?? null));
+      const cached = !chosen && !tp && prefetch.current?.key === birthKey() ? await prefetch.current.promise.catch(() => null) : null;
+      const { ok, status, data } = cached?.ok ? cached : await postResult(requestBody(a, chosen ?? null, tp ?? null));
       // 입력 문제(400)는 출생 정보 화면으로 돌아가 고치게 하고, 그 밖의 실패만 '다시 계산하기'(ERR_CALC)
       if (!ok && status === 400) {
         await wait();
@@ -358,8 +364,9 @@ export default function TestFlow() {
         return;
       }
       setPick(chosen ?? null);
+      setTypePick(tp ?? null);
       await wait();
-      await saveAndShow();
+      await saveAndShow(chosen ?? null, tp ?? null);
     } catch {
       await wait();
       setCalcFailed(true);
@@ -746,7 +753,7 @@ export default function TestFlow() {
                   {b14(copy, "ERR_CALC", "title", "별자리 지도를 그리다 별 하나를 놓쳤어요")}
                 </h1>
                 <p className="small">{b14(copy, "ERR_CALC", "body", "입력하신 정보는 그대로 있으니 다시 한번 그려 볼게요.")}</p>
-                <button type="button" className="btn block" onClick={() => lastCalc.current && void fetchResult(lastCalc.current.a, lastCalc.current.chosen)}>
+                <button type="button" className="btn block" onClick={() => lastCalc.current && void fetchResult(lastCalc.current.a, lastCalc.current.chosen, lastCalc.current.tp)}>
                   {b14(copy, "ERR_CALC", "button", "다시 계산하기")}
                 </button>
               </>
@@ -770,13 +777,14 @@ export default function TestFlow() {
           </h1>
           <p className="small">
             {candidateGrade === "C"
-              ? "태어난 시간을 몰라 하루 전체를 30분 간격으로 계산했더니, 유형이 둘 이상으로 나왔어요. 요즘의 나와 더 가까운 쪽을 골라 주세요."
-              : "고르신 시간대 안에서 30분 간격으로 계산했더니, 유형이 둘 이상으로 나왔어요. 요즘의 나와 더 가까운 쪽을 골라 주세요."}
+              ? "태어난 시간을 몰라 하루 전체를 30분 간격으로 계산했더니, 유형이 하나로 모이지 않았어요. 아래 네 가지 중 요즘의 나와 가장 닮은 모습을 골라 주세요."
+              : "고르신 시간대 안에서 30분 간격으로 계산했더니, 유형이 하나로 모이지 않았어요. 아래 네 가지 중 요즘의 나와 가장 닮은 모습을 골라 주세요."}
           </p>
           <GuideArt id="07" />
+          {/* 4개 중 고르기(owner 2026-10-11): 역량 2 × 방식 2, 카드는 해석 DB B6 */}
           <div className="choice night">
             {candidates.map((c) => (
-              <button key={c.pick} type="button" aria-pressed="false" onClick={() => fetchResult(answers as Answers, c.pick)}>
+              <button key={`${c.competency}-${c.style}`} type="button" aria-pressed="false" onClick={() => fetchResult(answers as Answers, c.pick, { competency: c.competency, style: c.style })}>
                 <b>
                   {c.competency} × {c.style}
                 </b>
@@ -816,6 +824,7 @@ export default function TestFlow() {
               // B·C등급: 입력한 날짜·장소는 그대로 두고 시간만 다시 넣는 화면으로(새 결과로 저장된다)
               setUnknownTime(false);
               setPick(null);
+              setTypePick(null);
               setStep("birth");
             }}
           />

@@ -61,7 +61,7 @@ export interface FreeResult {
   /** 휠 각도 선(점수순) — 시트 키는 순서 번호 */
   wheelAspects: WheelAspect[];
   /** A등급 역량 동점: 2번 섹션 "요즘의 나와 더 가까운 건?" 두 카드(프로토타입 renderType). 아니면 null */
-  tie: { options: Array<{ competency: string; style: string; card: string; selected: boolean }> } | null;
+  tie: { intro: string; options: Array<{ competency: string; style: string; card: string; selected: boolean }> } | null;
   gradeNote: string;
   /** B·C등급: "태어난 시간을 알면 더 정확해져요" 안내(A15 FIX_ADD_TIME) */
   addTimeNote: string | null;
@@ -553,7 +553,8 @@ export function buildFreeResult(args: {
   const themeIntro = pick3("A12c", (r) => r.word === answers.q2 && r.theme === themes[picked.theme]?.name, `A12c${answers.q2}${picked.theme}`);
   const areaLine = pick3("A12d", (r) => r.word === answers.q2 && r.area === answers.q1, `A12d${answers.q2}${answers.q1}`);
 
-  const dominant = (Object.keys(STYLE_BY_ELEMENT) as Element[]).find((e) => STYLE_BY_ELEMENT[e] === character.style)!;
+  // 가장 강한 원소: 4개 중 1등 원소가 아닌 방식을 골랐으면(owner 2026-10-11) 고른 방식이 아니라 실제 1등 원소(strong_element)
+  const dominant = character.strong_element ?? (Object.keys(STYLE_BY_ELEMENT) as Element[]).find((e) => STYLE_BY_ELEMENT[e] === character.style)!;
   const sunSign = chart.planets.sun!.sign;
   const moonSign = chart.planets.moon!.sign;
   const temp = row(db, "A17b", `TEMP_${ELEMENT_ID[elementOf(longitudes.sun)]}_${ELEMENT_ID[elementOf(longitudes.moon)]}`);
@@ -566,8 +567,6 @@ export function buildFreeResult(args: {
     if (sh) planets[k] = sh;
   }
   const wAspects = wheelAspects(db, chart);
-  // A등급 역량 동점: 계산상 1위가 먼저, 지금 고른 쪽이 눌린 상태(프로토타입 renderType)
-  const tiePair = character.needs_confirm ? [character.competency, character.runner_up].sort((a, b) => character.percentiles[a] - character.percentiles[b]) : [];
 
   const soft = isSoftTone(answers.q2);
   return {
@@ -581,15 +580,18 @@ export function buildFreeResult(args: {
     retro,
     utcLabel: args.utc ? `UTC ${args.utc.slice(0, 16).replace("T", " ")}` : "",
     wheelAspects: wAspects,
-    tie:
-      chart.accuracy === "A" && tiePair.length === 2
-        ? {
-            options: tiePair.map((comp) => {
-              const name = CHARACTER_GRID[comp][STYLES.indexOf(character.style)];
-              return { competency: comp, style: character.style, card: db.dbs.B6.rows.find((r) => r.character === name)?.choice_line ?? "", selected: comp === character.competency };
-            }),
-          }
-        : null,
+    // 4개 중 고르기(owner 2026-10-11): 역량 2 × 방식 2. 카드는 해석 DB B6(유형별 '요즘 나는…' 문장).
+    tie: character.options?.length
+      ? {
+          intro: TYPE_CHOICE_INTRO,
+          options: character.options.map((o) => ({
+            competency: o.competency,
+            style: o.style,
+            card: db.dbs.B6.rows.find((r) => r.character === CHARACTER_GRID[o.competency][STYLES.indexOf(o.style)])?.choice_line ?? "",
+            selected: o.competency === character.competency && o.style === character.style,
+          })),
+        }
+      : null,
     gradeNote:
       args.dstBoundary && chart.accuracy === "A"
         ? // 서머타임 경계: 계산은 입력한 시각 그대로(첫 번째 해석) 하되 1시간 안의 차이를 알린다 — 안내 문장은 Claude 초안(owner 검토 가능)
@@ -609,7 +611,7 @@ export function buildFreeResult(args: {
       typeLine: charRow.type_line,
       competency: character.competency,
       style: character.style,
-      why: charRow.why_text,
+      why: whyWithSource(charRow.why_text, character),
       intro: SHOW_CHARACTER ? charRow.intro : null,
       strength: SHOW_CHARACTER ? charRow.strength : null,
       energyMoment: SHOW_CHARACTER ? charRow.energy_moment : null,
@@ -693,4 +695,28 @@ export function tieOptions(db: AstroDb, c: CharacterResult): { intro: string; op
     };
   });
   return { intro: text(db, "A15", "FIX_TIE_CHOICE", "text"), options: opts };
+}
+
+/** 4개 중 고르기 안내(Claude 초안 — owner 검토 가능, 해석 DB A15 FIX_TIE_CHOICE는 '두 캐릭터' 문구라 쓰지 않음) */
+export const TYPE_CHOICE_INTRO = "출생차트에서 비슷한 무게로 나온 모습을 네 가지로 나눠 봤어요. 요즘의 나와 가장 가까운 모습을 골라 주세요.";
+
+const elWith = (el: string) => `${el}${batchim(el)?.has ? "이지만" : "지만"}`;
+
+/**
+ * '왜 이 유형인가'(A5 why_text) 마지막 문장은 "…것은, 차트에서 {원소}의 기운이 가장 강하기 때문입니다/이에요."로 끝난다.
+ * 4개 중 1등 원소가 아닌 방식을 골랐으면 그 부분이 사실과 달라지므로 출처에 맞는 문장으로 바꾼다(Claude 초안 — 엑셀 확정 전).
+ */
+export function whyWithSource(why: string, c: Pick<CharacterResult, "style" | "style_source" | "strong_element">): string {
+  if (!c.style_source || c.style_source === "dominant") return why;
+  const el = (Object.keys(STYLE_BY_ELEMENT) as Element[]).find((e) => STYLE_BY_ELEMENT[e] === c.style)!;
+  const strong = c.strong_element ?? el;
+  return why.replace(/차트에서 (불|흙|공기|물)의 기운이 가장 강하기 때문(입니다|이에요)\.?\s*$/, (_m, _e, end: string) => {
+    const reason =
+      c.style_source === "sun"
+        ? `차트에서 가장 강한 기운은 ${elWith(strong)}, 태양이 놓인 ${el}의 기운이 마음이 흔들리는 순간에 앞으로 나오기 때문`
+        : c.style_source === "second"
+          ? `차트에서 ${strong} 다음으로 강한 ${el}의 기운이 마음이 흔들리는 순간에 앞으로 나오기 때문`
+          : `태어난 시간에 따라 달의 자리가 바뀌어, 하루 중 어느 때는 ${el}의 기운이 가장 강해지기 때문`;
+    return `${reason}${end}.`;
+  });
 }

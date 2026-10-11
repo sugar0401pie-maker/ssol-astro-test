@@ -7,7 +7,8 @@ import type { CalibrationTable } from "@/lib/astro/character";
 import { placeFromCityId } from "@/lib/astro/cityData";
 import { parseBirthRequest } from "@/lib/astro/validate";
 import { ASTRO_DB } from "@/lib/report/dbData";
-import { buildFreeResult, candidateCards, type FreeResult } from "@/lib/report/freeResult";
+import { buildFreeResult, candidateCards, TYPE_CHOICE_INTRO, type FreeResult } from "@/lib/report/freeResult";
+import { CHARACTER_GRID, STYLES } from "@/lib/astro/constants";
 import { birthKeyOf } from "@/lib/report/variants";
 import calibration from "@/data/astro/calibration.json";
 
@@ -40,7 +41,7 @@ export function parseResultRequest(body: Record<string, unknown> | null): Parsed
 }
 
 export type Computed =
-  | { kind: "candidates"; payload: { candidates: Array<Omit<BirthResult["candidates"][number], "name"> & { label: string; card: string }>; candidateIntro: string; accuracy: string } }
+  | { kind: "candidates"; payload: { candidates: Array<{ competency: string; style: string; pick?: string; label: string; card: string }>; candidateIntro: string; accuracy: string } }
   | { kind: "result"; birth: BirthResult & { resolved: NonNullable<BirthResult["resolved"]> }; result: FreeResult };
 
 /** RangeError(고른 후보 시각이 구간 밖 등)는 호출한 쪽에서 400으로 돌려준다. 역량 동점은 결과 2번 섹션에서 고른다(별도 화면 없음, owner 2026-10-10). */
@@ -48,13 +49,15 @@ export function computeFree(input: BirthInput, answers: Answers, nickname: strin
   // 무료 결과에는 2026년만 필요하다(트랜짓 기간을 짧게).
   const birth = computeBirth(input, ref, { start: "2026-01-01", end: "2026-01-01" });
   if (!birth.resolved) {
-    const { intro, cards, labels } = candidateCards(ASTRO_DB, birth.candidates.map((c) => c.name));
+    // 4개 중 고르기(owner 2026-10-11): 후보에서 역량 2 × 방식 2. 카드는 B6, 동물 이름은 보내지 않는다(SHOW_CHARACTER=false).
+    const options = birth.options ?? [];
+    const names = options.map((o) => CHARACTER_GRID[o.competency][STYLES.indexOf(o.style)]);
+    const { cards, labels } = candidateCards(ASTRO_DB, names);
     return {
       kind: "candidates",
-      // 동물 이름은 보내지 않는다(SHOW_CHARACTER=false) — 화면에는 label(유형 한 줄)
       payload: {
-        candidates: birth.candidates.map(({ name, ...c }) => ({ ...c, label: labels[name], card: cards[name] })),
-        candidateIntro: intro,
+        candidates: options.map((o, i) => ({ competency: o.competency, style: o.style, pick: o.pick, label: labels[names[i]], card: cards[names[i]] })),
+        candidateIntro: TYPE_CHOICE_INTRO,
         accuracy: birth.accuracy,
       },
     };
