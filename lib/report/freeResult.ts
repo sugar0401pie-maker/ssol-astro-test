@@ -191,8 +191,8 @@ function planetSheet(db: AstroDb, key: PointKey, chart: NatalChart, retro: reado
 /** A6 '쉬운 정의' 한 줄(역량·방식). */
 /**
  * '웰니스 유형으로 분류하면…' 문단(owner 2026-10-10: 역량·방식 두 줄 대신 풀어 쓴 한 문단). A6 정의 문장에서
- * 이름·어미를 떼어 잇는다 — 문장은 DB 그대로, 연결 말만 코드. 유형의 역량은 '에너지가 많이 드는' 역량(가장 긴장을 받는
- * 행성)이라 '높다'고 쓰지 않는다. 형식이 맞지 않으면 null(그 문단을 빼고 보여 준다).
+ * 이름·어미를 떼어 잇는다 — 문장은 DB 그대로, 연결 말만 코드. 유형의 역량은 '힘이 많이 들어가는' 역량(가장 긴장을 받는
+ * 행성)이라 '높다'고 쓰지 않는다. 표현은 owner 2026-10-12(요약 '마음이 많이 쓰이고'·이유 '마음을 많이 쓰는'과 겹치지 않게). 형식이 맞지 않으면 null(그 문단을 빼고 보여 준다).
  */
 export function wellnessTypeLine(db: AstroDb, competency: string, style: string): string | null {
   const comp = a6Line(db, "역량", competency);
@@ -202,7 +202,7 @@ export function wellnessTypeLine(db: AstroDb, competency: string, style: string)
   const compDesc = strip(comp, `${competency}는 `, /(입니다|이에요)\.$/) ?? strip(comp, `${competency}은 `, /(입니다|이에요)\.$/);
   const styleDesc = strip(sty, `${style}는 마음이 흔들릴 때 `, /\s*방식(입니다|이에요)\.$/) ?? strip(sty, `${style}은 마음이 흔들릴 때 `, /\s*방식(입니다|이에요)\.$/);
   if (!compDesc || !styleDesc) return null;
-  return `웰니스 유형으로 분류하면, ${compDesc}에 에너지가 많이 드는 편이에요. 그리고 마음이 흔들릴 때는 ${styleDesc} 쪽을 고르는 성향입니다.`;
+  return `웰니스 유형으로 분류하면, ${compDesc}에 힘이 많이 들어가는 편이에요. 그리고 마음이 흔들릴 때는 ${styleDesc} 쪽을 고르는 성향입니다.`;
 }
 
 export function a6Line(db: AstroDb, kind: "역량" | "방식", name: string): string | null {
