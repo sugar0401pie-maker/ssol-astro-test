@@ -188,6 +188,28 @@ export async function settleOrder(orderId: string, status: "paid" | "canceled", 
   return (data?.length ?? 0) > 0;
 }
 
+/**
+ * 토스에서 승인(DONE)을 확인한 주문을 결제 완료로. pending뿐 아니라, 예전 코드나 동시 요청이 잘못 'canceled'로
+ * 바꿔 둔 주문도 되돌린다(돈은 이미 나갔으므로). 같은 결과에 이미 결제된 다른 주문이 있으면(고유 색인 23505) "duplicate".
+ */
+export async function markOrderPaid(orderId: string, extra: { paymentKey: string; method: string | null }): Promise<"ok" | "duplicate"> {
+  const { error } = await createAdminClient()
+    .from("astro_orders")
+    .update({ status: "paid", paid_at: new Date().toISOString(), payment_key: extra.paymentKey, method: extra.method })
+    .eq("id", orderId)
+    .in("status", ["pending", "canceled"]);
+  if (error?.code === "23505") return "duplicate";
+  if (error) throw new Error(`주문 갱신 실패: ${error.code}`);
+  return "ok";
+}
+
+/** 결과가 이미 결제됐는지(같은 결과를 두 번 결제하지 않게, 토스 승인 전에 확인). */
+export async function isResultPaid(resultId: string): Promise<boolean> {
+  const { data, error } = await createAdminClient().from(TABLE).select("paid_at").eq("id", resultId).maybeSingle();
+  if (error) throw new Error(`결과 결제 확인 실패: ${error.code}`);
+  return !!data?.paid_at;
+}
+
 export async function markResultPaid(resultId: string): Promise<void> {
   const db = createAdminClient();
   const { error } = await db.from(TABLE).update({ paid_at: new Date().toISOString() }).eq("id", resultId).is("paid_at", null);
