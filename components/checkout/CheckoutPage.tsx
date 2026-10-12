@@ -64,6 +64,9 @@ export default function CheckoutPage({ resultId, page }: { resultId: string; pag
       widget.renderAgreement("#toss-agreement");
       widgetRef.current = widget;
       setReady(true);
+    }).catch(() => {
+      // 토스 결제창을 불러오지 못하면(네트워크·차단 등) '준비하는 중…'에서 멈추지 않게 안내한다 — 다시 시도는 새로고침
+      if (!cancelled) setError("결제창을 불러오지 못했어요. 인터넷 연결을 확인하고 이 화면을 새로고침해 주세요.");
     });
     return () => {
       cancelled = true;

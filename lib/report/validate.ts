@@ -84,7 +84,13 @@ export const BANNED_PHRASES = [
   "질병", "병에 걸", "암에 걸", "수술", "진단", "우울증", "공황장애", "불안장애", "ADHD",
   "주식", "코인", "매수", "매도", "투자 시점", "투자하기 좋은", "부동산을 사",
   "이혼하", "헤어지세요", "헤어지는 게 좋", "결혼하세요", "만나세요",
+  // 2026-10-12 점검: '~하게 됩니다'만 막고 같은 뜻의 해요체 예측 단정·이직/퇴사 권유는 지나가던 빈틈
+  "찾아올 거예요", "찾아올 거에요", "생길 거예요", "생길 거에요",
+  "이직하세요", "퇴사하세요", "그만두세요", "그만두는 게 좋",
 ];
+
+/** 구로 잡기 어려운 예측 단정('서게 될 거예요'·'하게 될 거예요' 등 '~게 될 거예요' 전부) */
+export const BANNED_PATTERNS: RegExp[] = [/게 될 거(예요|에요)/];
 
 /** 이론명·학자 이름(화면 어디에도 노출 금지, 7-3). */
 export const THEORY_NAMES = [
@@ -185,6 +191,10 @@ export function validateReport(text: string, opts: ValidateOptions): ValidationI
     }
   }
   for (const p of BANNED_PHRASES) if (text.includes(p)) issues.push({ code: "banned_phrase", detail: p });
+  for (const re of BANNED_PATTERNS) {
+    const m = text.match(re);
+    if (m) issues.push({ code: "banned_phrase", detail: m[0] });
+  }
   for (const p of THEORY_NAMES) {
     let hit: boolean;
     if (/^[A-Z]+$/.test(p)) hit = new RegExp(`(^|[^A-Za-z])${p}([^A-Za-z]|$)`).test(text);

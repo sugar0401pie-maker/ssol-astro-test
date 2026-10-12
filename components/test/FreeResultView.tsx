@@ -27,7 +27,7 @@ const noopSubscribe = () => () => {};
 const SESSION_URL = "https://app.ssolwellnesshouse.com/session-reserve";
 /** 3장 웰니스 상담 기본 안내(부드러운 톤이 아닐 때) — Claude 초안, owner 검토 가능. 공포·재촉 표현 없이 */
 const WELLNESS_SESSION_NOTE =
-  "별 리포트로 돌아본 한 해를 사람과 함께 천천히 이야기해 보고 싶다면, 쏠 웰니스 하우스의 웰니스 상담을 이용해 보세요. {닉네임}님의 지금 마음을 함께 살펴보고, 나에게 맞는 속도를 찾는 시간이 될 거예요.";
+  "별 리포트로 돌아본 한 해를 사람과 함께 천천히 이야기해 보고 싶다면, 쏠 웰니스 하우스의 웰니스 상담을 이용해 보세요. {닉네임}님의 지금 마음을 함께 살펴보고, 나에게 맞는 속도를 함께 찾아가 볼 수 있어요.";
 const SIGN_NAMES = ["양자리", "황소자리", "쌍둥이자리", "게자리", "사자자리", "처녀자리", "천칭자리", "전갈자리", "사수자리", "염소자리", "물병자리", "물고기자리"];
 const ELEM_ORDER = ["불", "흙", "공기", "물"] as const;
 const ELEM_SHADE: Record<string, string> = { 불: "#013566", 흙: "#2B5486", 공기: "#5878A3", 물: "#8AA0C2" };
@@ -137,6 +137,8 @@ export default function FreeResultView({
     void getRealSession().then((s) => setLoggedIn(!!s));
   }, []);
   const wantPreview = !paidSection && !!resultId;
+  // 유형을 바꾸면 4~7장 미리보기 문장도 새 유형 기준으로 다시 받는다
+  const typeKey = `${result.character.competency}|${result.character.style}`;
   useEffect(() => {
     if (!wantPreview) return;
     let alive = true;
@@ -151,7 +153,7 @@ export default function FreeResultView({
     return () => {
       alive = false;
     };
-  }, [wantPreview, resultId]);
+  }, [wantPreview, resultId, typeKey]);
 
   // 웹툰식 주제별 페이지(패키지 v3): 한 번에 한 주제만. 페이지마다 주소(/results/{id}/{n})와 '마지막으로 보던 페이지'를 남겨
   // 결제하고 돌아오거나 [내 결과 보기]로 들어와도 그 페이지로 연다.
@@ -451,12 +453,19 @@ export default function FreeResultView({
           <Section no={2} title="별이 본 나의 유형" art={<PageArt page={2} signIndex={result.sunSignIndex} />}>
             <div className="box">
               <Summary text={character.summary} />
-              {result.tie && (
+              {/* 결제한 결과는 유형이 리포트와 묶여 바꿀 수 없으므로 고르기 자체를 보이지 않는다 */}
+              {result.tie && !paidSection && !paidPending && (
                 <>
                   <h3>요즘의 나와 더 가까운 건?</h3>
                   <p className="muted" style={{ fontSize: ".9rem" }}>
                     {result.tie.intro}
                   </p>
+                  {/* 예전 규칙으로 고른 유형이라 아래 네 가지에 없을 때 — 지금 어떤 유형이 적용됐는지 알려 준다 */}
+                  {!result.tie.options.some((o) => o.selected) && (
+                    <p className="muted" style={{ fontSize: ".9rem" }}>
+                      지금 결과는 예전에 고르신 {character.competency} × {character.style} 유형으로 보여요. 아래에서 다시 고를 수도 있어요.
+                    </p>
+                  )}
                   <div className="choice">
                     {result.tie.options.map((o, i) => (
                       <button key={`${o.competency}-${o.style}`} type="button" id={`choice-${i}`} aria-pressed={o.selected} disabled={switching} onClick={() => !o.selected && void chooseType(o.competency, o.style)}>

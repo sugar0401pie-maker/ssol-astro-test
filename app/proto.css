@@ -322,7 +322,7 @@ h3.sub-h{font-size:18px;font-weight:700;color:var(--navy);margin:22px 0 4px;font
 .rpage{display:block;animation:pgin .35s ease backwards}
 @media (prefers-reduced-motion: reduce){.rpage{animation:none}}
 @keyframes pgin{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
-.rpage.has-locked{padding-bottom:190px}
+.rpage.has-locked{padding-bottom:calc(300px + env(safe-area-inset-bottom))} /* 결제 카드(비회원 안내 포함 ~300px)가 맨 아래 사업자 정보를 가리지 않게 */
 .blur-dummy{filter:blur(6px);user-select:none;-webkit-user-select:none;pointer-events:none;opacity:.85;-webkit-mask-image:linear-gradient(#000 70%,transparent);mask-image:linear-gradient(#000 70%,transparent);margin-bottom:8px}
 .blur-dummy p{margin:0 0 12px}
 .page-share{margin:22px 0 0}

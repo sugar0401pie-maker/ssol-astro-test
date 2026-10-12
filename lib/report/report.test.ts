@@ -58,6 +58,11 @@ test("검증: 단정·금지 영역·이론명·** ·역풍 포장", () => {
   const codes = (t: string, o = {}) => validateReport(t, { ...base, ...o }).map((i) => i.code);
   assert.ok(codes("반드시 좋아집니다.").includes("banned_phrase"));
   assert.ok(codes("주식을 사기 좋은 때예요.").includes("banned_phrase"));
+  // 해요체 예측 단정·이직/퇴사 권유도 막는다(2026-10-12 점검)
+  assert.ok(codes("새로운 기회가 찾아올 거예요.").includes("banned_phrase"));
+  assert.ok(codes("결국 원하는 자리에 서게 될 거예요.").includes("banned_phrase"));
+  assert.ok(codes("올해는 이직하세요.").includes("banned_phrase"));
+  assert.ok(codes("회사를 그만두는 게 좋아요.").includes("banned_phrase"));
   assert.ok(codes("ACT에서는 가치를 봐요.").includes("theory_name"));
   assert.ok(codes("수용전념의 방법이에요.").includes("theory_name"));
   assert.ok(!codes("벡터처럼 방향을 정해요.").includes("theory_name"));

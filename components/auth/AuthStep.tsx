@@ -15,6 +15,11 @@ import {
   verifySignupOtp,
 } from "@/lib/supabase/authClient";
 
+/** 한국어 입력(조합) 중 Enter가 폼 제출로 넘어가지 않게(CLAUDE.md 5: isComposing 중 Enter는 전송이 아님) */
+function blockImeEnter(e: React.KeyboardEvent<HTMLFormElement>) {
+  if (e.key === "Enter" && (e.nativeEvent.isComposing || e.keyCode === 229)) e.preventDefault();
+}
+
 // 프로토타입 입력칸·버튼 모양(input[type=text]·.btn block·.linkish)을 그대로 쓴다
 const field = "auth-input";
 const primary = "btn block";
@@ -233,7 +238,7 @@ function SignInForm({ configured, error, setError, onForgot }: FormProps & { onF
   }
 
   return (
-    <form className="flex flex-col gap-2" onSubmit={submit}>
+    <form className="flex flex-col gap-2" onSubmit={submit} onKeyDown={blockImeEnter}>
       <input className={field} type="email" autoComplete="email" placeholder="이메일" value={email} onChange={(e) => setEmail(e.target.value)} aria-label="이메일" />
       <input className={field} type="password" autoComplete="current-password" placeholder="비밀번호" value={password} onChange={(e) => setPassword(e.target.value)} aria-label="비밀번호" />
       {error && <p className="text-sm text-cream">{error}</p>}
@@ -327,7 +332,7 @@ function SignUpForm({
 
   const check = "mt-0.5 h-4 w-4 shrink-0";
   return (
-    <form className="flex flex-col gap-2" onSubmit={submit}>
+    <form className="flex flex-col gap-2" onSubmit={submit} onKeyDown={blockImeEnter}>
       <input className={field} placeholder="이름 (실명)" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} aria-label="이름" />
       <input className={field} placeholder="닉네임 (선택, 비우면 이름이 표시돼요)" value={nickname} onChange={(e) => setNickname(e.target.value)} aria-label="닉네임" />
       <label className="flex flex-col gap-1 text-xs text-cream/80">
@@ -444,7 +449,7 @@ function ResetForm({ configured, error, setError, onStart, onDone, initialEmail 
     );
 
   return !sent ? (
-    <form className="flex flex-col gap-2" onSubmit={request}>
+    <form className="flex flex-col gap-2" onSubmit={request} onKeyDown={blockImeEnter}>
       {initialEmail && (
         <p className="rounded-2xl border border-gold px-4 py-3 text-sm leading-relaxed text-cream">
           ‘{initialEmail}’ 이메일로 이미 가입된 아이디가 있는 것 같아요. 비밀번호가 기억나지 않으면 여기서 새로 정할 수 있어요.
@@ -458,7 +463,7 @@ function ResetForm({ configured, error, setError, onStart, onDone, initialEmail 
       </button>
     </form>
   ) : (
-    <form className="flex flex-col gap-2" onSubmit={confirm}>
+    <form className="flex flex-col gap-2" onSubmit={confirm} onKeyDown={blockImeEnter}>
       <p className="text-xs text-cream/80">{email}로 인증번호를 보내드렸어요.</p>
       <input className={`${field} tracking-widest`} inputMode="numeric" placeholder="인증번호" value={code} onChange={(e) => setCode(e.target.value)} aria-label="인증번호" />
       <input className={field} type="password" autoComplete="new-password" placeholder="새 비밀번호" value={password} onChange={(e) => setPassword(e.target.value)} aria-label="새 비밀번호" />

@@ -67,8 +67,9 @@ function initialStep(progress: SavedProgress | null): Step {
   const p: Progress = {
     nickname: progress.nickname,
     firstTime: progress.firstTime,
-    // 새로고침 복원용: 로그인 여부를 아직 모르므로 공통 두 가지만 본다(임시 계정 동의는 생년월일 화면에서 이미 받았다)
-    consented: allConsented(progress.consents ?? {}, false),
+    // 새로고침 복원용: 로그인 여부를 아직 모르므로 모두에게 보이는 세 가지(만 14세·개인정보·이용약관)만 본다.
+    // (로그인한 사람의 '저장' 동의까지 요구하면 비회원은 새로고침 때마다 생년월일 화면으로 되돌아갔다.)
+    consented: allConsented(progress.consents ?? {}, true),
     answers: progress.answers as Progress["answers"],
   };
   return restorableStep(requested, p);
@@ -214,6 +215,11 @@ export default function TestFlow() {
     const onPop = () => {
       const target = stepFromPath(window.location.pathname);
       if (!target) return;
+      // 이미 저장한 결과에서 뒤로 가면 질문 화면을 다시 보여 주지 않고 그 결과로 — 다시 제출해 같은 결과가 하나 더 저장되지 않게
+      if (savedId && target !== "result") {
+        window.location.replace(`/results/${savedId}`);
+        return;
+      }
       const t = trail.current;
       if (t.stack[t.pos - 1] === target) t.pos--;
       else if (t.stack[t.pos + 1] === target) t.pos++;
@@ -222,7 +228,7 @@ export default function TestFlow() {
     };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
-  }, [candidates.length, result]);
+  }, [candidates.length, result, savedId]);
   function goBack() {
     const prev = prevStep(step, firstTime);
     if (!prev) return;
@@ -825,6 +831,7 @@ export default function TestFlow() {
               setUnknownTime(false);
               setPick(null);
               setTypePick(null);
+              setSavedId(null); // 새 결과로 저장되므로 — 남겨 두면 새로고침 때 입력 중인 시간이 사라지고 뒤로 가기가 옛 결과로 튕긴다
               setStep("birth");
             }}
           />
