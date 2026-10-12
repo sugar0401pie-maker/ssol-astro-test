@@ -700,23 +700,32 @@ export function tieOptions(db: AstroDb, c: CharacterResult): { intro: string; op
 /** 4개 중 고르기 안내(Claude 초안 — owner 검토 가능, 해석 DB A15 FIX_TIE_CHOICE는 '두 캐릭터' 문구라 쓰지 않음) */
 export const TYPE_CHOICE_INTRO = "출생차트에서 비슷한 무게로 나온 모습을 네 가지로 나눠 봤어요. 요즘의 나와 가장 가까운 모습을 골라 주세요.";
 
-const elWith = (el: string) => `${el}${batchim(el)?.has ? "이지만" : "지만"}`;
+/**
+ * '왜 이 유형인가' 마지막 문장 바꾸기(A5c, owner 확정 2026-10-12 — `docs/spec/11_해석DB/변경_A5c_근거문장.json`의 text 그대로,
+ * 끝의 "입니다."만 떼어 원래 문장 어미(입니다/이에요)를 살린다. 문구가 바뀌면 그 JSON과 이 표를 함께 고친다 — 테스트가 비교함).
+ */
+export const STYLE_WHY_TEMPLATES = {
+  time: "태어난 시간에 따라 달의 자리가 바뀌어, 하루 중 어느 때는 {{고른원소}}의 기운이 가장 강해지기 때문",
+  sun: "차트에서 가장 강한 기운은 {{원소1:이지만/지만}}, 태양이 놓인 {{고른원소}}의 기운이 마음이 흔들리는 순간에 앞으로 나오기 때문",
+  second: "차트에서 {{원소1}} 다음으로 강한 {{고른원소}}의 기운이 마음이 흔들리는 순간에 앞으로 나오기 때문",
+  other: "차트에서 가장 강한 기운은 {{원소1:이지만/지만}}, 함께 자리한 {{고른원소}}의 기운이 마음이 흔들리는 순간에 앞으로 나오기 때문",
+  zero: "차트에는 {{고른원소}}의 기운이 거의 없지만, 마음이 흔들리는 순간에는 부족한 쪽을 채우려는 마음이 앞으로 나오기 때문",
+} as const;
+
+const fillWhy = (t: string, strong: string, picked: string) =>
+  t
+    .replaceAll("{{원소1:이지만/지만}}", `${strong}${batchim(strong)?.has ? "이지만" : "지만"}`)
+    .replaceAll("{{원소1}}", strong)
+    .replaceAll("{{고른원소}}", picked);
 
 /**
  * '왜 이 유형인가'(A5 why_text) 마지막 문장은 "…것은, 차트에서 {원소}의 기운이 가장 강하기 때문입니다/이에요."로 끝난다.
- * 4개 중 1등 원소가 아닌 방식을 골랐으면 그 부분이 사실과 달라지므로 출처에 맞는 문장으로 바꾼다(Claude 초안 — 엑셀 확정 전).
+ * 4개 중 1등 원소가 아닌 방식을 골랐으면 그 부분이 사실과 달라지므로 출처에 맞는 A5c 문장으로 바꾼다.
  */
 export function whyWithSource(why: string, c: Pick<CharacterResult, "style" | "style_source" | "strong_element">): string {
   if (!c.style_source || c.style_source === "dominant") return why;
   const el = (Object.keys(STYLE_BY_ELEMENT) as Element[]).find((e) => STYLE_BY_ELEMENT[e] === c.style)!;
   const strong = c.strong_element ?? el;
-  return why.replace(/차트에서 (불|흙|공기|물)의 기운이 가장 강하기 때문(입니다|이에요)\.?\s*$/, (_m, _e, end: string) => {
-    const reason =
-      c.style_source === "sun"
-        ? `차트에서 가장 강한 기운은 ${elWith(strong)}, 태양이 놓인 ${el}의 기운이 마음이 흔들리는 순간에 앞으로 나오기 때문`
-        : c.style_source === "second"
-          ? `차트에서 ${strong} 다음으로 강한 ${el}의 기운이 마음이 흔들리는 순간에 앞으로 나오기 때문`
-          : `태어난 시간에 따라 달의 자리가 바뀌어, 하루 중 어느 때는 ${el}의 기운이 가장 강해지기 때문`;
-    return `${reason}${end}.`;
-  });
+  const template = STYLE_WHY_TEMPLATES[c.style_source];
+  return why.replace(/차트에서 (불|흙|공기|물)의 기운이 가장 강하기 때문(입니다|이에요)\.?\s*$/, (_m, _e, end: string) => `${fillWhy(template, strong, el)}${end}.`);
 }

@@ -5,7 +5,7 @@
 //   C  모름 → 12:00 기준, 상승궁·하우스 미사용, 하루 전체 30분 간격에서 가장 오래 나오는 후보 2~3개
 import { judgeCharacter, withCompetencyPick, withTypePick, type CalibrationTable, type CharacterResult } from "./character.ts";
 import type { Competency, Element } from "./constants.ts";
-import { candidateTypeOptions, tieTypeOptions, type TypeOption, type TypePick } from "./typeChoice.ts";
+import { candidateTypeOptions, tieTypeOptions, type ChoiceRule, type TypeOption, type TypePick } from "./typeChoice.ts";
 import { computeNatal, type Accuracy, type Longitudes, type NatalChart } from "./natal.ts";
 import { dstBoundary, localToUtc, type LocalDateTime } from "./time.ts";
 import { computeStationsAndIngress, computeTransits, type Ingress, type Station, type TransitEvent } from "./transits.ts";
@@ -47,10 +47,11 @@ export interface CharacterCandidate {
   share: number;
   /** 다시 요청할 때 time.pick으로 넘길 현지 시각 */
   pick: string;
-  /** 그 시각의 2위 역량·원소 점수·태양 별자리(4개 중 고르기 선택지를 만들 때) */
+  /** 그 시각의 2위 역량·원소 점수·태양·달 별자리(4개 중 고르기 선택지를 만들 때) */
   runnerUp: Competency;
   elements: Record<Element, number>;
   sunSign: string;
+  moonSign: string;
 }
 
 export interface BirthResult {
@@ -92,20 +93,20 @@ function localAt(input: BirthInput, minutes: number): LocalDateTime {
 
 /** 구간 [start, end) 안 30분 간격 표본으로 캐릭터 후보를 센다. 많이 나온 순, 동률이면 먼저 나온 순. */
 export function sampleCandidates(input: BirthInput, startMin: number, endMin: number, ref: CalibrationTable): CharacterCandidate[] {
-  const groups = new Map<string, { c: CharacterResult; times: number[]; elements: Record<Element, number>; sunSign: string }>();
+  const groups = new Map<string, { c: CharacterResult; times: number[]; elements: Record<Element, number>; sunSign: string; moonSign: string }>();
   let total = 0;
   for (let m = startMin; m < endMin; m += 30) {
     const utc = localToUtc(localAt(input, m), input.place.timeZone);
     const { chart, L } = computeNatal(utc, input.place.lat, input.place.lng, false);
     const c = judgeCharacter(L, chart.elements, ref);
-    const g = groups.get(c.name) ?? { c, times: [], elements: chart.elements, sunSign: chart.planets.sun!.sign };
+    const g = groups.get(c.name) ?? { c, times: [], elements: chart.elements, sunSign: chart.planets.sun!.sign, moonSign: chart.planets.moon!.sign };
     g.times.push(m);
     groups.set(c.name, g);
     total++;
   }
   return [...groups.values()]
     .sort((a, b) => b.times.length - a.times.length)
-    .map(({ c, times, elements, sunSign }) => ({
+    .map(({ c, times, elements, sunSign, moonSign }) => ({
       name: c.name,
       competency: c.competency,
       style: c.style,
@@ -115,6 +116,7 @@ export function sampleCandidates(input: BirthInput, startMin: number, endMin: nu
       runnerUp: c.runner_up,
       elements,
       sunSign,
+      moonSign,
     }));
 }
 
@@ -201,16 +203,13 @@ function resolve(
   }
   // 4개 중 고르기 선택지(owner 2026-10-11): B·C는 후보가 갈렸을 때, A는 역량 동점일 때. 고른 유형(typePick)이 있으면 반영,
   // 예전에 저장된 결과는 competencyPick(역량만)으로 그대로 다시 본다.
-  const options =
-    accuracy === "A"
-      ? character.needs_confirm
-        ? tieTypeOptions({ competency: character.competency, runnerUp: character.runner_up, style: character.style, elements: chart.elements, sunSign: chart.planets.sun!.sign })
-        : undefined
-      : candidates.length > 1
-        ? candidateTypeOptions(candidates)
-        : undefined;
+  // 두 번째 방식은 규칙 D(2026-10-12). 그 전(규칙 C)에 저장된 결과의 고른 유형은 legacy로 그대로 인정한다.
+  const tieArgs = { competency: character.competency, runnerUp: character.runner_up, style: character.style, elements: chart.elements, sunSign: chart.planets.sun!.sign, moonSign: chart.planets.moon!.sign };
+  const optionsFor = (rule: ChoiceRule) =>
+    accuracy === "A" ? (character.needs_confirm ? tieTypeOptions(tieArgs, rule) : undefined) : candidates.length > 1 ? candidateTypeOptions(candidates, rule) : undefined;
+  const options = optionsFor("D");
   if (options) character = { ...character, options };
-  character = input.typePick ? withTypePick(character, input.typePick) : withCompetencyPick(character, input.competencyPick);
+  character = input.typePick ? withTypePick(character, input.typePick, optionsFor("C")) : withCompetencyPick(character, input.competencyPick);
   const dst = accuracy === "A" ? dstBoundary(localAt(input, chartMinutes), input.place.timeZone) : null;
   return {
     engineVersion: ENGINE_VERSION,

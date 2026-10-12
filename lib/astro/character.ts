@@ -118,8 +118,9 @@ export function withCompetencyPick(c: CharacterResult, pick: Competency | undefi
  * 4개 중 고른 유형 반영(owner 2026-10-11). 선택지 안에 있을 때만 받아들이고, 아니면 판정 그대로.
  * 2위 역량은 고른 역량이 아닌 쪽으로 바꿔 둔다(채팅 요약 등에서 '다른 후보'로 쓰임).
  */
-export function withTypePick(c: CharacterResult, pick: TypePick | undefined): CharacterResult {
-  const opt = findOption(c.options, pick);
+export function withTypePick(c: CharacterResult, pick: TypePick | undefined, legacy?: TypeOption[]): CharacterResult {
+  // legacy: 옛 규칙 C 선택지 — 그때 저장된 결과가 고른 유형이 새 4개(규칙 D)에 없어도 그대로 인정(owner 2026-10-12, 결제 리포트와 어긋나지 않게).
+  const opt = findOption(c.options, pick) ?? findOption(legacy, pick);
   if (!opt || (opt.competency === c.competency && opt.style === c.style)) return c;
   const other = c.options!.find((o) => o.competency !== opt.competency)?.competency ?? c.runner_up;
   return {

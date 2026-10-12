@@ -1,0 +1,81 @@
+{
+  "version": "A5c change 2026-10-12 (rule D)",
+  "rule": {
+    "groups": {
+      "꺼내는 쪽": {
+        "다가가기": "불",
+        "조율하기": "흙"
+      },
+      "간직하는 쪽": {
+        "거리두기": "공기",
+        "맞춰주기": "물"
+      }
+    },
+    "second_style": "1등 원소의 반대 그룹 두 원소 중 점수가 더 높은 원소의 방식. 동점 → 달 원소 → 태양 원소 → 정해진 짝. 반대 그룹 모두 0점 → 정해진 짝",
+    "fixed_pair": {
+      "거리두기": "다가가기",
+      "다가가기": "거리두기",
+      "맞춰주기": "조율하기",
+      "조율하기": "맞춰주기"
+    },
+    "reason_pick_order": [
+      "STYLE_WHY_TIME",
+      "STYLE_WHY_SUN",
+      "STYLE_WHY_SECOND",
+      "STYLE_WHY_OTHER",
+      "STYLE_WHY_ZERO"
+    ]
+  },
+  "rows": [
+    {
+      "order": 0,
+      "change": "그대로",
+      "id": "STYLE_WHY_TIME",
+      "slot": "2장 ‘왜 이 유형인가’ 마지막 문장의 뒷부분(“…것은, ” 다음)",
+      "condition": "시간 모름으로 후보끼리 방식이 달라 고른 경우",
+      "text": "태어난 시간에 따라 달의 자리가 바뀌어, 하루 중 어느 때는 {{고른원소}}의 기운이 가장 강해지기 때문입니다.",
+      "en": "the Moon's sign changes depending on your birth time, so at certain times of the day {{고른원소}} energy becomes the strongest.",
+      "review_note": "예: “…것은, 태어난 시간에 따라 달의 자리가 바뀌어, 하루 중 어느 때는 불의 기운이 가장 강해지기 때문입니다.”"
+    },
+    {
+      "order": 1,
+      "change": "조건 문구 수정",
+      "id": "STYLE_WHY_SUN",
+      "slot": "2장 ‘왜 이 유형인가’ 마지막 문장의 뒷부분(“…것은, ” 다음)",
+      "condition": "고른 방식이 1등 원소의 방식이 아니고, 고른 원소 = 태양 별자리 원소일 때(우선순위 1)",
+      "text": "차트에서 가장 강한 기운은 {{원소1:이지만/지만}}, 태양이 놓인 {{고른원소}}의 기운이 마음이 흔들리는 순간에 앞으로 나오기 때문입니다.",
+      "en": "while the strongest energy in your chart is {{원소1}}, the {{고른원소}} energy where your Sun sits tends to come forward in moments when your heart feels unsettled.",
+      "review_note": "예: “…것은, 차트에서 가장 강한 기운은 공기지만, 태양이 놓인 불의 기운이 마음이 흔들리는 순간에 앞으로 나오기 때문입니다.”"
+    },
+    {
+      "order": 2,
+      "change": "조건 문구 수정",
+      "id": "STYLE_WHY_SECOND",
+      "slot": "2장 ‘왜 이 유형인가’ 마지막 문장의 뒷부분(“…것은, ” 다음)",
+      "condition": "고른 방식이 1등 원소의 방식이 아니고, 고른 원소 = 차트 전체 2등 원소일 때(우선순위 2)",
+      "text": "차트에서 {{원소1}} 다음으로 강한 {{고른원소}}의 기운이 마음이 흔들리는 순간에 앞으로 나오기 때문입니다.",
+      "en": "the {{고른원소}} energy, the next strongest in your chart after {{원소1}}, tends to come forward in moments when your heart feels unsettled.",
+      "review_note": "예: “…것은, 차트에서 흙 다음으로 강한 불의 기운이 마음이 흔들리는 순간에 앞으로 나오기 때문입니다.”"
+    },
+    {
+      "order": 3,
+      "change": "새로 추가",
+      "id": "STYLE_WHY_OTHER",
+      "slot": "2장 ‘왜 이 유형인가’ 마지막 문장의 뒷부분(“…것은, ” 다음)",
+      "condition": "고른 방식이 1등 원소의 방식이 아니고, 태양 원소도 전체 2등 원소도 아닐 때(우선순위 3, 2026-10-12 추가)",
+      "text": "차트에서 가장 강한 기운은 {{원소1:이지만/지만}}, 함께 자리한 {{고른원소}}의 기운이 마음이 흔들리는 순간에 앞으로 나오기 때문입니다.",
+      "en": "while the strongest energy in your chart is {{원소1}}, the {{고른원소}} energy that's also part of your chart tends to come forward in moments when your heart feels unsettled.",
+      "review_note": "예: “…것은, 차트에서 가장 강한 기운은 물이지만, 함께 자리한 흙의 기운이 마음이 흔들리는 순간에 앞으로 나오기 때문입니다.”"
+    },
+    {
+      "order": 4,
+      "change": "새로 추가",
+      "id": "STYLE_WHY_ZERO",
+      "slot": "2장 ‘왜 이 유형인가’ 마지막 문장의 뒷부분(“…것은, ” 다음)",
+      "condition": "반대 그룹 두 원소가 모두 0점이라 정해진 짝으로 보여 준 방식을 골랐을 때(약 2.5%, 2026-10-12 추가)",
+      "text": "차트에는 {{고른원소}}의 기운이 거의 없지만, 마음이 흔들리는 순간에는 부족한 쪽을 채우려는 마음이 앞으로 나오기 때문입니다.",
+      "en": "although there's very little {{고른원소}} energy in your chart, in moments when your heart feels unsettled, the part of you that wants to fill in what's missing tends to come forward.",
+      "review_note": "정해진 짝: 거리두기(공기)↔다가가기(불), 맞춰주기(물)↔조율하기(흙)"
+    }
+  ]
+}
