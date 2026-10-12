@@ -2,6 +2,7 @@
 // 유료 섹션(4~7)은 제목만 보낸다 — 본문을 브라우저에 보내고 블러로 가리면 결제 없이 볼 수 있기 때문.
 // 출생차트의 모든 행성·하우스·각도 설명은 무료(2026-10-09 결정): 휠 탭 시트 전체 + 본문 '나의 행성 읽기'·'행성끼리의 관계'.
 // DB 문장의 토큰을 못 채우면 그 문장은 빼고 보여준다(fail safe) — 빈칸·괄호가 화면에 나가지 않게.
+import { withReportPrice } from "../billing/pricing.ts";
 import { DOMAIN_MAP, isSoftTone, type Answers, type Q2Word } from "../astro/answers.ts";
 import type { CharacterResult } from "../astro/character.ts";
 import { SHOW_CHARACTER, characterLabel } from "./characterDisplay.ts";
@@ -652,7 +653,7 @@ export function buildFreeResult(args: {
     care: soft
       ? { note: q2?.care_note ?? "", card: text(db, "A15", "FIX_CARE_CARD", "text").replace(/\s*→\s*\[.*\]\s*$/, "") }
       : null,
-    payPopup: b11(db, "PAY_POPUP"),
+    payPopup: withReportPrice(b11(db, "PAY_POPUP")), // 금액 글자는 실제 가격으로(owner 2026-10-12 A)
     shareNoteLocked: b11(db, "SHARE_NOTE_LOCKED"),
     saveCopy: {
       saveDone: b11(db, "SAVE_DONE"),

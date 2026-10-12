@@ -26,6 +26,8 @@ import type { FreeResult, WheelSheet } from "@/lib/report/freeResult";
 const noopSubscribe = () => () => {};
 const SESSION_URL = "https://app.ssolwellnesshouse.com/session-reserve";
 /** 3장 웰니스 상담 기본 안내(부드러운 톤이 아닐 때) — Claude 초안, owner 검토 가능. 공포·재촉 표현 없이 */
+/** 1~6장 끝 짧은 고지(owner 2026-10-12 B — 전체 고지문 A15 FIX_DISCLAIMER는 7장 끝에 그대로) */
+const SHORT_DISCLAIMER = "점성술은 예측 도구가 아니에요. 이 결과는 나를 돌아보기 위한 웰니스 콘텐츠예요.";
 const WELLNESS_SESSION_NOTE =
   "별 리포트로 돌아본 한 해를 사람과 함께 천천히 이야기해 보고 싶다면, 쏠 웰니스 하우스의 웰니스 상담을 이용해 보세요. {닉네임}님의 지금 마음을 함께 살펴보고, 나에게 맞는 속도를 함께 찾아가 볼 수 있어요.";
 const SIGN_NAMES = ["양자리", "황소자리", "쌍둥이자리", "게자리", "사자자리", "처녀자리", "천칭자리", "전갈자리", "사수자리", "염소자리", "물병자리", "물고기자리"];
@@ -246,7 +248,15 @@ export default function FreeResultView({
   const lockedPage = page >= 4 && !paidSection;
   // 고지문(마스터스펙 8-1 '결과 하단 고정 고지' — 안전 원칙상 없애지 않는다): owner 2026-10-10 요청으로 장마다 보이던 것을
   // 프로토타입처럼 마지막 장(7장) 끝에만. '상담사 검수 전 초안' 표시는 owner 요청으로 숨김.
-  const disclaimer = page === RESULT_PAGES ? <p className="disclaimer">{result.disclaimer}</p> : null;
+  // owner 2026-10-12(B): 1~3장만 보고 나가는 사람도 볼 수 있게 1~6장 끝에는 짧은 한 줄, 7장에는 전체 고지문.
+  const disclaimer =
+    page === RESULT_PAGES ? (
+      <p className="disclaimer">{result.disclaimer}</p>
+    ) : (
+      <p className="disclaimer" style={{ fontSize: ".74rem", opacity: 0.8 }}>
+        {SHORT_DISCLAIMER}
+      </p>
+    );
   const next = page < RESULT_PAGES ? page + 1 : null;
 
   return (
