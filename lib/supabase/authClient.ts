@@ -5,6 +5,7 @@
 // 2026-10-08 owner 요청으로 쏘웰라 가입 화면으로 보내던 것을 이 사이트 안 가입으로 바꿨다(진행 중인 테스트를 잃지 않게).
 // 쏘웰라 쪽 가입 절차·저장 칸이 바뀌면 여기도 같이 바꾼다.
 import { getBrowserClient } from "./browser";
+import { clearGuestToken } from "@/lib/guest/client";
 
 export type AuthResult = { ok: boolean; error?: string };
 
@@ -140,6 +141,8 @@ export async function signInWithOAuth(provider: "kakao" | "naver", redirectTo?: 
 
 export async function signOut(): Promise<void> {
   await getBrowserClient()?.auth.signOut();
+  // 공용 기기: 로그아웃 뒤 남은 비회원 열쇠가 다음에 로그인한 사람 계정으로 옮겨지지 않게 지운다.
+  clearGuestToken();
 }
 
 /**

@@ -47,24 +47,29 @@ function cardOf(c: Extract<ReturnType<typeof computeFree>, { kind: "result" }>) 
   return { sunSign: c.result.sunSign, sunSignIndex: c.result.sunSignIndex, oneLiner: c.result.sunSignIntro?.oneLiner ?? null };
 }
 
-/** 재시도(화면이 30초 동안 아무것도 못 받았을 때)면 30초 넘게 멈춘 생성도 다시 시작한다(평소엔 5분). */
-export const RETRY_STALE_MS = 30_000;
+/**
+ * 재시도(화면이 30초 동안 아무것도 못 받았을 때)여도 서버는 2분 넘게 멈춘 생성만 다시 시작한다(평소엔 5분).
+ * 정상 생성도 20~60초가 걸려서, 30초에 다시 시작하면 같은 리포트를 두 번 만들게 된다(AI 비용 두 배).
+ */
+export const RETRY_STALE_MS = 120_000;
 
 export async function runReportGeneration(resultId: string, opts: { retry?: boolean } = {}): Promise<void> {
-  if (!(await claimReportGeneration(resultId, opts.retry ? RETRY_STALE_MS : undefined))) return; // 이미 만드는 중이거나 끝남
+  const attempt = await claimReportGeneration(resultId, opts.retry ? RETRY_STALE_MS : undefined);
+  if (!attempt) return; // 이미 만드는 중이거나 끝남(또는 방금 실패해 잠시 쉬는 중)
   try {
     const row = await getResultForReport(resultId);
     if (!row) throw new Error("결과 없음");
     const c = computeFree(row.birth_input, row.answers, row.nickname);
     if (c.kind !== "result") throw new Error("결과를 다시 계산하지 못함");
-    const report = await generatePaidReport({ db: ASTRO_DB, resolved: c.birth.resolved, wishContext: wishContextOf(c.birth.stored, c.birth.accuracy), answers: row.answers, nickname: row.nickname, birthKey: birthKeyOf(row.birth_input), onPart: (partial) => savePartialReport(resultId, partial) });
-    await saveReport(resultId, report);
+    const report = await generatePaidReport({ db: ASTRO_DB, resolved: c.birth.resolved, wishContext: wishContextOf(c.birth.stored, c.birth.accuracy), answers: row.answers, nickname: row.nickname, birthKey: birthKeyOf(row.birth_input), onPart: (partial) => savePartialReport(resultId, partial, attempt) });
+    // 그사이 다른 시도가 자리를 넘겨받았으면 저장하지 않는다(그쪽 결과가 남는다)
+    if (!(await saveReport(resultId, report, attempt))) return;
     await emailReport(resultId, row.user_id, row.nickname, cardOf(c));
     // 쏘웰라 채팅이 참고할 요약을 리포트 본문·제안까지 넣어 다시 만든다.
     await saveChatSummary(resultId, chatSummaryFor(c, row.answers, report, row.nickname));
   } catch (e) {
     console.error("유료 리포트 생성 실패:", e instanceof Error ? e.message : "unknown");
-    await saveReport(resultId, null).catch(() => {});
+    await saveReport(resultId, null, attempt).catch(() => {});
   }
 }
 

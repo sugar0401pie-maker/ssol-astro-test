@@ -38,6 +38,16 @@ export function apiHeaders(session: Session | null | undefined, extra: Record<st
   return h;
 }
 
+/** 열쇠 지우기 — 옮기기가 끝났거나 로그아웃할 때. 남겨 두면 같은 기기에서 다음에 로그인한 사람에게 옮겨질 수 있다. */
+export function clearGuestToken(): void {
+  memoryToken = null;
+  try {
+    localStorage.removeItem(KEY);
+  } catch {
+    /* 저장소를 못 쓰는 환경 */
+  }
+}
+
 let claimedFor: string | null = null;
 
 /** 로그인 직후 이 브라우저의 비회원 결과를 계정으로 옮긴다(페이지마다 한 번). 옮긴 수. */
@@ -48,7 +58,13 @@ export async function claimGuestResults(session: Session): Promise<number> {
   try {
     const res = await fetch("/api/results/claim", { method: "POST", headers: apiHeaders(session) });
     const d = (await res.json().catch(() => ({}))) as { claimed?: number };
-    return res.ok ? d.claimed ?? 0 : 0;
+    if (!res.ok) {
+      claimedFor = null; // 다음 기회에 다시(열쇠는 남겨 둔다)
+      return 0;
+    }
+    // 옮기기가 끝난 열쇠는 지운다 — 서버에서도 이미 비워졌고, 남겨 두면 같은 기기의 다음 로그인 사람에게 옮겨질 수 있다.
+    clearGuestToken();
+    return d.claimed ?? 0;
   } catch {
     claimedFor = null; // 다음 기회에 다시
     return 0;

@@ -106,7 +106,8 @@ export async function updateResultPick(
   patch: { input: BirthInput; character: string; competency: string; style: string; chatSummary?: string | null },
 ): Promise<boolean> {
   const row: Record<string, unknown> = { birth_input: patch.input, character: patch.character, competency: patch.competency, style: patch.style };
-  const run = (r: object) => byOwner(createAdminClient().from(TABLE).update(r), owner).eq("id", id).select("id");
+  // 결제한 결과는 바꾸지 않는다 — 확인과 수정 사이에 결제가 끝나도 리포트와 어긋나지 않게 수정 자체에 조건을 둔다.
+  const run = (r: object) => byOwner(createAdminClient().from(TABLE).update(r), owner).eq("id", id).is("paid_at", null).select("id");
   let { data, error } = await run(patch.chatSummary ? { ...row, chat_summary: patch.chatSummary, chat_summary_at: new Date().toISOString() } : row);
   if (error?.code === "42703" && patch.chatSummary) ({ data, error } = await run(row));
   if (error) throw new Error(`결과 수정 실패: ${error.code}`);
@@ -248,25 +249,38 @@ export async function deleteExpiredGuestResults(now = new Date()): Promise<numbe
  * 리포트 생성 자리를 잡는다: 아직 없거나 실패했거나, 생성 중인데 너무 오래(5분) 멈춰 있으면 'generating'으로 바꾸고 true.
  * 이미 누가 만들고 있으면 false — 같은 리포트를 동시에 두 번 만들지 않게.
  */
-export async function claimReportGeneration(resultId: string, staleMs = 5 * 60_000): Promise<boolean> {
+/**
+ * 리포트 생성 자리 잡기. 성공하면 이번 시도의 표시(시작 시각 문자열)를 돌려준다 — 저장할 때 이 표시가 그대로일 때만 덮어써서,
+ * 늦게 끝난 옛 시도가 새 시도의 결과를 덮지 않게 한다. 자리를 못 잡으면 null.
+ * staleMs: 'generating'이 이만큼 멈춰 있으면 다시 시작. failedCooldownMs: 실패한 지 이만큼 지나야 다시 시작(매 요청마다 AI를 다시 부르지 않게).
+ */
+export async function claimReportGeneration(resultId: string, staleMs = 5 * 60_000, failedCooldownMs = 60_000): Promise<string | null> {
   const staleBefore = new Date(Date.now() - staleMs).toISOString();
+  const failedBefore = new Date(Date.now() - failedCooldownMs).toISOString();
+  const attempt = new Date().toISOString();
   const { data, error } = await createAdminClient()
     .from(TABLE)
-    .update({ report_status: "generating", report_started_at: new Date().toISOString() })
+    .update({ report_status: "generating", report_started_at: attempt })
     .eq("id", resultId)
     .not("paid_at", "is", null)
-    .or(`report_status.in.(none,failed),and(report_status.eq.generating,report_started_at.lt.${staleBefore})`)
+    .or(
+      `report_status.eq.none,and(report_status.eq.failed,report_started_at.is.null),and(report_status.eq.failed,report_started_at.lt.${failedBefore}),and(report_status.eq.generating,report_started_at.lt.${staleBefore})`,
+    )
     .select("id");
   if (error) throw new Error(`리포트 생성 시작 실패: ${error.code}`);
-  return (data?.length ?? 0) > 0;
+  return (data?.length ?? 0) > 0 ? attempt : null;
 }
 
-export async function saveReport(resultId: string, report: unknown | null): Promise<void> {
-  const { error } = await createAdminClient()
+/** 이번 시도(attempt)가 아직 자리를 갖고 있을 때만 저장. 저장했으면 true. */
+export async function saveReport(resultId: string, report: unknown | null, attempt?: string): Promise<boolean> {
+  let q = createAdminClient()
     .from(TABLE)
     .update(report ? { report, report_status: "ready" } : { report_status: "failed" })
     .eq("id", resultId);
+  if (attempt) q = q.eq("report_started_at", attempt).eq("report_status", "generating");
+  const { data, error } = await q.select("id");
   if (error) throw new Error(`리포트 저장 실패: ${error.code}`);
+  return (data?.length ?? 0) > 0;
 }
 
 /** 마지막으로 보던 장 저장(주인 확인). 칸이 없으면(마이그레이션 전) 조용히 넘어간다 — 이 기기 기억이 대신한다. */
@@ -276,8 +290,10 @@ export async function saveLastPage(owner: Owner, id: string, page: number): Prom
 }
 
 /** 쓰는 중인 리포트(다 쓴 파트까지)를 저장 — 아직 생성 중일 때만(끝난 리포트를 덮지 않게). 실패해도 던지지 않는다. */
-export async function savePartialReport(resultId: string, report: unknown): Promise<void> {
-  const { error } = await createAdminClient().from(TABLE).update({ report }).eq("id", resultId).eq("report_status", "generating");
+export async function savePartialReport(resultId: string, report: unknown, attempt?: string): Promise<void> {
+  let q = createAdminClient().from(TABLE).update({ report }).eq("id", resultId).eq("report_status", "generating");
+  if (attempt) q = q.eq("report_started_at", attempt);
+  const { error } = await q;
   if (error) console.warn(`리포트 중간 저장 실패: ${error.code}`);
 }
 
@@ -326,7 +342,11 @@ export async function releaseReportEmail(resultId: string): Promise<void> {
 export async function getAccountEmail(userId: string): Promise<string | null> {
   const { data, error } = await createAdminClient().auth.admin.getUserById(userId);
   if (error || !data.user) return null;
-  const meta = (data.user.user_metadata ?? {}) as Record<string, unknown>;
-  const email = data.user.email || (typeof meta.contact_email === "string" ? meta.contact_email : "") || (typeof meta.email === "string" ? meta.email : "");
+  // user_metadata는 사용자가 스스로 바꿀 수 있어(updateUser) 쓰지 않는다 — 계정 이메일, 없으면(네이버) 로그인 제공자가 준 정보만.
+  const fromIdentity = (data.user.identities ?? [])
+    .map((i) => (i.identity_data ?? {}) as Record<string, unknown>)
+    .map((d) => (typeof d.contact_email === "string" ? d.contact_email : typeof d.email === "string" ? d.email : ""))
+    .find((e) => e) ?? "";
+  const email = data.user.email || fromIdentity;
   return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) ? email : null;
 }
