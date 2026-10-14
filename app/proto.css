@@ -365,8 +365,11 @@ details.why ul{list-style:disc}
 /* 화면 등장 애니메이션은 끝난 뒤 남지 않게(backwards) — 'both'로 남아 있으면 안쪽의 position:fixed(토스트·시트·결제 카드)가
    화면이 아니라 이 상자를 기준으로 붙어 페이지 아래로 밀려났다(2026-10-10 수정) */
 /* 결제 후 리포트 쓰는 중(ReportWriting): 잠긴 섹션 흐린 자리 가운데에 */
-.blur-wrap{position:relative;min-height:330px}
-.report-writing{position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(253,246,233,.95) 40%,rgba(253,246,233,0) 78%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;padding:0 8px}
+.blur-wrap{position:relative}
+/* 쓰는 중: 흐린 가짜 문장은 뒤에 깔고, 별·문구는 글 흐름대로(긴 지연 안내도 상자 안에서 늘어나게) */
+.blur-wrap.pending{min-height:340px}
+.blur-wrap.pending .blur-dummy{position:absolute;inset:0;overflow:hidden;margin:0}
+.report-writing{position:relative;min-height:340px;background:radial-gradient(ellipse at center,rgba(253,246,233,.95) 40%,rgba(253,246,233,0) 78%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;padding:16px 8px}
 .star-orbit{width:150px;height:150px}
 .star-orbit svg{width:100%;height:100%;overflow:visible}
 .star-orbit .orb,.star-orbit .ring-rev{transform-box:view-box;transform-origin:80px 80px}
@@ -380,6 +383,8 @@ details.why ul{list-style:disc}
 @keyframes twinkleRw{from{opacity:.1}to{opacity:.9}}
 .star-orbit .tw{fill:#CBB27A}
 .report-writing .writing-msg{margin:0;font-family:var(--f-head);font-size:1.05rem;color:var(--ink);line-height:1.5;animation:breathe 2.4s ease-in-out infinite}
+/* 오래 걸릴 때 안내는 긴 문장이라 본문 글꼴·조금 작게, 깜빡이지 않게 */
+.report-writing .writing-msg.slow{font-family:inherit;font-size:.9rem;line-height:1.6;animation:none;opacity:1}
 @keyframes breathe{0%,100%{opacity:.45}50%{opacity:1}}
 .report-writing .writing-note{margin:0;font-size:.8rem;color:var(--ink);opacity:.7;white-space:pre-line;line-height:1.55}
 @media (prefers-reduced-motion:reduce){.star-orbit .orb,.star-orbit .ring-rev,.star-orbit .core-glow,.star-orbit .tw,.report-writing .writing-msg{animation:none}}

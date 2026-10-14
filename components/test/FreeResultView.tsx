@@ -611,7 +611,7 @@ export default function FreeResultView({
                       </div>
                     )}
                     {/* 흐려지는 자리: 실제 본문이 아니라 해석 DB B13 가짜 문장(결제 전에는 실제 유료 본문을 보내지 않는다) */}
-                    <div className="blur-wrap">
+                    <div className={`blur-wrap${paidPending ? " pending" : ""}`}>
                       <div className="blur-dummy" aria-hidden="true" inert>
                         {(preview[page]?.dummy.length ? preview[page].dummy : ["　".repeat(40), "　".repeat(40), "　".repeat(40), "　".repeat(40)]).map((t, i) => (
                           <p key={i}>{t}</p>

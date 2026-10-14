@@ -53,7 +53,7 @@ export function ReportWriting({ nickname, slowText }: { nickname: string; slowTe
           </g>
         </svg>
       </div>
-      <p key={slowText ? "slow" : i} className="writing-msg">
+      <p key={slowText ? "slow" : i} className={`writing-msg${slowText ? " slow" : ""}`}>
         {slowText ?? messages[i]}
       </p>
       {!slowText && <p className="writing-note">{WRITING_NOTE}</p>}
