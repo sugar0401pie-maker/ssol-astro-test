@@ -1,0 +1,63 @@
+{
+  "table": "A10",
+  "date": "2026-10-14",
+  "status": "초안 — owner 확인 전",
+  "changes": [
+    {
+      "id": "RX_MERCURY_H05",
+      "column": "careful_cell",
+      "level": "확실히 어긋남",
+      "why": "제목은 '들뜬 마음에 한 말·약속'인데 본문·행동·왜 그럴까는 모두 '예전 취미·작업을 다시 꺼내 마무리'",
+      "careful_cell_before": "들뜬 마음에 한 말이나 약속을 다시 살펴보기",
+      "careful_cell_after": "멈춘 작업은 새로 벌이기보다 마무리하기"
+    },
+    {
+      "id": "RX_VENUS_H06",
+      "column": "careful_cell",
+      "level": "확실히 어긋남",
+      "why": "제목은 '작은 지출'인데 본문·행동은 '동료 분위기·일의 즐거움, 기분 좋던 작은 루틴 되살리기'(지출 이야기 없음)",
+      "careful_cell_before": "일상 속 작은 지출과 습관을 다시 점검하기",
+      "careful_cell_after": "나를 기분 좋게 하던 작은 루틴 되찾기"
+    },
+    {
+      "id": "RX_VENUS_H11",
+      "column": "careful_cell",
+      "level": "확실히 어긋남",
+      "why": "제목은 '모임 지출·무리한 약속 줄이기'인데 본문·행동은 '예전 친구가 떠오르고, 나에게 편한 사람 알아보기·오래 못 본 친구에게 안부'",
+      "careful_cell_before": "모임 지출과 무리한 약속을 줄이기",
+      "careful_cell_after": "나에게 편한 사람이 누구인지 다시 살펴보기"
+    },
+    {
+      "id": "RX_MARS_H05",
+      "column": "careful_cell",
+      "level": "확실히 어긋남",
+      "why": "제목은 '승부욕에 휩쓸리지 않기'인데 본문·행동은 '하고 싶던 일이 막히고 재미가 안 붙음, 멈춘 작업 이어 가기'",
+      "careful_cell_before": "놀이와 취미에서도 승부욕에 휩쓸리지 않기",
+      "careful_cell_after": "재미가 안 붙어도 멈춘 작업을 조금씩 이어 가기"
+    },
+    {
+      "id": "RX_VENUS_H09",
+      "column": "careful_cell",
+      "level": "일부만 맞음",
+      "why": "제목은 '비싼 여행·수업 결제 따져 보기'인데 본문·행동은 '예전에 가 본 곳·접었던 공부를 다시 떠올리기'(결제 이야기 없음)",
+      "careful_cell_before": "비싼 여행·수업 결제는 한 번 더 따져 보기",
+      "careful_cell_after": "새 계획보다 지난 여행·공부에서 좋았던 점 되짚기"
+    },
+    {
+      "id": "RX_VENUS_H03",
+      "column": "careful_cell",
+      "level": "일부만 맞음",
+      "why": "제목은 '감정이 실린 말은 늦춰 전하기'인데 본문 뒷부분·행동은 '고마움을 다시 전하기·안부 메시지'",
+      "careful_cell_before": "감정이 실린 말은 한 템포 늦춰 전하기",
+      "careful_cell_after": "서운한 말은 늦추고, 고마운 말은 먼저 전하기"
+    },
+    {
+      "id": "RX_VENUS_H04",
+      "column": "careful_cell",
+      "level": "일부만 맞음",
+      "why": "제목은 '집 꾸미기·가구 큰 구매 미루기'인데 본문은 '가족과의 지난 일이 떠오르고 집이 낯설게 느껴짐'(행동은 '새로 사기 전 있는 물건 다시 써 보기'로 맞음)",
+      "careful_cell_before": "집 꾸미기·가구 같은 큰 구매는 미뤄 두기",
+      "careful_cell_after": "집을 바꾸기보다 있는 공간을 다시 아껴 보기"
+    }
+  ]
+}
