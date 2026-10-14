@@ -89,6 +89,16 @@ export interface PaidSkeleton {
   /** 바람과 흐름 잇기 토큰 값: {{흐름근거}}(2027), {{바라던해}}(5년) */
   bridgeBasis27: string;
   desiredYear: number | null;
+  /** 4번 '연말에 조심할 세 가지' 소제목+목록 — AI는 쓰지 않고 서버가 DB 문장으로 한 번만 붙인다(요약+DB 문장 중복 방지) */
+  careful4: Block[];
+}
+
+/** A10 본문 첫 문장 "○○의 별이 ○○의 자리에서 거꾸로 가는 (것처럼 보이는) 기간입니다/이에요." —
+ *  세 항목이 모두 같은 틀이라 이어 읽으면 반복된다. 행성·자리는 항목 아래 작은 줄(note)에 이미 있으니 뺀다. */
+export function stripRxLead(text: string): string {
+  const m = text.match(/^[^.!?]*거꾸로 가는[^.!?]*기간(입니다|이에요)\.\s*/);
+  const rest = m ? text.slice(m[0].length).trim() : text;
+  return rest || text;
 }
 
 /** 본문 조각 → 글자(채팅 요약·미리보기용) */
@@ -448,7 +458,7 @@ export function buildPaidSkeleton(args: {
       t: "items",
       items: three.map((x) => ({
         title: x.row.careful_cell,
-        text: `${x.row.text} ${x.row.action}`,
+        text: `${stripRxLead(x.row.text)} ${x.row.action}`,
         note: `${POINT_KO[x.planet]} 역행 · ${rangeText(x.start, x.end)} · ${x.sign} · ${x.house}하우스(${houseNick(db, x.house)})`,
       })),
     });
@@ -717,7 +727,8 @@ export function buildPaidSkeleton(args: {
     practices,
     closing,
     dbSentences: {
-      4: texts(body4),
+      // 조심할 세 가지 목록은 서버가 그대로 붙이므로 AI 하한선에서 뺀다(넣으면 AI가 요약 뒤에 같은 문장을 또 붙였다)
+      4: texts(body4.filter((b) => b.t !== "items")),
       // 판정 문장은 꼭 들어가야 하는 하한선. 유형을 풀어 쓸 때의 바탕(A6 역량·방식 쉬운 정의, 06 프롬프트 v3 '캐릭터 표기')
       5: [...texts(body5), ...(gradeC ? [gradeC] : []), ...[a6Line(db, "역량", character.competency), a6Line(db, "방식", character.style)].filter((x): x is string => !!x)],
       6: texts(body6),
@@ -725,6 +736,11 @@ export function buildPaidSkeleton(args: {
     },
     bridgeBasis27,
     desiredYear,
+    careful4: (() => {
+      const i = body4.findIndex((b) => b.t === "head" && b.text.includes("조심할 세 가지"));
+      const items = body4[i + 1];
+      return i >= 0 && items?.t === "items" ? [body4[i], items] : [];
+    })(),
   };
 }
 

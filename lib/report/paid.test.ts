@@ -8,12 +8,12 @@ import { buildTimeline, periodWindows, selectPeriods } from "../astro/timeline.t
 import { computeWish } from "../astro/wish.ts";
 import type { Answers } from "../astro/answers.ts";
 import { row, type AstroDb } from "./db.ts";
-import { buildPaidSkeleton, evidencePhrase, yearize, type Block } from "./paidSkeleton.ts";
+import { buildPaidSkeleton, evidencePhrase, stripRxLead, yearize, type Block } from "./paidSkeleton.ts";
 import { buildReportInput } from "./reportInput.ts";
 import { previewLines } from "./prepare.ts";
 import { buildChatSummary, CHAT_SUMMARY_MAX } from "./chatSummary.ts";
 import { buildFreeResult } from "./freeResult.ts";
-import { fillSystemPrompt, partUserMessage, processPartOutput, splitSections } from "./aiPrompt.ts";
+import { fillSystemPrompt, insertCareful4, partUserMessage, processPartOutput, splitSections } from "./aiPrompt.ts";
 import { SYSTEM_PROMPT_TEMPLATE } from "./systemPrompt.ts";
 import { compileC1, type C1Row } from "./validate.ts";
 
@@ -60,6 +60,34 @@ test("DB 뼈대: 4섹션 모두 있고, 연말 조심할 세 가지에 금성 �
   assert.ok(!skeleton.closing.includes("→"));
   // 뼈대 문장에도 빈칸 토큰이 남지 않는다
   assert.ok(!JSON.stringify(skeleton).includes("{{"));
+});
+
+test("연말 조심할 세 가지: '○○의 별이 ○○의 자리에서 거꾸로 가는 기간' 틀 문장은 빼고, AI 하한선에도 넣지 않는다(중복 방지)", () => {
+  for (const r of db.dbs.A10.rows.filter((x) => x.id.startsWith("RX_"))) {
+    const out = stripRxLead(r.text);
+    assert.ok(out.length > 10 && !out.includes("거꾸로 가는"), r.id);
+    assert.ok(r.text.endsWith(out), r.id);
+  }
+  const { skeleton } = setup();
+  const items = skeleton.sections[0].body.find((b) => b.t === "items") as Extract<Block, { t: "items" }>;
+  for (const it of items.items) assert.ok(!it.text.includes("거꾸로 가는"));
+  assert.equal(skeleton.careful4.length, 2);
+  assert.equal(skeleton.careful4[1], items);
+  for (const it of items.items) assert.ok(!skeleton.dbSentences[4].some((x) => x.includes(it.title)));
+});
+
+test("4번 AI 본문: AI가 쓴 '조심할 세 가지'는 빼고 서버 목록을 '기대해도 좋은 일' 앞에 끼운다", () => {
+  const careful: Block[] = [{ t: "head", text: "• 연말에 조심할 세 가지" }, { t: "items", items: [{ title: "가", text: "나", note: "다" }] }];
+  const ai: Block[] = [
+    { t: "p", text: "도입" },
+    { t: "head", text: "• 연말에 조심할 세 가지" },
+    { t: "p", text: "첫째, AI 요약" },
+    { t: "head", text: "• 연말에 기대해도 좋은 일" },
+    { t: "p", text: "기대" },
+  ];
+  const out = insertCareful4(ai, careful);
+  assert.deepEqual(out.map((b) => (b.t === "items" ? "items" : (b as { text: string }).text)), ["도입", "• 연말에 조심할 세 가지", "items", "• 연말에 기대해도 좋은 일", "기대"]);
+  assert.deepEqual(insertCareful4([{ t: "p", text: "도입" }], careful).length, 3);
 });
 
 test("{{근거}} 구절은 '-는'으로 끝난다", () => {

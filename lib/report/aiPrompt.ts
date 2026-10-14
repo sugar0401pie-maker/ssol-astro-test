@@ -53,7 +53,10 @@ export function partUserMessage(built: BuiltReportInput, part: PartId, summaries
     const s = summaries[no];
     if (s) lines.push(`${no}번 섹션의 두괄식 첫 문장은 서버가 굵게 붙입니다: "${tokenizeYears(s, built)}" — 이 문장을 첫 문단으로 그대로 쓰고, 다음 문단부터 이어 쓰세요.`);
   }
-  if (part === "A") lines.push("4번 섹션의 '• 달마다 살펴볼 것'(월별 줄글)은 서버가 DB 문장으로 붙입니다. '• 연말에 기대해도 좋은 일' 문단까지만 쓰세요.");
+  if (part === "A") {
+    lines.push("4번 섹션의 '• 달마다 살펴볼 것'(월별 줄글)은 서버가 DB 문장으로 붙입니다. '• 연말에 기대해도 좋은 일' 문단까지만 쓰세요.");
+    lines.push("4번 섹션의 '• 연말에 조심할 세 가지' 소제목과 목록도 서버가 DB 문장 그대로 붙입니다. 이 소제목과 목록은 쓰지 말고, 첫 문단 뒤 고민과 하늘 신호를 잇는 한 문단 다음에 바로 '• 연말에 기대해도 좋은 일'로 넘어가세요.");
+  }
   if (part === "C")
     lines.push("7번 섹션의 '• 별이 주는 질문 3가지'와 '• 작은 실천 3가지' 목록은 서버가 DB 문장 그대로 화면에 붙입니다. 목록은 쓰지 말고 두괄식 문장, 왜 이 질문인지 문단, 마지막 쏘웰라 안내 문단만 쓰세요.");
   return [...lines, "", "입력(JSON):", JSON.stringify(built.input)].join("\n");
@@ -160,6 +163,23 @@ export interface PartContext {
   judgements?: Partial<Record<5 | 6, string>>;
   /** 섹션 5·6 B12 대체 문장(토큰 채운 것) */
   fallbackBridges?: Partial<Record<5 | 6, string | null>>;
+  /** 4번 '조심할 세 가지' 소제목+목록(서버 DB 문장) — AI가 쓴 같은 목록은 빼고 이것을 끼운다 */
+  careful4?: Block[];
+}
+
+/** 4번: AI가 지시를 어기고 '조심할 세 가지'를 썼으면 그 소제목~다음 소제목 전까지 빼고,
+ *  서버 목록을 '연말에 기대해도 좋은 일' 소제목 앞(없으면 끝)에 끼운다. */
+export function insertCareful4(blocks: Block[], careful: Block[]): Block[] {
+  if (!careful.length) return blocks;
+  const out: Block[] = [];
+  let skipping = false;
+  for (const b of blocks) {
+    if (b.t === "head") skipping = b.text.includes("조심할 세 가지");
+    if (!skipping) out.push(b);
+  }
+  const at = out.findIndex((b) => b.t === "head" && b.text.includes("기대해도 좋은"));
+  out.splice(at >= 0 ? at : out.length, 0, ...careful);
+  return out;
 }
 
 export function processPartOutput(
@@ -229,7 +249,7 @@ export function processPartOutput(
         blocks.splice(at >= 0 ? at + 1 : Math.min(1, blocks.length), 0, { t: "bridge", text: fb });
       }
     }
-    sections[no] = blocks;
+    sections[no] = no === 4 && ctx.careful4 ? insertCareful4(blocks, ctx.careful4) : blocks;
   }
   return { ok: true, sections, issues, bridgeFailed };
 }

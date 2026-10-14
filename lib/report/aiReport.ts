@@ -90,6 +90,7 @@ export async function generatePaidReport(args: {
     wish: answers.q3,
     judgements: { 5: judgementSentence(skeleton, 5), 6: judgementSentence(skeleton, 6) },
     fallbackBridges: { 5: bridgeOf(5), 6: bridgeOf(6) },
+    careful4: skeleton.careful4,
   };
 
   const logs: Partial<Record<PartId, PartLog>> = {};
