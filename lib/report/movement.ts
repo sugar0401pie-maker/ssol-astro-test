@@ -12,9 +12,16 @@ export function b9Id(movement: MovementLabel, temperament: Temperament, wish: Q3
   return `MV_${movement === "움직이는 해" ? "MOVE" : "QUIET"}_${TEMP_ID[temperament]}_${CHANGE_WISHES.has(wish) ? "CHG" : "OTH"}`;
 }
 
-export function movementLine(db: AstroDb, y: WishYear, temperament: Temperament, wish: Q3Wish): string | null {
+/**
+ * B9 문장. 같은 리포트에서 같은 행이 다시 나오면(nth) line → line_alt1 → line_alt2 순서(해석 DB v1.2.3 B9 used_in),
+ * 변형이 비어 있거나 세 번을 넘으면 마지막으로 있는 문장.
+ */
+export function movementLine(db: AstroDb, y: WishYear, temperament: Temperament, wish: Q3Wish, nth = 0): string | null {
   const id = b9Id(y.movementLabel, temperament, wish);
-  return id ? row(db, "B9", id)?.line ?? null : null;
+  const r = id ? row(db, "B9", id) : null;
+  if (!r) return null;
+  const options = [r.line, r.line_alt1, r.line_alt2].filter((x): x is string => !!x);
+  return options[Math.min(nth, options.length - 1)] ?? null;
 }
 
 /** B10 경계 문장(판정 설명 + 위아래를 오가는 해 설명). */

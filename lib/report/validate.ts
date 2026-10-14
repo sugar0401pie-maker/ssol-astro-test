@@ -180,7 +180,8 @@ export function validateReport(text: string, opts: ValidateOptions): ValidationI
     .replace(/^###\s*\d+\..*$/gm, "") // 헤더 줄 전체(5번 제목에 '2027년'이 들어 있다)
     .replace(/^\s*\d+\.\s/gm, "")
     .replace(/(\d{1,2})\s?(하우스|H)/g, (m, n: string) => (allowedHouses.has(Number(n)) ? "" : m));
-  const digit = structural.match(/.{0,10}[0-9０-９].{0,10}/);
+  // 리턴 주기(해석 DB A16b RET_*: '12년 만에'·'약 29년 만에'·'약 50년 만에')는 사실 안내라 허용(owner 2026-10-14 (나)) — 이 세 표현만
+  const digit = structural.replace(/(약 )?(12|29|50)년 만에/g, "").match(/.{0,10}[0-9０-９].{0,10}/);
   if (digit) issues.push({ code: "digit_outside_token", detail: digit[0] });
   for (const t of used) if (!opts.allowedTokens.includes(t)) issues.push({ code: "unknown_token", detail: t });
   for (const t of opts.requiredTokens ?? []) if (!used.has(t)) issues.push({ code: "missing_token", detail: t });

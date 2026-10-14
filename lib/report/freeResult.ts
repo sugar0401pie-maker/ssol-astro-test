@@ -11,6 +11,7 @@ import type { Accuracy, Longitudes, NatalChart } from "../astro/natal.ts";
 import {
   buildTimeline, periodFilter, scoreInWindow, turningPoints, type ScoredEvent, type TimelineEvent,
 } from "../astro/timeline.ts";
+import { ingressLine } from "./ingress.ts";
 import { POINT_ID, SIGN_ID, ELEMENT_ID, aspectGroup, findRow, pad2, row, tryFill, type AstroDb } from "./db.ts";
 import { batchim, formatDate, QUARTER_LABELS } from "./format.ts";
 import { a12Variant, b11, fillSummary, hashPick } from "./variants.ts";
@@ -533,7 +534,7 @@ export function buildFreeResult(args: {
     for (const e of events) {
       if (e.kind !== "ingress" || !e.intervals[0].from.startsWith("2026") || qOf(e.intervals[0].from) !== qn) continue;
       const d = e.intervals[0].from;
-      reasons.push({ iso: d, title: `${POINT_KO[e.planet]} ${e.sign}${e.house ? `(${e.house}하우스)` : ""} 이동`, when: formatDate(d), meaning: text(db, "A16", "TERM_INGRESS", "meaning_line") });
+      reasons.push({ iso: d, title: `${POINT_KO[e.planet]} ${e.sign}${e.house ? `(${e.house}하우스)` : ""} 이동`, when: formatDate(d), meaning: ingressLine(db, e.planet, e.house) });
     }
     reasons.sort((a, b) => (a.iso < b.iso ? -1 : 1));
     return { label: QUARTER_LABELS[qn - 1], cell, reasons: reasons.map(({ title, when, meaning }) => ({ title, when, meaning })) };
