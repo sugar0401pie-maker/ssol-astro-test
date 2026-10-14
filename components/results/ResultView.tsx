@@ -134,9 +134,13 @@ export default function ResultView({ id, page }: { id: string; page?: number }) 
         // 결제 후 리포트를 쓰는 동안에도 유료 섹션 제목·첫 문장 자리를 그대로 두고, 완성되면 같은 자리에서 채운다.
         paidPending={
           data.paid && (!report || report.partial)
-            ? waitedTooLong
-              ? `${b14(copy, "ERR_AI_SLOW", "title", "", data.nickname)} ${b14(copy, "ERR_AI_SLOW", "body", "리포트를 만드는 데 시간이 걸리고 있어요. 잠시 뒤 새로고침해 주세요.", data.nickname)} ${REPORT_SUPPORT_NOTE}`.trim()
-              : `${b14(copy, "EMPTY_REPORT_GEN", "title", "", data.nickname)} ${b14(copy, "EMPTY_REPORT_GEN", "body", "결제가 확인됐어요. 연말부터 앞으로 5년까지, 전체 리포트를 쓰고 있어요(20~60초).", data.nickname)}`.trim()
+            ? {
+                // 별 아래 작은 안내는 B14 EMPTY_REPORT_GEN body('보통 20~30초 걸려요…'), 큰 문구는 3초마다 바뀌는 문구
+                note: b14(copy, "EMPTY_REPORT_GEN", "body", "보통 20~30초 걸려요. 다 쓴 부분부터 차례로 보여 드릴게요.", data.nickname),
+                slowText: waitedTooLong
+                  ? `${b14(copy, "ERR_AI_SLOW", "title", "", data.nickname)} ${b14(copy, "ERR_AI_SLOW", "body", "리포트를 만드는 데 시간이 걸리고 있어요. 잠시 뒤 새로고침해 주세요.", data.nickname)} ${REPORT_SUPPORT_NOTE}`.trim()
+                  : null,
+              }
             : undefined
         }
       />

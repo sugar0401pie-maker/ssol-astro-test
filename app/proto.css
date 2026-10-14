@@ -364,3 +364,10 @@ details.why ul{list-style:disc}
 .net-notice{position:fixed;left:0;right:0;top:0;z-index:60;display:flex;flex-direction:column;gap:2px;padding:10px 16px;background:#FFD7A8;color:#013566;font-size:.86rem;line-height:1.5;text-align:center}
 /* 화면 등장 애니메이션은 끝난 뒤 남지 않게(backwards) — 'both'로 남아 있으면 안쪽의 position:fixed(토스트·시트·결제 카드)가
    화면이 아니라 이 상자를 기준으로 붙어 페이지 아래로 밀려났다(2026-10-10 수정) */
+/* 결제 후 리포트 쓰는 중(ReportWriting): 잠긴 섹션 흐린 자리 가운데에 */
+.blur-wrap{position:relative}
+.report-writing{position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(253,246,233,.92) 35%,rgba(253,246,233,0) 75%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;padding:0 8px}
+.report-writing .orbit{width:110px;height:110px}
+.report-writing .writing-msg{margin:0;font-family:var(--f-head);font-size:1.02rem;color:var(--ink);line-height:1.5;animation:fadeIn .5s ease both}
+.report-writing .writing-note{margin:0;font-size:.82rem;color:var(--ink);opacity:.65}
+@media (prefers-reduced-motion:reduce){.report-writing .spin{animation:none}.report-writing .writing-msg{animation:none}}

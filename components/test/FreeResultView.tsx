@@ -4,6 +4,7 @@
 // 머리 → 1. 태어난 순간의 하늘(정확도·시간 추가·휠·표·4원소·나의 행성 읽기) → 2. 별이 본 나의 유형(동점이면 고르기) →
 // 3. 2026 회고 → [SNS 공유하기][저장하기] → 4~7(잠김: 요약 + 앞부분만, 결제 후 전체) → 부드러운 톤 카드 → 공유·저장 → 고지.
 // 1~3번 문장은 서버가 해석 DB에서 골라 보낸다(AI 0회). 4~7번 본문은 결제 전에는 브라우저로 보내지 않는다.
+import { ReportWriting } from "@/components/results/ReportWriting";
 import SowellaButton from "@/components/results/SowellaButton";
 import PageArt from "@/components/results/PageArt";
 import { RESULT_PAGES, rememberPage } from "@/lib/results/lastPage";
@@ -120,7 +121,8 @@ export default function FreeResultView({
   /** B·C등급 태어난 시간 [수정] */
   onAddTime?: () => void;
   /** 결제는 끝났고 리포트를 쓰는 중 — 잠긴 자리를 그대로 두고 안내만 바꾼다 */
-  paidPending?: string;
+  /** 결제 후 리포트를 쓰는 중: 잠긴 섹션 가운데에 도는 별 + 바뀌는 문구(note = 작은 안내, slowText = 오래 걸릴 때 고정 안내) */
+  paidPending?: { note: string; slowText: string | null };
   /** 저장하기 → 가입할 때 미리 채울 값 */
   savePrefill?: { birthDate?: string; nickname?: string };
   /** 2번 섹션에서 유형을 바꿨을 때 새 결과 */
@@ -609,18 +611,16 @@ export default function FreeResultView({
                       </div>
                     )}
                     {/* 흐려지는 자리: 실제 본문이 아니라 해석 DB B13 가짜 문장(결제 전에는 실제 유료 본문을 보내지 않는다) */}
-                    <div className={`blur-dummy${paidPending ? " animate-pulse motion-reduce:animate-none" : ""}`} aria-hidden="true" inert>
-                      {(preview[page]?.dummy.length ? preview[page].dummy : ["　".repeat(40), "　".repeat(40)]).map((t, i) => (
-                        <p key={i}>{t}</p>
-                      ))}
+                    <div className="blur-wrap">
+                      <div className="blur-dummy" aria-hidden="true" inert>
+                        {(preview[page]?.dummy.length ? preview[page].dummy : ["　".repeat(40), "　".repeat(40), "　".repeat(40), "　".repeat(40)]).map((t, i) => (
+                          <p key={i}>{t}</p>
+                        ))}
+                      </div>
+                      {paidPending && <ReportWriting nickname={nickname} note={paidPending.note} slowText={paidPending.slowText} />}
                     </div>
                   </div>
                 </section>
-                {paidPending && (
-                  <p role="status" className="paybox" style={{ textAlign: "center" }}>
-                    {paidPending}
-                  </p>
-                )}
                 {!resultId && <p className="hint text-center">결과를 저장하면 전체 리포트를 볼 수 있어요.</p>}
               </div>
             )}
