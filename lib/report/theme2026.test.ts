@@ -12,6 +12,7 @@ test("A12t: 주제 이름·어울리는 단어를 DB에서 읽는다", () => {
   assert.equal(table.WEIGHT.name, "무게·책임");
   assert.deepEqual(table.REVIEW.fitWords, ["배움", "멈춤", "정리"]);
   assert.deepEqual(table.RELEASE.fitWords, ["변화", "이별", "그만하자", "정리"]);
+  assert.deepEqual(table.GROWTH.fitWords, ["배움", "성취", "시작", "설렘", "감사"]);
   assert.deepEqual(table.CALM.fitWords, []);
 });
 

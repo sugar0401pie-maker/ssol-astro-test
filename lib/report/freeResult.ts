@@ -311,7 +311,7 @@ function signSheets(db: AstroDb, chart: NatalChart): Record<string, WheelSheet> 
 // ---- 2026 회고 ----
 
 const HEAVY_WORDS: ReadonlySet<Q2Word> = new Set(["버텨", "고생", "그만하자", "멈춤", "이별"]);
-const LIGHT_WORDS: ReadonlySet<Q2Word> = new Set(["성취", "설렘", "시작", "배움"]);
+const LIGHT_WORDS: ReadonlySet<Q2Word> = new Set(["성취", "설렘", "시작", "배움", "감사"]);
 
 /** A8 행 ID(TR_{행성}_{대상}_{CONJ|HARM|TENSE}, 토성 리턴은 TR_SATURN_RETURN). 해당 행이 없으면 null. */
 export function a8Id(e: TimelineEvent): string | null {
