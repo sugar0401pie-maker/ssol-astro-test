@@ -54,7 +54,7 @@ export default function ResultView({ id, page }: { id: string; page?: number }) 
   }, [session, id]);
 
   // 결제했으면 유료 리포트를 받아 온다. 아직 만드는 중이면 4초마다 다시 묻는다.
-  // owner 2026-10-11: 30초 동안 아무것도 못 받으면 한 번 다시 만들기를 요청하고, 그래도(60초) 안 뜨면 고객센터 안내.
+  // owner 2026-10-11: 30초 동안 아무것도 못 받으면 한 번 다시 만들기를 요청하고, 60초가 지나도 안 뜨면 고객센터 안내(10-14: 쓰는 중이어도 60초).
   // 안내를 띄운 뒤에도 3분까지는 계속 물어서, 늦게라도 완성되면 그대로 보여 준다.
   const paid = data?.paid === true;
   const [waitedTooLong, setWaitedTooLong] = useState(false);
@@ -86,8 +86,8 @@ export default function ResultView({ id, page }: { id: string; page?: number }) 
       }
       if (stop) return;
       const now = Date.now() - started;
-      // 재시도 뒤 30초(=60초)까지 아무것도 없거나, 일부만 온 채 2분이 지나면 고객센터 안내
-      if ((!gotAny && now >= REPORT_RETRY_MS * 2) || now >= 120_000) setWaitedTooLong(true);
+      // 60초가 지나면 쓰는 중 신호가 와도 고객센터 안내(owner 2026-10-14 — 예전엔 일부가 왔으면 2분까지 기다렸다)
+      if (now >= REPORT_RETRY_MS * 2) setWaitedTooLong(true);
       if (now > 180_000) return;
       setTimeout(tick, 4000);
     };
