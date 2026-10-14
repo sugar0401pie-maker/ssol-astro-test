@@ -497,8 +497,7 @@ export default function TestFlow() {
       {step === "firstTime" && (
         <section className="screen on" id="scr-first" aria-labelledby="first-big">
           <h1 className="big" id="first-big" tabIndex={-1}>
-            오늘 당신의 태어난 날짜와 시간을 토대로 점성술에 따라 {name}님의 과거와 현재, 미래를 알아봅니다. 우리 쏠 하우스만의 특제 레시피로 {name}님의 주요
-            고민에 맞는 웰니스 제안을 해드릴게요. 이제 한 번 해볼까요?
+            쏠 아스트로 하우스만의 레시피로 {name}님의 과거와 현재, 미래를 알아보겠습니다. 이제 한 번 해볼까요?
           </h1>
           <GuideArt id="03-1" />
           <div className="stack">
