@@ -4,7 +4,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { CHARACTER_GRID, COMPETENCY_BY_PLANET, ELEMENTS, SIGNS, STYLES } from "../astro/constants.ts";
-import { Q1_OPTIONS, Q2_ALL, Q2_OPTIONS, Q3_ALL, type Answers } from "../astro/answers.ts";
+import { Q1_OPTIONS, Q2_ALL, Q2_OPTIONS, Q3_ALL, isSoftTone, type Answers } from "../astro/answers.ts";
 import { b9Id } from "./movement.ts";
 import { computeNatal } from "../astro/natal.ts";
 import { judgeCharacter, type CalibrationTable } from "../astro/character.ts";
@@ -262,10 +262,12 @@ test("Q2 새 단어 '정리'(2026-10-14): 2026 회고 첫 문단·영역 문장�
   assert.ok(!json.includes("멈춤’"));
 });
 
-test("Q2 새 단어 '감사'(2026-10-14): 회고 문장이 '감사' 문장으로 채워지고, 화면 선택지에서 고생·그만하자는 빠진다", () => {
+test("Q2 새 단어 '감사'(2026-10-14): 회고 문장이 '감사' 문장으로 채워지고, 화면 선택지에서 버텨·그만하자는 빠진다", () => {
   const r = JSON.stringify(sample({ q1: "연애", q2: "감사", q3: "안정" }));
   const mine = db.dbs.A12d.rows.filter((x) => x.word === "감사" && x.area === "연애").map((x) => x.text);
   assert.ok(mine.some((t) => r.includes(t.slice(0, 20))), "A12d 감사×연애 문장");
-  assert.ok(!Q2_OPTIONS.includes("고생") && !Q2_OPTIONS.includes("그만하자"));
+  assert.ok(!Q2_OPTIONS.includes("버텨") && !Q2_OPTIONS.includes("그만하자"));
+  // 안전: 힘든 해를 고르는 단어 하나(고생)는 부드러운 톤으로 남아 있어야 한다
+  assert.ok(Q2_OPTIONS.includes("고생") && isSoftTone("고생"));
   assert.equal(Q2_OPTIONS.length, 10);
 });
