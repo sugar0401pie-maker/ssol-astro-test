@@ -5,7 +5,7 @@ import { BANNED_PHRASES } from "./validate.ts";
 
 test("리포트 쓰는 중 문구: 이름이 채워지고, 예측·단정 표현이 없다", () => {
   const ms = writingMessages("호로록냠냠");
-  assert.ok(ms.length >= 6);
+  assert.equal(ms.length, 4);
   assert.ok(ms[0].startsWith("호로록냠냠님의"));
   for (const m of ms) {
     assert.ok(!m.includes("{"), m);

@@ -76,7 +76,7 @@ export default function ResultView({ id, page }: { id: string; page?: number }) 
           track("report_ready", {}, `report_ready:${id}`);
           return setReport(d.report);
         }
-        // 쓰는 중: 다 쓴 섹션부터 보여 주고 계속 기다린다
+        // 쓰는 중: 받아 두기만 하고(화면에는 다 된 뒤에만 보여 줌) 계속 기다린다
         if (d.report) {
           gotAny = true;
           setReport(d.report);
@@ -125,9 +125,9 @@ export default function ResultView({ id, page }: { id: string; page?: number }) 
         initialPage={page ?? lastPage(id)}
         // 임시 계정으로 결제했으면 4~7장 맨 위에 보관(가입) 안내(프로토타입 .temp-banner)
         tempBanner={data.guest && !session && data.paid ? (n) => <TempPayBanner banner={data.result.tempPay.banner} loginBig={data.result.tempPay.loginBigPaid} resultId={id} page={n} /> : undefined}
-        // 쓰는 중(partial)이면 아직 없는 섹션은 null → 잠긴 자리 + '쓰고 있어요' 안내
+        // 리포트는 다 만들어진 뒤에만 보여 준다(owner 2026-10-14: 다 쓴 부분부터 보여 주지 않음). 쓰는 중이면 잠긴 자리 + 도는 별
         paidSection={
-          data.paid && report
+          data.paid && report && !report.partial
             ? (no) => (report.sections.some((s) => s.no === no) ? <PaidReportView report={report} signIndex={data.result.sunSignIndex} resultId={id} only={no} /> : null)
             : undefined
         }
@@ -135,8 +135,6 @@ export default function ResultView({ id, page }: { id: string; page?: number }) 
         paidPending={
           data.paid && (!report || report.partial)
             ? {
-                // 별 아래 작은 안내는 B14 EMPTY_REPORT_GEN body('보통 20~30초 걸려요…'), 큰 문구는 3초마다 바뀌는 문구
-                note: b14(copy, "EMPTY_REPORT_GEN", "body", "보통 20~30초 걸려요. 다 쓴 부분부터 차례로 보여 드릴게요.", data.nickname),
                 slowText: waitedTooLong
                   ? `${b14(copy, "ERR_AI_SLOW", "title", "", data.nickname)} ${b14(copy, "ERR_AI_SLOW", "body", "리포트를 만드는 데 시간이 걸리고 있어요. 잠시 뒤 새로고침해 주세요.", data.nickname)} ${REPORT_SUPPORT_NOTE}`.trim()
                   : null,

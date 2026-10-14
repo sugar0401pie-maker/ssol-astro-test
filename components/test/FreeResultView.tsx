@@ -121,8 +121,8 @@ export default function FreeResultView({
   /** B·C등급 태어난 시간 [수정] */
   onAddTime?: () => void;
   /** 결제는 끝났고 리포트를 쓰는 중 — 잠긴 자리를 그대로 두고 안내만 바꾼다 */
-  /** 결제 후 리포트를 쓰는 중: 잠긴 섹션 가운데에 도는 별 + 바뀌는 문구(note = 작은 안내, slowText = 오래 걸릴 때 고정 안내) */
-  paidPending?: { note: string; slowText: string | null };
+  /** 결제 후 리포트를 쓰는 중: 잠긴 섹션 가운데에 도는 별 + 바뀌는 문구(slowText = 오래 걸릴 때 고정 안내) */
+  paidPending?: { slowText: string | null };
   /** 저장하기 → 가입할 때 미리 채울 값 */
   savePrefill?: { birthDate?: string; nickname?: string };
   /** 2번 섹션에서 유형을 바꿨을 때 새 결과 */
@@ -617,7 +617,7 @@ export default function FreeResultView({
                           <p key={i}>{t}</p>
                         ))}
                       </div>
-                      {paidPending && <ReportWriting nickname={nickname} note={paidPending.note} slowText={paidPending.slowText} />}
+                      {paidPending && <ReportWriting nickname={nickname} slowText={paidPending.slowText} />}
                     </div>
                   </div>
                 </section>
