@@ -4,7 +4,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { CHARACTER_GRID, COMPETENCY_BY_PLANET, ELEMENTS, SIGNS, STYLES } from "../astro/constants.ts";
-import { Q1_OPTIONS, Q2_OPTIONS, Q3_ALL, type Answers } from "../astro/answers.ts";
+import { Q1_OPTIONS, Q2_ALL, Q2_OPTIONS, Q3_ALL, type Answers } from "../astro/answers.ts";
 import { b9Id } from "./movement.ts";
 import { computeNatal } from "../astro/natal.ts";
 import { judgeCharacter, type CalibrationTable } from "../astro/character.ts";
@@ -45,7 +45,17 @@ test("DB: 엔진이 만드는 ID가 모두 있다", () => {
       assert.ok(a5 && a5.competency === comp && a5.style === STYLES[i], `A5 ${n}`);
       assert.ok(db.dbs.B6.rows.find((r) => r.character === n)?.choice_line, `B6 ${n}`);
     });
-  Q2_OPTIONS.forEach((w, i) => assert.equal(row(db, "A12", `Q2_${pad2(i + 1)}`)?.word, w));
+  // Q2 단어마다(화면에서 빠진 예전 단어 포함) A12 1줄 · A12b 12줄 · A12c 주제 6개 × 3 · A12d 고민 영역 6개 × 3
+  const themes = ["무게·책임", "전환·새 국면", "확장·도움", "정리·내려놓기", "다시 보기·멈춤", "고른 흐름"];
+  for (const w of Q2_ALL) {
+    assert.ok(db.dbs.A12.rows.find((r) => r.word === w), `A12 ${w}`);
+    assert.equal(db.dbs.A12b.rows.filter((r) => r.word === w).length, 12, `A12b ${w}`);
+    for (const th of themes) assert.equal(db.dbs.A12c.rows.filter((r) => r.word === w && r.theme === th).length, 3, `A12c ${w} ${th}`);
+    for (const d of Q1_OPTIONS) assert.equal(db.dbs.A12d.rows.filter((r) => r.word === w && r.area === d).length, 3, `A12d ${w} ${d}`);
+  }
+  for (const w of Q2_OPTIONS) assert.ok((Q2_ALL as readonly string[]).includes(w));
+  // Q2·Q3에 같은 단어가 생기지 않게('시작'만 예외 — 마스터스펙 Q3 확정 메모, start_overlap 검사)
+  assert.deepEqual(Q2_OPTIONS.filter((w) => (Q3_ALL as readonly string[]).includes(w)), ["시작"]);
   for (const wish of Q3_ALL)
     for (const level of ["활짝 열리는 해(순풍)", "내 손에 달린 해(보통)", "기반을 다지는 해(역풍)", "열리는 해"]) assert.ok(db.dbs.A13.rows.find((r) => r.wish === wish && r.level === level), `A13 ${wish} ${level}`);
   for (const comp of Object.values(COMPETENCY_BY_PLANET)) {
@@ -241,4 +251,13 @@ test("서머타임 경계 시각(정확한 시간)은 정확도 B로 표시하�
   assert.equal(r.accuracy, "B");
   assert.match(r.gradeNote, /1시간 안의 차이/);
   assert.equal(r.addTimeNote, null); // 시간을 알려 준 사람에게 '시간 추가하기'는 띄우지 않는다
+});
+
+test("Q2 새 단어 '정리'(2026-10-14): 2026 회고 첫 문단·영역 문장·마무리가 '정리' 문장으로 채워진다", () => {
+  const r = sample({ q1: "가족", q2: "정리", q3: "안정" });
+  const json = JSON.stringify(r);
+  assert.ok(json.includes("‘정리’") || json.includes("정리"));
+  const mine = new Set(db.dbs.A12d.rows.filter((x) => x.word === "정리" && x.area === "가족").map((x) => x.text));
+  assert.ok([...mine].some((t) => json.includes(t.slice(0, 20))), "A12d 정리×가족 문장");
+  assert.ok(!json.includes("멈춤’"));
 });

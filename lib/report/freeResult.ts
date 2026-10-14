@@ -540,7 +540,7 @@ export function buildFreeResult(args: {
   });
 
   const tps = turningPointTexts(db, events, chart, birthYear, { birthDate: args.birthDate, domainHouses: DOMAIN_MAP[answers.q1].houses, today });
-  const q2 = row(db, "A12", `Q2_${pad2(["버텨", "배움", "변화", "멈춤", "성취", "이별", "고생", "그만하자", "시작", "설렘"].indexOf(answers.q2) + 1)}`);
+  const q2 = findRow(db, "A12", (r) => r.word === answers.q2);
   const hasTp = turningPoints(events, w).length > 0;
   const match = q2Matches(answers.q2, scored.slice(0, 5), db, hasTp);
   // 해석 DB v1.3: 2026 하늘 주제(A12t 규칙) → 첫 문단 A12c(단어 × 주제), 전환점 뒤에 A12d(단어 × 고민 영역). 칸 안 표현은 출생정보 해시로 하나.
