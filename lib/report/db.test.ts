@@ -74,8 +74,9 @@ test("DB: 엔진이 만드는 ID가 모두 있다", () => {
   for (const id of ["TP_SATURN_RETURN_1", "TP_SATURN_RETURN_2", "TP_JUPITER_RETURN", "TP_URANUS_OPPOSITION", "TP_NEPTUNE_SQUARE", "TP_URANUS_INTO_ASC_SIGN", "TP_SATURN_INTO_ASC_SIGN", "TP_QUIET_YEAR", "TP_SOLAR_ECLIPSE_ON_POINT", "TP_LUNAR_ECLIPSE_ON_POINT"]) has("A18", id);
 });
 
-const SKIP_KEYS = new Set(["id", "review_note", "dates", "image_file", "house", "house_label", "period_label", "event", "name", "minutes", "houses", "planets", "scene_hint", "in_service_range", "section", "note", "slot", "situation", "when", "variant", "level", "wish", "word"]); // validate_text.py 2026-10-10과 같게
-const DIGIT_OK_ROWS = new Set(["FIX_PAYWALL_BOX", "FIX_SOWELLA_3DAY", "ERR_DATE_RANGE", "EMPTY_REPORT_GEN", "BLUR_S7_09"]);
+const SKIP_KEYS = new Set(["id", "review_note", "dates", "image_file", "house", "house_label", "period_label", "event", "name", "minutes", "houses", "planets", "scene_hint", "in_service_range", "section", "note", "slot", "situation", "when", "variant", "level", "wish", "word", "condition", "place"]); // validate_text.py 2026-10-10과 같게 + 화면에 안 나가는 설명 칸(A5c condition·A15 place, 2026-10-14 DB)
+// FIX_CANDIDATE_CHOICE: "30분 간격" 계산 안내 — owner 검수 메모로 허용(2026-10-14 DB)
+const DIGIT_OK_ROWS = new Set(["FIX_PAYWALL_BOX", "FIX_SOWELLA_3DAY", "ERR_DATE_RANGE", "EMPTY_REPORT_GEN", "BLUR_S7_09", "FIX_CANDIDATE_CHOICE"]);
 
 test("DB: 화면 문장이 C1 금지어 사전과 숫자 규칙을 통과한다(validate_text.py와 같은 기준)", () => {
   const rules = compileC1(db.dbs.C1.rows as unknown as C1Row[]);
