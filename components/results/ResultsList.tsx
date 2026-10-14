@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { apiHeaders, getGuestToken } from "@/lib/guest/client";
 import { signOut } from "@/lib/supabase/authClient";
 import { useRealSession } from "./useSession";
-import { b11, useCopy } from "@/lib/copy/useCopy";
+import { b11, b14, useCopy } from "@/lib/copy/useCopy";
 
 interface Row {
   id: string;
@@ -58,12 +58,18 @@ export default function ResultsList() {
     else setError("지우지 못했어요. 잠시 후 다시 시도해 주세요.");
   }
 
+  // B14 MYRESULT_LIST_TITLE 제목만(owner 2026-10-14 — 설명 줄은 지금 목록과 맞지 않아 쓰지 않음). 이름은 카카오·네이버·가입 때 남긴
+  // 계정 프로필 이름(테스트 화면 닉네임 미리 채우기와 같은 값). 비회원이거나 이름이 없으면 '내 결과'.
+  const meta = (session?.user.user_metadata ?? {}) as Record<string, unknown>;
+  const accountName = [meta.nickname, meta.name, meta.full_name].find((v): v is string => typeof v === "string" && v.trim() !== "")?.trim();
+  const listTitle = accountName ? b14(copy, "MYRESULT_LIST_TITLE", "title", "내 결과", accountName) : "내 결과";
+
   if (session === undefined) return <p className="text-center text-cream/70">확인하는 중…</p>;
   if (needLogin) return <p className="text-center text-cream/70">로그인 화면으로 이동하는 중…</p>;
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-xl font-bold text-cream">내 결과</h1>
+      <h1 className="text-xl font-bold text-cream">{listTitle}</h1>
       {session === null && (
         <p className="rounded-2xl border border-gold px-4 py-3 text-sm leading-relaxed text-cream/90">
           로그인하지 않고 이 기기에 저장한 결과예요. 결과를 열어 [저장하기]를 누르고 로그인하면 계정에 보관돼요(저장하지 않으면 30일 뒤 지워져요).

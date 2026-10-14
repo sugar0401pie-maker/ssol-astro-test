@@ -17,11 +17,15 @@ import PaidReportView from "./PaidReportView";
 import { b14, useCopy } from "@/lib/copy/useCopy";
 import type { PaidReport } from "@/lib/report/aiReport";
 import { lastPage } from "@/lib/results/lastPage";
+import BottomSheet from "@/components/ui/BottomSheet";
 
 /** 리포트가 30초 동안 아무것도 안 오면 한 번 다시 만들기 요청(owner 2026-10-11) */
 const REPORT_RETRY_MS = 30_000;
 /** 그래도 안 뜰 때 고객센터 안내(Claude 초안, owner 검토 가능) */
 const REPORT_SUPPORT_NOTE = "그래도 리포트가 보이지 않으면 contact@ssolwellness.com으로 알려 주세요. 결제 내역을 확인해 바로 도와드릴게요.";
+
+/** 결제한 결과에서 [수정]을 누를 때 안내(owner 문구 2026-10-14) */
+const TIME_EDIT_PAID_NOTE = "생년월일을 수정해도 처음에 만든 리포트는 그대로 유지됩니다.";
 
 export default function ResultView({ id, page }: { id: string; page?: number }) {
   const session = useRealSession();
@@ -33,6 +37,8 @@ export default function ResultView({ id, page }: { id: string; page?: number }) 
   const [error, setError] = useState<string | null>(null);
   // 로그인하고 돌아왔을 때 등 앞 화면이 남긴 안내(프로토타입 backToResult의 toast)
   const [toast, setToast] = useToast();
+  // 결제한 결과에서 [수정](태어난 시간 고치기)을 누르면 새 테스트로 가기 전에 B14 INFO_TIME_EDIT_PAID 안내(owner 2026-10-14)
+  const [timeEditNote, setTimeEditNote] = useState(false);
   const loaded = !!data;
   useEffect(() => {
     if (!loaded) return;
@@ -120,7 +126,7 @@ export default function ResultView({ id, page }: { id: string; page?: number }) 
         firstTime={data.firstTime}
         resultId={id}
         // C등급: 시간을 알게 됐으면 테스트를 다시(새 결과로 저장된다)
-        onAddTime={() => router.push("/test")}
+        onAddTime={() => (data.paid ? setTimeEditNote(true) : router.push("/test"))}
         // 주소에 페이지가 없으면(/results/{id} — 결제 후 돌아올 때 등) 이 기기에 기억한 마지막 페이지로 연다
         initialPage={page ?? lastPage(id)}
         // 임시 계정으로 결제했으면 4~7장 맨 위에 보관(가입) 안내(프로토타입 .temp-banner)
@@ -149,6 +155,13 @@ export default function ResultView({ id, page }: { id: string; page?: number }) 
           처음부터 다시
         </Link>
       </div>
+      <BottomSheet open={timeEditNote} onClose={() => setTimeEditNote(false)} labelledBy="time-edit-title">
+        {/* owner 문구(2026-10-14) — B14 INFO_TIME_EDIT_PAID의 긴 본문 대신 이 한 문장 */}
+        <h3 id="time-edit-title">{TIME_EDIT_PAID_NOTE}</h3>
+        <button type="button" className="btn block" onClick={() => router.push("/test")}>
+          {b14(copy, "INFO_TIME_EDIT_PAID", "button", "확인했어요")}
+        </button>
+      </BottomSheet>
       <Toast msg={toast} />
     </div>
   );
