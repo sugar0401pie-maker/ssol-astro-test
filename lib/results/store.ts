@@ -8,6 +8,7 @@ import { ASTRO_DB } from "@/lib/report/dbData";
 import { CONSENT_VERSION } from "./consent";
 import { guestExpiry } from "./guest";
 import type { Owner } from "./owner";
+import type { Attribution, ShareChannel, Touch } from "@/lib/attribution/attribution";
 
 /** 주인 조건을 붙인다(supabase 쿼리 빌더 — 타입이 너무 깊어 최소 모양으로만 다룬다). */
 type Filterable = { eq(column: string, value: string): Filterable; is(column: string, value: null): Filterable };
@@ -40,8 +41,10 @@ export async function saveResult(args: {
   birth: BirthResult & { resolved: NonNullable<BirthResult["resolved"]> };
   /** 쏘웰라 채팅용 요약(lib/report/chatSummary.ts). 없으면 저장하지 않는다. */
   chatSummary?: string | null;
+  /** 유입 경로(서버에서 sanitizeAttribution을 거친 값). 없으면 저장하지 않는다. */
+  attribution?: Attribution | null;
 }): Promise<string> {
-  const { owner, nickname, firstTime, input, answers, birth, chatSummary } = args;
+  const { owner, nickname, firstTime, input, answers, birth, chatSummary, attribution } = args;
   const { chart, character } = birth.resolved;
   const row = {
       ...(owner.kind === "user"
@@ -66,7 +69,11 @@ export async function saveResult(args: {
       consented_at: new Date().toISOString(),
   };
   const insert = (r: object) => createAdminClient().from(TABLE).insert(r).select("id").single();
-  let { data, error } = await insert(chatSummary ? { ...row, chat_summary: chatSummary, chat_summary_at: new Date().toISOString() } : row);
+  const summary = chatSummary ? { chat_summary: chatSummary, chat_summary_at: new Date().toISOString() } : {};
+  const source = attribution ? { attribution_first: attribution.first, attribution_last: attribution.last } : {};
+  let { data, error } = await insert({ ...row, ...summary, ...source });
+  // 유입 경로 마이그레이션(20261015000000) 전이면 attribution 칸이 없다(42703) — 유입 경로 없이 다시(결과 저장은 막지 않음).
+  if (error?.code === "42703" && attribution) ({ data, error } = await insert({ ...row, ...summary }));
   // 비회원·요약 마이그레이션(20261008000200) 전이면 chat_summary 칸이 없다(42703) — 요약 없이 다시 저장(로그인 사용자는 계속 저장되게).
   if (error?.code === "42703" && chatSummary) ({ data, error } = await insert(row));
   if (error || !data) throw new Error(`결과 저장 실패: ${error?.code ?? "no data"}`);
@@ -139,11 +146,14 @@ export async function getPayState(owner: Owner, resultId: string): Promise<(PayS
   return { paid: !!data.paid_at, reportStatus: data.report_status, reportStartedAt: data.report_started_at, report: data.report };
 }
 
-export async function createOrder(owner: Owner, resultId: string, amount: number, withdrawalVersion: string): Promise<string> {
+export async function createOrder(owner: Owner, resultId: string, amount: number, withdrawalVersion: string, attributionLast: Touch | null = null): Promise<string> {
   const who = owner.kind === "user" ? { user_id: owner.userId } : { user_id: null, guest_token_hash: owner.tokenHash };
   const row = { ...who, result_id: resultId, amount, status: "pending" };
   const insert = (r: object) => createAdminClient().from("astro_orders").insert(r).select("id").single();
-  let { data, error } = await insert({ ...row, withdrawal_notice_at: new Date().toISOString(), withdrawal_notice_version: withdrawalVersion });
+  const notice = { withdrawal_notice_at: new Date().toISOString(), withdrawal_notice_version: withdrawalVersion };
+  let { data, error } = await insert({ ...row, ...notice, ...(attributionLast ? { attribution_last: attributionLast } : {}) });
+  // 유입 경로 마이그레이션(20261015000000) 전이면 attribution_last 칸이 없다(42703) — 칸 없이 다시(결제는 막지 않음)
+  if (error?.code === "42703" && attributionLast) ({ data, error } = await insert({ ...row, ...notice }));
   // 동의 기록 마이그레이션(20261011000000) 전이면 칸이 없다(42703) — 결제는 막지 않고 칸 없이 다시(동의는 astro_consents에도 남김 시도)
   if (error?.code === "42703") ({ data, error } = await insert(row));
   if (error || !data) throw new Error(`주문 생성 실패: ${error?.code ?? "no data"}`);
@@ -235,6 +245,9 @@ export async function claimGuestResults(userId: string, tokenHash: string): Prom
   if (error) throw new Error(`결과 옮기기 실패: ${error.code}`);
   const { error: e2 } = await db.from("astro_orders").update({ user_id: userId, guest_token_hash: null }).is("user_id", null).eq("guest_token_hash", tokenHash);
   if (e2) throw new Error(`주문 옮기기 실패: ${e2.code}`);
+  // 로그인 전에 만든 공유 링크도 계정으로(표가 없으면 — 마이그레이션 전 — 건너뜀, 옮기기 자체는 막지 않음)
+  const { error: e3 } = await db.from("astro_share_links").update({ user_id: userId, guest_token_hash: null }).is("user_id", null).eq("guest_token_hash", tokenHash);
+  if (e3) console.warn("공유 링크 옮기기 실패:", e3.code);
   return (data ?? []).map((r) => r.id as string);
 }
 
@@ -349,4 +362,25 @@ export async function getAccountEmail(userId: string): Promise<string | null> {
     .find((e) => e) ?? "";
   const email = data.user.email || fromIdentity;
   return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) ? email : null;
+}
+
+/**
+ * 공유 링크 코드 기록(공유 버튼을 누를 때). 결과 id는 이 주인의 결과일 때만 남긴다.
+ * 'created' | 'duplicate'(같은 코드가 이미 있음) | 'unavailable'(표가 없음 — 마이그레이션 전).
+ */
+export async function insertShareLink(owner: Owner | null, slug: string, channel: ShareChannel, resultId: string | null): Promise<"created" | "duplicate" | "unavailable"> {
+  const db = createAdminClient();
+  let ownResult: string | null = null;
+  if (owner && resultId && isUuid(resultId)) {
+    let q = db.from(TABLE).select("id").eq("id", resultId);
+    q = owner.kind === "user" ? q.eq("user_id", owner.userId) : q.is("user_id", null).eq("guest_token_hash", owner.tokenHash);
+    const { data } = await q.maybeSingle();
+    ownResult = data ? resultId : null;
+  }
+  const who = !owner ? {} : owner.kind === "user" ? { user_id: owner.userId } : { guest_token_hash: owner.tokenHash };
+  const { error } = await db.from("astro_share_links").insert({ slug, channel, result_id: ownResult, ...who });
+  if (!error) return "created";
+  if (error.code === "23505") return "duplicate";
+  if (error.code === "42P01" || error.code === "PGRST205") return "unavailable";
+  throw new Error(`공유 링크 기록 실패: ${error.code}`);
 }

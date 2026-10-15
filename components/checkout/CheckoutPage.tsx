@@ -10,6 +10,7 @@ import { useRealSession } from "@/components/results/useSession";
 import { b11, useCopy } from "@/lib/copy/useCopy";
 import { track } from "@/lib/analytics/track";
 import { WITHDRAWAL_CHECK_LABEL, WITHDRAWAL_NOTICE_LINES } from "@/lib/billing/withdrawal";
+import { getAttribution } from "@/lib/attribution/client";
 
 const TOSS_CLIENT_KEY = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY;
 
@@ -43,7 +44,7 @@ export default function CheckoutPage({ resultId, page }: { resultId: string; pag
     void fetch("/api/checkout", {
       method: "POST",
       headers: apiHeaders(session, { "content-type": "application/json" }),
-      body: JSON.stringify({ resultId, withdrawalAck: true }),
+      body: JSON.stringify({ resultId, withdrawalAck: true, attributionLast: getAttribution()?.last ?? null }),
     })
       .then(async (res) => {
         const d = await res.json();

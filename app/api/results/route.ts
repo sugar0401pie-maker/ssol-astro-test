@@ -7,6 +7,7 @@ import { recordConsents } from "@/lib/results/consentLog";
 import { CONSENT_VERSION } from "@/lib/results/consent";
 import { characterLabel } from "@/lib/report/characterDisplay";
 import { ASTRO_DB } from "@/lib/report/dbData";
+import { sanitizeAttribution } from "@/lib/attribution/attribution";
 
 // POST: 저장 동의 → 서버가 다시 계산해 저장하고 무료 결과를 돌려준다(브라우저가 보낸 계산값은 쓰지 않음).
 // 로그인했으면 계정에, 아니면 이 브라우저의 비회원 열쇠로 익명 저장(owner 결정 2026-10-08: 먼저 보고 저장 권유).
@@ -46,6 +47,8 @@ export async function POST(req: NextRequest) {
       answers: parsed.answers,
       birth: computed.birth,
       chatSummary: chatSummaryFor(computed, parsed.answers, null, parsed.nickname),
+      // 유입 경로(브라우저가 보낸 값을 정해 둔 칸·형식만 남겨서)
+      attribution: sanitizeAttribution(body.attribution),
     });
     // 출생 정보 화면의 필수 동의(화면이 모두 체크해야 넘어가고, 서버도 consent:true를 확인했다)
     // 로그인 없이(비회원)는 3가지(임시 계정은 이용약관에 포함), 로그인하면 결과 저장까지 4가지

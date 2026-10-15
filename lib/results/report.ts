@@ -32,7 +32,8 @@ async function emailReport(resultId: string, userId: string | null, nickname: st
       sunSign: card.sunSign,
       oneLiner: card.oneLiner,
       imageUrl: kakaoArtUrl(art, SITE_URL),
-      resultUrl: `${SITE_URL}/results/${resultId}/1`,
+      // 재방문 집계용 utm(owner 2026-10-15 링크 규칙)
+      resultUrl: `${SITE_URL}/results/${resultId}/1?utm_source=email&utm_medium=report_mail`,
       disclaimer: findRow(ASTRO_DB, "A15", (r) => r.id === "FIX_DISCLAIMER")?.text ?? "",
     });
     const sent = await sendEmail({ to, ...mail });

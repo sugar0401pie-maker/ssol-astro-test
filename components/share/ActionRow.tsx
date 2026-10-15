@@ -106,7 +106,7 @@ export default function ActionRow({
           저장하기
         </button>
       </div>
-      <ShareSheet {...share} open={shareOpen} onClose={() => setShareOpen(false)} />
+      <ShareSheet {...share} resultId={resultId} open={shareOpen} onClose={() => setShareOpen(false)} />
 
       {/* "저장되었습니다!"(프로토타입 .saved-modal — 금색 동그라미 체크, 뒤 배경 없음) */}
       <div className={`saved-modal${modal ? " on" : ""}`} role="status" aria-live="polite" hidden={!modal}>

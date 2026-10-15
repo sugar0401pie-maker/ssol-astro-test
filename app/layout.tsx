@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import NetworkNotice from "@/components/ui/NetworkNotice";
+import AttributionCapture from "@/components/attribution/AttributionCapture";
 import { Gowun_Batang, Noto_Sans_KR, Noto_Sans_Symbols, Noto_Sans_Symbols_2 } from "next/font/google";
 import "./globals.css";
 
@@ -48,6 +49,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <div className="sky-dust" aria-hidden="true" />
         <div className="sky-dust b" aria-hidden="true" />
         <NetworkNotice />
+        <AttributionCapture />
         <div className="app flex flex-col">{children}</div>
       </body>
     </html>

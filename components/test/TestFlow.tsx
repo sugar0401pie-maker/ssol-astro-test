@@ -20,6 +20,7 @@ import FreeResultView from "./FreeResultView";
 import SiteFooter from "@/components/SiteFooter";
 import Toast, { useToast } from "@/components/ui/Toast";
 import { takeFlash } from "@/lib/ui/flash";
+import { getAttribution } from "@/lib/attribution/client";
 
 // 새로고침해도 이 탭 안에서는 이어 가도록 진행 상태를 sessionStorage에 둔다(탭을 닫으면 사라짐, 결과 저장 뒤엔 결과 id만).
 const PROGRESS_KEY = "astro_test_progress_v2";
@@ -286,7 +287,7 @@ export default function TestFlow() {
       const res = await fetch("/api/results", {
         method: "POST",
         headers: apiHeaders(session, { "content-type": "application/json" }),
-        body: JSON.stringify({ ...requestBody(answers as Answers, p, tp), consent: true, firstTime: firstTime === true }),
+        body: JSON.stringify({ ...requestBody(answers as Answers, p, tp), consent: true, firstTime: firstTime === true, attribution: getAttribution() }),
       });
       const data = await res.json();
       if (!res.ok || !data.result) throw new Error(data.error ?? "저장하지 못했어요.");
@@ -309,7 +310,7 @@ export default function TestFlow() {
       const res = await fetch("/api/results", {
         method: "POST",
         headers: apiHeaders(session, { "content-type": "application/json" }),
-        body: JSON.stringify({ ...requestBody(answers as Answers, pick, typePick), consent: true, firstTime: firstTime === true }),
+        body: JSON.stringify({ ...requestBody(answers as Answers, pick, typePick), consent: true, firstTime: firstTime === true, attribution: getAttribution() }),
       });
       const data = await res.json();
       if (!res.ok || !data.id) return false;
