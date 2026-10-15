@@ -36,7 +36,7 @@ export default function TempPayBanner({ banner, loginBig, resultId, page }: { ba
             <section className="screen on" id="scr-login" aria-labelledby="login-big">
               <AuthStep
                 title={loginBig || undefined}
-                subtitle={b11(copy, "LOGIN_SMALL_GUEST", "로그인하면 지금 결과가 내 계정으로 옮겨지고, 쏘웰라 3일 이용권도 함께 받을 수 있어요.")}
+                subtitle={b11(copy, "LOGIN_SMALL_GUEST", "로그인하면 지금 결과가 내 계정으로 옮겨지고, 쏘웰라와도 대화할 수 있어요.")}
                 art={<GuideArt id="06" />}
                 oauthRedirect={typeof window !== "undefined" ? `${window.location.origin}/results/${resultId}/${page}` : undefined}
                 onSignedIn={() => void afterSignIn()}

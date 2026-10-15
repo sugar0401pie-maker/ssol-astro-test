@@ -56,7 +56,8 @@ test("DB 뼈대: 4섹션 모두 있고, 연말 조심할 세 가지에 금성 �
   const qb = db.dbs.A17a.rows.find((r) => r.competency === "기대기" && r.wish === "안정")!;
   assert.deepEqual(skeleton.questions.items, [qb.q1, qb.q2, qb.q3]);
   assert.equal(skeleton.practices.length, 3);
-  assert.ok(skeleton.closing.startsWith("이 리포트와 함께 3일 동안 쏘웰라 이용권이 제공됩니다."));
+  assert.ok(skeleton.closing.startsWith("위 질문 중 하나를 골라 쏘웰라와"));
+  assert.ok(!skeleton.closing.includes("이용권"));
   assert.ok(!skeleton.closing.includes("→"));
   // 뼈대 문장에도 빈칸 토큰이 남지 않는다
   assert.ok(!JSON.stringify(skeleton).includes("{{"));

@@ -63,7 +63,7 @@ export default function LoginClient() {
     : isStart ? b11(copy, "LOGIN_BIG", "빠르게 로그인하고 내 별자리를 확인해볼까요?") : b11(copy, "LOGIN_BIG_MYRESULT", "로그인하고 내 결과를 다시 볼까요?");
   const subtitle = isStart
     ? b11(copy, "LOGIN_SMALL", "결과는 내 계정에 저장돼서 언제든 다시 볼 수 있어요. 나중에 태어난 시간을 추가할 수도 있어요.")
-    : b11(copy, "LOGIN_SMALL_GUEST", "로그인하면 지금 결과가 내 계정으로 옮겨지고, 쏘웰라 3일 이용권도 함께 받을 수 있어요.");
+    : b11(copy, "LOGIN_SMALL_GUEST", "로그인하면 지금 결과가 내 계정으로 옮겨지고, 쏘웰라와도 대화할 수 있어요.");
 
   return (
     <AuthStep

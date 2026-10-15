@@ -62,7 +62,8 @@ export default function ResultsList() {
   // 계정 프로필 이름(테스트 화면 닉네임 미리 채우기와 같은 값). 비회원이거나 이름이 없으면 '내 결과'.
   const meta = (session?.user.user_metadata ?? {}) as Record<string, unknown>;
   const accountName = [meta.nickname, meta.name, meta.full_name].find((v): v is string => typeof v === "string" && v.trim() !== "")?.trim();
-  const listTitle = accountName ? b14(copy, "MYRESULT_LIST_TITLE", "title", "내 결과", accountName) : "내 결과";
+  const fallbackTitle = b14(copy, "MYRESULT_LIST_TITLE", "alt", "내 결과");
+  const listTitle = accountName ? b14(copy, "MYRESULT_LIST_TITLE", "title", fallbackTitle, accountName) : fallbackTitle;
 
   if (session === undefined) return <p className="text-center text-cream/70">확인하는 중…</p>;
   if (needLogin) return <p className="text-center text-cream/70">로그인 화면으로 이동하는 중…</p>;

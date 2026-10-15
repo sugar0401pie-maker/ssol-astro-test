@@ -24,7 +24,7 @@ const REPORT_RETRY_MS = 30_000;
 /** 그래도 안 뜰 때 고객센터 안내(Claude 초안, owner 검토 가능) */
 const REPORT_SUPPORT_NOTE = "그래도 리포트가 보이지 않으면 contact@ssolwellness.com으로 알려 주세요. 결제 내역을 확인해 바로 도와드릴게요.";
 
-/** 결제한 결과에서 [수정]을 누를 때 안내(owner 문구 2026-10-14) */
+/** 결제한 결과에서 [수정]을 누를 때 안내(owner 문구 2026-10-14) — DB를 못 받았을 때의 기본값 */
 const TIME_EDIT_PAID_NOTE = "생년월일을 수정해도 처음에 만든 리포트는 그대로 유지됩니다.";
 
 export default function ResultView({ id, page }: { id: string; page?: number }) {
@@ -156,8 +156,8 @@ export default function ResultView({ id, page }: { id: string; page?: number }) 
         </Link>
       </div>
       <BottomSheet open={timeEditNote} onClose={() => setTimeEditNote(false)} labelledBy="time-edit-title">
-        {/* owner 문구(2026-10-14) — B14 INFO_TIME_EDIT_PAID의 긴 본문 대신 이 한 문장 */}
-        <h3 id="time-edit-title">{TIME_EDIT_PAID_NOTE}</h3>
+        {/* B14 INFO_TIME_EDIT_PAID 제목(v1.2.4부터 owner 문구가 DB에 들어감). 못 받으면 같은 문장 */}
+        <h3 id="time-edit-title">{b14(copy, "INFO_TIME_EDIT_PAID", "title", TIME_EDIT_PAID_NOTE)}</h3>
         <button type="button" className="btn block" onClick={() => router.push("/test")}>
           {b14(copy, "INFO_TIME_EDIT_PAID", "button", "확인했어요")}
         </button>
