@@ -6,6 +6,7 @@ import { getRealSession } from "@/lib/supabase/browser";
 import type { FunnelEvent } from "./events";
 import { attributionProps } from "@/lib/attribution/attribution";
 import { captureAttribution, getAttribution } from "@/lib/attribution/client";
+import { gaFromFunnel } from "./gaClient";
 
 const KEY = "astro_anon_v1";
 let memoryId: string | null = null;
@@ -35,6 +36,8 @@ export function track(event: FunnelEvent, props: Record<string, string | number>
   }
   // 이번 방문의 유입 경로(utm·공유 코드 등 짧은 값)를 함께 남긴다 — 화면이 첫 기록보다 먼저 이벤트를 보내도 빠지지 않게 여기서도 읽는다
   captureAttribution();
+  // GA4에도 정해 둔 단계만(테스트 시작·생년월일 입력 완료·무료 결과·유료 클릭) — 값은 장 번호·금액뿐
+  gaFromFunnel(event, props);
   const withSource = { ...attributionProps(getAttribution()?.last), ...props };
   void (async () => {
     try {
