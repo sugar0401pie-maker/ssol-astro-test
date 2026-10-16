@@ -46,7 +46,12 @@ export default function CheckoutSuccess() {
       if (res.ok) {
         gaPurchase(orderId, Number(amount));
         // X 픽셀 결제 전환 — 서버 전환 API와 같은 conversion_id(주문 번호)
-        xPixelEvent(X_EVENT_IDS.purchase, { conversion_id: orderId, value: Number(amount), currency: "KRW" });
+        xPixelEvent(X_EVENT_IDS.purchase, {
+          conversion_id: orderId,
+          value: Number(amount),
+          currency: "KRW",
+          contents: [{ content_type: "digital_report", content_id: "astro_report", content_name: "쏠 아스트로 하우스 전체 리포트", content_price: Number(amount), num_items: 1 }],
+        });
       }
       if (res.ok && d.resultId) router.replace(`/results/${d.resultId}/${clampPage(params.get("page"))}`);
       else {

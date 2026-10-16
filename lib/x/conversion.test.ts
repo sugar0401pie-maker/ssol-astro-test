@@ -50,3 +50,8 @@ test("이벤트 ID 형식·클라이언트 IP", () => {
   assert.equal(clientIp(h), "203.0.113.5");
   assert.equal(clientIp(new Headers()), null);
 });
+
+test("결제 이벤트 ID가 형식에 맞다", async () => {
+  const { X_EVENT_IDS } = await import("./events.ts");
+  assert.ok(isXEventId(X_EVENT_IDS.purchase));
+});

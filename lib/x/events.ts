@@ -6,7 +6,7 @@ export const X_PIXEL_ID = "rh4ou";
  * purchase = 유료 리포트 결제 완료(서버가 토스 승인을 확인한 결제만).
  */
 export const X_EVENT_IDS: { purchase: string | null } = {
-  purchase: null,
+  purchase: "tw-rh4ou-rhcgf", // owner 전달 2026-10-16(유형: 구매)
 };
 
 export function isXEventId(v: string | null | undefined): v is string {
