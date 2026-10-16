@@ -14,6 +14,8 @@ export interface Touch {
   /** 처음 연 페이지 경로, 쿼리 없이(예: /share/abc123) */
   landing_path?: string;
   in_app?: InApp;
+  /** X(트위터) 광고 클릭 식별자(랜딩 주소의 twclid) — X 전환 API로 결제를 광고 클릭과 잇는 데만 쓴다 */
+  twclid?: string;
   /** 이 기록이 생긴 시각(ISO) */
   first_seen_at: string;
 }
@@ -36,6 +38,7 @@ const UTM_RE = /^[\p{L}\p{N}_.\- ]{1,64}$/u;
 export const SLUG_RE = /^[A-Za-z0-9]{8,16}$/;
 const HOST_RE = /^[a-z0-9.-]{1,100}$/;
 const PATH_RE = /^\/[A-Za-z0-9_\-/]{0,120}$/;
+export const TWCLID_RE = /^[A-Za-z0-9_-]{1,200}$/;
 
 /** User-Agent로 앱 안 브라우저 판별. 모르면 none. */
 export function inAppOf(ua: string): InApp {
@@ -91,6 +94,8 @@ export function readTouch(p: { search: string; pathname: string; referrer: strin
     const s = slugFromPath(p.pathname);
     if (s) t.ref = s;
   }
+  const tw = q.get("twclid");
+  if (tw && TWCLID_RE.test(tw)) t.twclid = tw;
   const host = referrerHostOf(p.referrer, p.ownHost);
   if (host) t.referrer_host = host;
   const path = cleanPath(p.pathname);
@@ -101,7 +106,7 @@ export function readTouch(p: { search: string; pathname: string; referrer: strin
 
 /** 새 캠페인 신호가 있는 방문인지(utm·공유 코드·바깥 사이트에서 옴) */
 export function hasSignal(t: Touch): boolean {
-  return !!(t.utm_source || t.utm_medium || t.utm_campaign || t.ref || t.referrer_host);
+  return !!(t.utm_source || t.utm_medium || t.utm_campaign || t.ref || t.referrer_host || t.twclid);
 }
 
 /**
@@ -131,6 +136,7 @@ export function sanitizeTouch(raw: unknown): Touch | null {
   }
   if (typeof r.ref === "string" && SLUG_RE.test(r.ref)) t.ref = r.ref;
   if (typeof r.referrer_host === "string" && HOST_RE.test(r.referrer_host)) t.referrer_host = r.referrer_host;
+  if (typeof r.twclid === "string" && TWCLID_RE.test(r.twclid)) t.twclid = r.twclid;
   const path = cleanPath(r.landing_path);
   if (path) t.landing_path = path;
   if (typeof r.in_app === "string" && (IN_APPS as readonly string[]).includes(r.in_app)) t.in_app = r.in_app as InApp;

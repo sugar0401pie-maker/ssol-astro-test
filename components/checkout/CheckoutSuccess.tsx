@@ -9,6 +9,8 @@ import { b14, useCopy } from "@/lib/copy/useCopy";
 import { clampPage } from "@/lib/results/lastPage";
 import { track } from "@/lib/analytics/track";
 import { gaPurchase } from "@/lib/analytics/gaClient";
+import { xPixelEvent } from "@/lib/x/pixelClient";
+import { X_EVENT_IDS } from "@/lib/x/events";
 
 export default function CheckoutSuccess() {
   const params = useSearchParams();
@@ -41,7 +43,11 @@ export default function CheckoutSuccess() {
       // 결제를 누른 그 페이지로 바로(프로토타입 unlock — 비회원이면 그 페이지 맨 위에 보관 안내가 뜬다)
       track(res.ok ? "pay_success" : "pay_fail", { page: clampPage(params.get("page")) });
       // GA4 purchase: 서버가 금액·주문을 확인한 결제만(같은 주문 번호는 GA가 한 번만 센다)
-      if (res.ok) gaPurchase(orderId, Number(amount));
+      if (res.ok) {
+        gaPurchase(orderId, Number(amount));
+        // X 픽셀 결제 전환 — 서버 전환 API와 같은 conversion_id(주문 번호)
+        xPixelEvent(X_EVENT_IDS.purchase, { conversion_id: orderId, value: Number(amount), currency: "KRW" });
+      }
       if (res.ok && d.resultId) router.replace(`/results/${d.resultId}/${clampPage(params.get("page"))}`);
       else {
         setError(d.error ?? "결제를 확인하지 못했어요.");

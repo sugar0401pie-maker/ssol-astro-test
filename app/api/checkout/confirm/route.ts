@@ -4,6 +4,10 @@ import { cancelTossPayment, confirmTossPayment, getTossPayment } from "@/lib/bil
 import { decideAfterConfirmFailure } from "@/lib/billing/confirmDecision";
 import { runReportGeneration } from "@/lib/results/report";
 import { getOrder, isResultPaid, markOrderPaid, markResultPaid, ownsOrder, settleOrder } from "@/lib/results/store";
+import { sendXConversion } from "@/lib/x/sendConversion";
+import { clientIp } from "@/lib/x/conversion";
+import { X_EVENT_IDS } from "@/lib/x/events";
+import { sanitizeTouch } from "@/lib/attribution/attribution";
 
 const CONFIRM_RETRY_MESSAGE = "결제 확인이 늦어지고 있어요. 잠시 뒤 이 화면을 새로고침해 주세요. 계속되면 contact@ssolwellness.com으로 알려 주세요.";
 
@@ -74,6 +78,22 @@ export async function POST(req: NextRequest) {
       await markResultPaid(resultId);
       after(() => runReportGeneration(resultId));
     }
+    // X 광고 전환(결제 완료) — 서버가 토스 승인을 확인한 결제만, 처음 결제 완료 처리될 때 한 번.
+    // conversion_id = 주문 번호(브라우저 픽셀도 같은 값으로 보내 X가 한 번만 센다). 식별자: 광고 클릭 twclid, 없으면 IP+브라우저 정보.
+    // 이메일·전화번호는 보내지 않는다(owner 결정 전). 실패해도 결제 응답에는 영향 없음.
+    const twclid = sanitizeTouch({ first_seen_at: new Date().toISOString(), ...(order.attribution_last ?? {}) })?.twclid ?? null;
+    const ip = clientIp(req.headers);
+    const ua = req.headers.get("user-agent");
+    after(async () => {
+      await sendXConversion({
+        eventId: X_EVENT_IDS.purchase,
+        conversionId: orderId,
+        eventSourceUrl: "https://astro.ssolwellnesshouse.com/checkout/success",
+        ids: { twclid, ipAddress: ip, userAgent: ua },
+        value: order.amount,
+        currency: "KRW",
+      });
+    });
     return NextResponse.json({ ok: true, resultId: order.result_id, guest: owner.kind === "guest" });
   } catch (e) {
     console.error(e instanceof Error ? e.message : "결제 승인 처리 실패");

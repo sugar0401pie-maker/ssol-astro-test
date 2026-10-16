@@ -161,13 +161,13 @@ export async function createOrder(owner: Owner, resultId: string, amount: number
 }
 
 export async function getOrder(orderId: string) {
-  const { data, error } = await createAdminClient()
-    .from("astro_orders")
-    .select("id, user_id, guest_token_hash, result_id, amount, status")
-    .eq("id", orderId)
-    .maybeSingle();
+  const base = "id, user_id, guest_token_hash, result_id, amount, status";
+  const q = (cols: string) => createAdminClient().from("astro_orders").select(cols).eq("id", orderId).maybeSingle();
+  let { data, error } = await q(`${base}, attribution_last`);
+  // 유입 경로 마이그레이션(20261015000000) 전이면 칸이 없다(42703) — 칸 없이 다시
+  if (error?.code === "42703") ({ data, error } = await q(base));
   if (error) throw new Error(`주문 조회 실패: ${error.code}`);
-  return data as OrderRow | null;
+  return data as unknown as OrderRow | null;
 }
 
 export interface OrderRow {
@@ -177,6 +177,8 @@ export interface OrderRow {
   result_id: string | null;
   amount: number;
   status: string;
+  /** 주문을 만들 때의 유입 경로(이번 방문) — X 광고 클릭 식별자(twclid)도 여기에 */
+  attribution_last?: { twclid?: string } | null;
 }
 
 /** 이 주문의 주인인지(비회원 주문이 나중에 계정으로 옮겨졌으면 계정으로만 맞는다). */
