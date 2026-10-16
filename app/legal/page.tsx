@@ -303,7 +303,7 @@ export default function LegalPage() {
 
         <section id="privacy" className="mt-10 border-t border-navy/15 pt-8">
           <h2 className="text-[18px] font-semibold text-navy">개인정보처리방침</h2>
-          <p className="mt-1 text-[13px] text-navy/60">공고일자: 2026년 09월 22일 · 시행일자: 2026년 09월 22일</p>
+          <p className="mt-1 text-[13px] text-navy/60">공고일자: 2026년 10월 16일 · 시행일자: 2026년 10월 16일</p>
 
           <P>
             쏠 웰니스 하우스(이하 &ldquo;회사&rdquo;)는 웰니스 자기이해 플랫폼 &ldquo;쏠 웰니스 하우스&rdquo;(이하
