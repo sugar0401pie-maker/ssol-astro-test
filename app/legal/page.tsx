@@ -64,7 +64,7 @@ export default function LegalPage() {
 
         <section id="terms" className="mt-10 border-t border-navy/15 pt-8">
           <h2 className="text-[18px] font-semibold text-navy">쏠 웰니스 하우스 이용약관</h2>
-          <p className="mt-1 text-[13px] text-navy/60">시행일자: 2026년 09월 22일</p>
+          <p className="mt-1 text-[13px] text-navy/60">시행일자: 2026년 10월 16일</p>
 
           <H3>제1장 총칙</H3>
           <p className="mt-2 text-[14px] font-medium text-navy">제1조 (목적)</p>
@@ -298,7 +298,7 @@ export default function LegalPage() {
           <P>회사는 서비스 내에 타 사이트로 연결되는 링크(SNS 공유 등)를 제공할 수 있으며, 해당 사이트의 내용에 대해서는 책임지지 않는다.</P>
 
           <p className="mt-4 text-[14px] font-medium text-navy">부칙</p>
-          <P>본 약관은 2026년 09월 22일부터 시행한다.</P>
+          <P>본 약관은 2026년 10월 16일부터 시행한다.</P>
         </section>
 
         <section id="privacy" className="mt-10 border-t border-navy/15 pt-8">
