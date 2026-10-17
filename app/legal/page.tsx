@@ -64,7 +64,7 @@ export default function LegalPage() {
 
         <section id="terms" className="mt-10 border-t border-navy/15 pt-8">
           <h2 className="text-[18px] font-semibold text-navy">쏠 웰니스 하우스 이용약관</h2>
-          <p className="mt-1 text-[13px] text-navy/60">시행일자: 2026년 10월 16일</p>
+          <p className="mt-1 text-[13px] text-navy/60">시행일자: 2026년 10월 17일</p>
 
           <H3>제1장 총칙</H3>
           <p className="mt-2 text-[14px] font-medium text-navy">제1조 (목적)</p>
@@ -84,7 +84,7 @@ export default function LegalPage() {
                   items={[
                     "가. 웰니스 성향 자가진단 테스트(이하 “테스트”) 제공 서비스",
                     "나. 테스트 결과를 기반으로 한 유료 심층 분석 리포트(이하 “심층 리포트”) 제공 서비스",
-                    "다. 심층 리포트 구매 시 함께 제공되는 AI 대화 이용권(이하 “AI 채팅권”) 서비스",
+                    "다. 테스트 결과를 참고해 대화하는 AI 웰니스 대화 서비스(이하 “쏘웰라”)와의 연계 서비스(쏘웰라의 이용 조건은 쏘웰라에서 정한다)",
                     "라. 테스트 결과 저장, 소셜미디어 공유 등 부가 서비스",
                     "마. 기타 회사가 추가로 개발하거나 제휴를 통해 제공하는 서비스",
                   ]}
@@ -179,7 +179,7 @@ export default function LegalPage() {
           <UL
             items={[
               "무료 서비스: 웰니스 성향 자가진단 테스트, 테스트 결과 요약(유형명, 특징, 궁합 등) 열람",
-              "유료 서비스: 심층 리포트(1회 결제 시 해당 테스트 결과에 대한 심층 분석 콘텐츠 및 3일간 AI 채팅권 제공)",
+              "유료 서비스: 심층 리포트(1회 결제 시 해당 테스트 결과에 대한 심층 분석 콘텐츠 제공)",
               "부가 서비스: 결과 저장, SNS 공유 등",
             ]}
           />
@@ -298,7 +298,7 @@ export default function LegalPage() {
           <P>회사는 서비스 내에 타 사이트로 연결되는 링크(SNS 공유 등)를 제공할 수 있으며, 해당 사이트의 내용에 대해서는 책임지지 않는다.</P>
 
           <p className="mt-4 text-[14px] font-medium text-navy">부칙</p>
-          <P>본 약관은 2026년 10월 16일부터 시행한다.</P>
+          <P>본 약관은 2026년 10월 17일부터 시행한다.</P>
         </section>
 
         <section id="privacy" className="mt-10 border-t border-navy/15 pt-8">
