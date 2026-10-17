@@ -279,7 +279,6 @@ export default function FreeResultView({
       </div>
 
       <div key={page} className={`rpage${lockedPage && !paidPending ? " has-locked" : ""}`}>
-        {page >= 4 && tempBanner?.(page)}
         {page === 1 && (
           <>
           <header className="res-head">
@@ -624,10 +623,12 @@ export default function FreeResultView({
                 {!resultId && <p className="hint text-center">결과를 저장하면 전체 리포트를 볼 수 있어요.</p>}
               </div>
             )}
+            {/* 임시 계정으로 결제한 사람에게만(ResultView가 guest·로그인 안 함·결제함일 때만 넘김): 리포트 아래에 보관(가입) 안내 — owner 2026-10-17 */}
+            {tempBanner?.(page)}
             {disclaimer}
             {/* 4~7번 페이지마다 [SNS 공유하기][저장하기] — 결제 전이면 B11 SHARE_NOTE_LOCKED */}
             <div className="page-share">
-              {!paidSection && <p className="share-note">{result.shareNoteLocked || "결제하지 않더라도 지금까지의 결과를 공유할 수 있어요."}</p>}
+              {!paidSection && !paidPending && <p className="share-note">{result.shareNoteLocked || "결제하지 않더라도 지금까지의 결과를 공유할 수 있어요."}</p>}
               <ActionRow share={share} copy={result.saveCopy} resultId={resultId ?? null} prefill={savePrefill} onRetrySave={onRetrySave} />
             </div>
           </>

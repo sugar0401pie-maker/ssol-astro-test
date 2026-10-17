@@ -1,6 +1,6 @@
 "use client";
 
-// 임시 계정으로 결제한 사람에게(프로토타입 unlock() .temp-banner, 마스터스펙 6-1-1 '그 페이지 맨 위'):
+// 임시 계정으로 결제한 사람에게(프로토타입 unlock() .temp-banner — owner 2026-10-17: 맨 위가 아니라 4~7장 리포트 아래):
 // B11 PAY_TEMP_BANNER + [회원가입하고 보관하기] → 로그인 화면(openLogin('paid'): LOGIN_BIG_PAID · LOGIN_SMALL_GUEST ·
 // 카카오/네이버/이메일로 계속하기 · [결과로 돌아가기]) → 로그인하면 이 기기의 결과·주문을 계정으로 옮기고 같은 페이지로 + LOGIN_DONE.
 import { useEffect, useState } from "react";
