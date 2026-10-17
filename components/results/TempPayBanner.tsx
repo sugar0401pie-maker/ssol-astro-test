@@ -11,23 +11,29 @@ import { claimGuestResults } from "@/lib/guest/client";
 import { getRealSession } from "@/lib/supabase/browser";
 import { setFlash } from "@/lib/ui/flash";
 
-export default function TempPayBanner({ banner, loginBig, resultId, page }: { banner: string; loginBig: string; resultId: string; page: number }) {
+// 리포트를 쓰는 동안(owner 2026-10-17): 완성 메일을 이유로 로그인을 권한다 — 메일은 계정 메일로만 보낼 수 있어서.
+// 문구는 Claude 초안(owner 검토 가능). 로그인하면 결과가 계정으로 옮겨지고, 완성되는 순간 메일이 나간다(lib/results/report.ts).
+export const WRITING_MAIL_NOTE = "리포트를 쓰고 있어요. 지금 로그인해 두면 완성됐을 때 계정 메일로 알려드리고, 리포트도 계정에 보관돼요.";
+export const WRITING_MAIL_BUTTON = "로그인하고 완성 메일 받기";
+const WRITING_MAIL_DONE = "로그인되었어요. 리포트가 완성되면 메일로 알려드릴게요.";
+
+export default function TempPayBanner({ banner, loginBig, resultId, page, writing = false }: { banner: string; loginBig: string; resultId: string; page: number; writing?: boolean }) {
   const copy = useCopy();
   const [open, setOpen] = useState(false);
 
   async function afterSignIn() {
     const s = await getRealSession();
     if (s) await claimGuestResults(s);
-    setFlash(b11(copy, "LOGIN_DONE", "로그인되었어요. 결과가 내 계정에 저장됐어요."));
+    setFlash(writing ? WRITING_MAIL_DONE : b11(copy, "LOGIN_DONE", "로그인되었어요. 결과가 내 계정에 저장됐어요."));
     location.replace(`/results/${resultId}/${page}`);
   }
 
   return (
     <>
       <div className="temp-banner" id="temp-banner">
-        <p>{banner}</p>
+        <p>{writing ? WRITING_MAIL_NOTE : banner}</p>
         <button type="button" className="btn block small-btn" onClick={() => setOpen(true)}>
-          회원가입하고 보관하기
+          {writing ? WRITING_MAIL_BUTTON : "회원가입하고 보관하기"}
         </button>
       </div>
       {open && (

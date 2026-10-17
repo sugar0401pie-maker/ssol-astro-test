@@ -65,7 +65,10 @@ export async function runReportGeneration(resultId: string, opts: { retry?: bool
     const report = await generatePaidReport({ db: ASTRO_DB, resolved: c.birth.resolved, wishContext: wishContextOf(c.birth.stored, c.birth.accuracy), answers: row.answers, nickname: row.nickname, birthKey: birthKeyOf(row.birth_input), onPart: (partial) => savePartialReport(resultId, partial, attempt) });
     // 그사이 다른 시도가 자리를 넘겨받았으면 저장하지 않는다(그쪽 결과가 남는다)
     if (!(await saveReport(resultId, report, attempt))) return;
-    await emailReport(resultId, row.user_id, row.nickname, cardOf(c));
+    // 주인을 다시 읽는다: 생성 중(20~60초)에 비회원이 로그인해 계정으로 옮겼으면, 시작할 때 읽은 user_id는 비어 있고
+    // 옮기는 순간(claim)의 메일 확인은 리포트가 아직 없어 건너뛰었기 때문(메일은 claimReportEmail로 한 번만 나간다).
+    const owner = (await getResultForReport(resultId).catch(() => null))?.user_id ?? row.user_id;
+    await emailReport(resultId, owner, row.nickname, cardOf(c));
     // 쏘웰라 채팅이 참고할 요약을 리포트 본문·제안까지 넣어 다시 만든다.
     await saveChatSummary(resultId, chatSummaryFor(c, row.answers, report, row.nickname));
   } catch (e) {
