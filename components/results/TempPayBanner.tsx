@@ -6,13 +6,12 @@
 import { useEffect, useState } from "react";
 import AuthStep from "@/components/auth/AuthStep";
 import GuideArt from "@/components/test/GuideArt";
-import BottomSheet from "@/components/ui/BottomSheet";
 import { b11, useCopy } from "@/lib/copy/useCopy";
 import { claimGuestResults } from "@/lib/guest/client";
 import { getRealSession } from "@/lib/supabase/browser";
 import { setFlash } from "@/lib/ui/flash";
 
-// 리포트를 쓰는 동안(owner 2026-10-17): 배너·쓰는 중 별 화면은 그대로 두고, 완성 메일을 이유로 로그인을 권하는 팝업을 따로 띄운다
+// 리포트를 쓰는 동안(owner 2026-10-17): 배너·쓰는 중 별 화면은 그대로 두고, 완성 메일을 이유로 로그인을 권하는 팝업을 화면 가운데에 띄운다(오른쪽 위 ×로 닫기)
 // (메일은 계정 메일로만 보낼 수 있어서). 결과마다 이 기기에서 한 번만(닫으면 다시 안 뜸). 문구는 owner 지정.
 // 로그인하면 결과가 계정으로 옮겨지고, 완성되는 순간 메일이 나간다(lib/results/report.ts).
 export const WRITING_MAIL_NOTE = "지금 로그인하시면 계정에 리포트를 보관할 수 있어요.";
@@ -37,6 +36,13 @@ export default function TempPayBanner({ banner, loginBig, resultId, page, writin
     return () => clearTimeout(t);
   }, [writing, resultId]);
 
+  useEffect(() => {
+    if (!popup) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && closePopup();
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  });
+
   function closePopup() {
     setPopup(false);
     try {
@@ -59,19 +65,26 @@ export default function TempPayBanner({ banner, loginBig, resultId, page, writin
           회원가입하고 보관하기
         </button>
       </div>
-      <BottomSheet open={popup} onClose={closePopup} labelledBy="mail-popup-title">
-        <h3 id="mail-popup-title">{WRITING_MAIL_NOTE}</h3>
-        <button
-          type="button"
-          className="btn block"
-          onClick={() => {
-            closePopup();
-            setOpen(true);
-          }}
-        >
-          {WRITING_MAIL_BUTTON}
-        </button>
-      </BottomSheet>
+      {popup && (
+        <div className="mail-pop-back" onClick={closePopup}>
+          <div role="dialog" aria-modal="true" aria-labelledby="mail-popup-title" className="mail-pop" onClick={(e) => e.stopPropagation()}>
+            <button className="x" type="button" aria-label="닫기" autoFocus onClick={closePopup}>
+              ×
+            </button>
+            <h3 id="mail-popup-title">{WRITING_MAIL_NOTE}</h3>
+            <button
+              type="button"
+              className="btn block"
+              onClick={() => {
+                closePopup();
+                setOpen(true);
+              }}
+            >
+              {WRITING_MAIL_BUTTON}
+            </button>
+          </div>
+        </div>
+      )}
       {open && (
         <div role="dialog" aria-modal="true" aria-label="로그인" className="fixed inset-0 z-50 overflow-auto" style={{ background: "linear-gradient(180deg,var(--midnight) 0%,#08244d 45%,var(--navy) 100%)" }}>
           <div className="app">
