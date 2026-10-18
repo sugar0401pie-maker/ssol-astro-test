@@ -12,7 +12,7 @@ import AuthFooterLink from "@/components/auth/AuthFooterLink";
 import { getRealSession } from "@/lib/supabase/browser";
 import { INTRO_IMAGES, nextImage } from "./images";
 
-const src = (i: number) => `/intro/${INTRO_IMAGES[i]}.jpg`;
+const src = (i: number) => `/intro/${INTRO_IMAGES[i]}.webp`;
 
 export default function Intro() {
   const [loggedIn, setLoggedIn] = useState(false);
@@ -27,14 +27,26 @@ export default function Intro() {
 
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    INTRO_IMAGES.forEach((_, i) => {
+    // 첫 화면 속도(2026-10-18): 여섯 장을 한꺼번에 받지 않는다. 다음에 보일 한 장만 미리 받아 두고,
+    // 다 받아진 그림으로만 넘긴다(느린 망에서는 받아질 때까지 지금 그림이 그대로 있다).
+    let upcoming = nextImage(current.current);
+    let ready = false;
+    const preload = (i: number) => {
+      ready = false;
       const im = new window.Image();
+      im.onload = () => {
+        if (i === upcoming) ready = true;
+      };
       im.src = src(i);
-    });
+    };
+    preload(upcoming);
     const timer = setInterval(() => {
-      const n = nextImage(current.current);
+      if (!ready) return;
+      const n = upcoming;
       current.current = n;
       setLayers((l) => (l.showA ? { ...l, b: n, showA: false } : { ...l, a: n, showA: true }));
+      upcoming = nextImage(n);
+      preload(upcoming);
     }, 2000);
     return () => clearInterval(timer);
   }, []);
@@ -44,7 +56,7 @@ export default function Intro() {
       <section className="screen on" id="scr-intro" aria-labelledby="intro-title">
         <div className="intro-bg" aria-hidden="true">
           {/* eslint-disable-next-line @next/next/no-img-element -- 2초마다 바뀌는 배경이라 미리 불러 둔 원본을 쓴다 */}
-          <img src={src(layers.a)} alt="" className={layers.showA ? "show" : ""} />
+          <img src={src(layers.a)} alt="" fetchPriority="high" className={layers.showA ? "show" : ""} />
           {layers.b !== null && (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={src(layers.b)} alt="" className={layers.showA ? "" : "show"} />

@@ -9,14 +9,18 @@ import "./globals.css";
 const notoSansKr = Noto_Sans_KR({
   variable: "--font-noto-sans-kr",
   subsets: ["latin"],
-  weight: ["400", "500", "700"],
+  // 굵기 하나짜리 가변 글꼴(2026-10-18): 굵기 3개(400·500·700)를 따로 두면 글꼴 선언이 372개(압축해도 약 80KB)라
+  // 화면을 그리기 전에 읽어야 하는 스타일이 커졌다. 가변 글꼴 하나로 모든 굵기를 낸다.
+  // 미리 받기 끔(2026-10-18 첫 화면 속도): 한글 글꼴은 글자 범위별로 100개 가까운 조각이라, 미리 받기를 켜 두면
+  // 첫 화면에서 쓰지 않는 조각까지 약 2MB를 먼저 받았다. 끄면 브라우저가 화면에 실제로 나온 글자 조각만 받는다.
+  preload: false,
 });
 
 // 제목·요약 글꼴(프로토타입 --f-head). owner 결정 2026-10-10: HTML과 같게 명조 제목.
-const gowunBatang = Gowun_Batang({ variable: "--font-gowun-batang", weight: ["400", "700"], subsets: ["latin"] });
+const gowunBatang = Gowun_Batang({ variable: "--font-gowun-batang", weight: ["400", "700"], subsets: ["latin"], preload: false });
 // 휠의 행성·별자리 기호(프로토타입 --f-sym)
-const notoSymbols = Noto_Sans_Symbols({ variable: "--font-noto-symbols", subsets: ["symbols"] });
-const notoSymbols2 = Noto_Sans_Symbols_2({ variable: "--font-noto-symbols-2", weight: "400", subsets: ["symbols"] });
+const notoSymbols = Noto_Sans_Symbols({ variable: "--font-noto-symbols", subsets: ["symbols"], preload: false });
+const notoSymbols2 = Noto_Sans_Symbols_2({ variable: "--font-noto-symbols-2", weight: "400", subsets: ["symbols"], preload: false });
 
 const DESCRIPTION = "출생차트로 나를 돌아보는 쏠 웰니스 하우스의 자기성찰 콘텐츠. 예측 도구가 아니며 진단·상담을 대신하지 않습니다.";
 // 공유 미리보기(카카오톡·X 등): 사이트 첫 화면 정보만. 결과 주소는 본인 전용이라 결과별 미리보기는 만들지 않는다.
