@@ -12,7 +12,8 @@ import AuthFooterLink from "@/components/auth/AuthFooterLink";
 import { getRealSession } from "@/lib/supabase/browser";
 import { INTRO_IMAGES, nextImage } from "./images";
 
-const src = (i: number) => `/intro/${INTRO_IMAGES[i]}.webp`;
+// 원본 jpg 그대로(화질 유지 — owner 결정: 그림은 줄이거나 다시 압축하지 않는다)
+const src = (i: number) => `/intro/${INTRO_IMAGES[i]}.jpg`;
 
 export default function Intro() {
   const [loggedIn, setLoggedIn] = useState(false);
@@ -36,6 +37,12 @@ export default function Intro() {
       const im = new window.Image();
       im.onload = () => {
         if (i === upcoming) ready = true;
+      };
+      // 받기에 실패하면 다른 그림으로 다시 시도한다(실패한 그림에 멈춰 배경이 안 바뀌지 않게)
+      im.onerror = () => {
+        if (i !== upcoming) return;
+        upcoming = nextImage(current.current);
+        window.setTimeout(() => preload(upcoming), 3000);
       };
       im.src = src(i);
     };
