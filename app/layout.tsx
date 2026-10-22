@@ -36,9 +36,10 @@ export const metadata: Metadata = {
     description: DESCRIPTION,
     url: "/",
     locale: "ko_KR",
-    images: [{ url: "/intro/observatory.jpg", alt: "밤하늘 아래 관측소" }],
+    // 공유 썸네일(owner 2026-10-22 지정 그림, 원본 크기 그대로 jpg — 카카오톡·X가 webp를 잘 못 읽어서)
+    images: [{ url: "/og/share.jpg", width: 1774, height: 887, alt: "밤하늘 별자리 원을 가리키는 양" }],
   },
-  twitter: { card: "summary_large_image", title: "쏠 아스트로 하우스", description: DESCRIPTION, images: ["/intro/observatory.jpg"] },
+  twitter: { card: "summary_large_image", title: "쏠 아스트로 하우스", description: DESCRIPTION, images: ["/og/share.jpg"] },
 };
 
 export const viewport: Viewport = {
