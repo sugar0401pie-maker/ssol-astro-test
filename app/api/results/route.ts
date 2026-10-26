@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
+import { maybeCleanup } from "@/lib/results/cleanup";
 import { computeFree, parseResultRequest } from "@/lib/results/compute";
 import { countResultsSince, listResults, saveResult } from "@/lib/results/store";
 import { DAY_MS, IP_SAVE_LIMIT, SAVE_LIMIT_MESSAGE, dailySaveLimit, ipBlocked } from "@/lib/results/saveLimit";
@@ -21,6 +22,8 @@ export const runtime = "nodejs";
 const ipLimiter = windowLimiter(IP_SAVE_LIMIT.max, IP_SAVE_LIMIT.windowMs);
 
 export async function POST(req: NextRequest) {
+  // 기한 지난 비회원 결과·IP 기록 정리(정리 작업 대신, 1시간에 한 번까지 — cleanup.ts)
+  after(() => maybeCleanup());
   const owner = await resolveOwner(req.headers);
   if (!owner) return NextResponse.json({ error: "결과를 찾을 수 없어요. 처음부터 다시 시도해 주세요." }, { status: 401 });
   let body: Record<string, unknown>;
@@ -81,6 +84,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
+  after(() => maybeCleanup());
   const owner = await resolveOwner(req.headers);
   if (!owner) return NextResponse.json({ error: "결과를 찾을 수 없어요. 처음부터 다시 시도해 주세요." }, { status: 401 });
   try {
