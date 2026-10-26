@@ -130,6 +130,7 @@ export default function ResultView({ id, page }: { id: string; page?: number }) 
         // 주소에 페이지가 없으면(/results/{id} — 결제 후 돌아올 때 등) 이 기기에 기억한 마지막 페이지로 연다
         initialPage={page ?? lastPage(id)}
         // 임시 계정으로 결제했으면 4~7장 맨 위에 보관(가입) 안내(프로토타입 .temp-banner)
+        tempNote={data.guest && !session && data.paid ? data.result.tempPay.note || undefined : undefined}
         tempBanner={data.guest && !session && data.paid ? (n) => <TempPayBanner banner={data.result.tempPay.banner} loginBig={data.result.tempPay.loginBigPaid} resultId={id} page={n} writing={!report || !!report.partial} /> : undefined}
         // 리포트는 다 만들어진 뒤에만 보여 준다(owner 2026-10-14: 다 쓴 부분부터 보여 주지 않음). 쓰는 중이면 잠긴 자리 + 도는 별
         paidSection={

@@ -100,6 +100,7 @@ export default function FreeResultView({
   initialPage,
   onRetrySave,
   tempBanner,
+  tempNote,
   onAddTime,
   paidPending,
   savePrefill,
@@ -114,6 +115,8 @@ export default function FreeResultView({
   paidSection?: (no: number) => React.ReactNode;
   /** 임시 계정으로 결제한 사람: 4~7장 맨 위 보관 안내(프로토타입 .temp-banner) */
   tempBanner?: (page: number) => React.ReactNode;
+  /** 임시 계정으로 결제한 사람에게만(ResultView가 넘김): 4~7장 맨 위 B11 PAY_TEMP_NOTE — owner 2026-10-26, 결제 팝업에서 옮김 */
+  tempNote?: string;
   /** 저장이 실패한 결과를 다시 저장해 보기(성공하면 true) — 테스트 흐름에서만 */
   onRetrySave?: () => Promise<boolean>;
   /** 처음 열 페이지(1~7, 패키지 v3 웹툰식 결과) */
@@ -135,7 +138,7 @@ export default function FreeResultView({
   const [switching, setSwitching] = useState(false);
   // 결제 전: 유료 섹션의 굵은 요약 + 본문 첫 두 문장(서버가 DB 뼈대에서 그만큼만 보냄) + 흐린 자리용 B13 가짜 문장
   const [preview, setPreview] = useState<Record<number, { first: string; lines: string[]; dummy: string[] }>>({});
-  // 로그인하지 않은(임시 계정) 사람에게만 결제 팝업 아래 B11 PAY_TEMP_NOTE
+  // 로그인하지 않은(임시 계정) 사람에게만 3장 끝 로그인 권유 한 줄
   const [loggedIn, setLoggedIn] = useState(true);
   useEffect(() => {
     void getRealSession().then((s) => setLoggedIn(!!s));
@@ -603,6 +606,7 @@ export default function FreeResultView({
         {/* ===== 4~7. 결제 후 전체, 결제 전에는 굵은 요약 + 첫 두 문장만, 아래는 흐린 가짜 문장(B13) ===== */}
         {page >= 4 && (
           <>
+            {tempNote && <p className="hint text-center">{tempNote}</p>}
             {/* 결제 후: 그 장의 섹션(쓰는 중이면 아직 없는 섹션은 null → 아래 잠긴 자리 + 안내) */}
             {(paidSection && paidSection(page)) || (
               <div className="locked-zone" id="locked-zone">
@@ -682,7 +686,6 @@ export default function FreeResultView({
             <div className="pf-txt">
               <p className="pp-t">{popup.message}</p>
               {popup.sub && <p className="pp-s">{popup.sub}</p>}
-              {!loggedIn && result.tempPay?.note && <p className="pp-temp">{result.tempPay.note}</p>}
             </div>
             {resultId ? (
               <Link href={`/checkout/${resultId}?page=${page}`} className="btn block">

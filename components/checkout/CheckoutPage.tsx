@@ -7,7 +7,6 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { apiHeaders } from "@/lib/guest/client";
 import { useRealSession } from "@/components/results/useSession";
-import { b11, useCopy } from "@/lib/copy/useCopy";
 import { track } from "@/lib/analytics/track";
 import { WITHDRAWAL_CHECK_LABEL, WITHDRAWAL_NOTICE_LINES } from "@/lib/billing/withdrawal";
 import { getAttribution } from "@/lib/attribution/client";
@@ -26,7 +25,6 @@ type Widget = Awaited<ReturnType<typeof import("@tosspayments/payment-widget-sdk
 export default function CheckoutPage({ resultId, page }: { resultId: string; page: number }) {
   const router = useRouter();
   const session = useRealSession();
-  const copy = useCopy();
   const [order, setOrder] = useState<Order | null>(null);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -100,8 +98,6 @@ export default function CheckoutPage({ resultId, page }: { resultId: string; pag
         <div className="rounded-2xl border border-gold px-4 py-3 text-cream">
           <p className="font-bold">{order.orderName}</p>
           <p className="text-sm text-cream/80">{order.amount.toLocaleString()}원</p>
-          {/* 쏘웰라는 로그인한 계정만 쓸 수 있다(패키지 v3) — 비회원에게는 임시 계정 보관 안내(B11 PAY_TEMP_NOTE)를 */}
-          {!session && b11(copy, "PAY_TEMP_NOTE", "") && <p className="mt-1 text-xs text-cream/70">{b11(copy, "PAY_TEMP_NOTE", "")}</p>}
         </div>
       )}
       {/* 결제 전 청약철회 안내(약관 제13조) — 동의해야 결제 수단이 열린다 */}
