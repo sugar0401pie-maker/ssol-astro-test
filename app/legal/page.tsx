@@ -303,7 +303,7 @@ export default function LegalPage() {
 
         <section id="privacy" className="mt-10 border-t border-navy/15 pt-8">
           <h2 className="text-[18px] font-semibold text-navy">개인정보처리방침</h2>
-          <p className="mt-1 text-[13px] text-navy/60">공고일자: 2026년 10월 16일 · 시행일자: 2026년 10월 16일</p>
+          <p className="mt-1 text-[13px] text-navy/60">공고일자: 2026년 10월 26일 · 시행일자: 2026년 10월 26일</p>
 
           <P>
             쏠 웰니스 하우스(이하 &ldquo;회사&rdquo;)는 웰니스 자기이해 플랫폼 &ldquo;쏠 웰니스 하우스&rdquo;(이하
@@ -458,6 +458,7 @@ export default function LegalPage() {
               "전자상거래법에 따른 소비자 불만 또는 분쟁처리에 관한 기록: 3년",
               "통신비밀보호법에 따른 로그인 기록 등 통신사실확인자료: 3개월",
               "부정 이용 방지를 위한 부정 가입·이용 기록: 수집일로부터 6개월",
+              "부정 이용(자동 프로그램 등을 이용한 반복 저장) 방지를 위한 결과 저장 시 접속 IP 정보: IP 주소 그대로가 아니라 알아볼 수 없는 값으로 변환해 저장하며, 저장일로부터 7일이 지나면 파기",
             ]}
           />
 
