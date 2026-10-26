@@ -586,6 +586,15 @@ export default function FreeResultView({
             </div>
           </div>
 
+            {/* owner 2026-10-26 (가): 로그인하지 않은 사람에게만, 막지 않는 로그인 권유 한 줄(문구 owner 확정) */}
+            {!loggedIn && resultId && (
+              <p className="hint text-center">
+                로그인하면 결과가 보관되고 쏘웰라와 이어서 이야기할 수 있어요.{" "}
+                <a className="underline" href={`/login?next=${encodeURIComponent(`/results/${resultId}/3`)}`} onClick={() => track("save_click", { from: "page3" }, undefined)}>
+                  로그인하기
+                </a>
+              </p>
+            )}
             {/* 무료 구간 끝: [SNS 공유하기] + [저장하기] */}
             <ActionRow share={share} copy={result.saveCopy} resultId={resultId ?? null} prefill={savePrefill} onRetrySave={onRetrySave} />
           </>

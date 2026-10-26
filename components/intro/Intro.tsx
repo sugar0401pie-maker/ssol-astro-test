@@ -2,7 +2,7 @@
 
 // 1. 인트로(마스터스펙 6-1 화면 1, 2026-10-09 프로토타입 #scr-intro 마크업·클래스 그대로):
 // 그림 6장이 화면 전체를 채우고 2초마다 무작위로 바뀐다(같은 그림 연속 금지, '동작 줄이기'면 정지)
-// + "SSOL WELLNESS HOUSE" + 제목 + [테스트 하기]·[내 결과 보기](로그인 전이면 로그인 화면을 거침, 패키지 v3). 하단 정보는 그림 아래(.intro-foot)에 따로.
+// + "SSOL WELLNESS HOUSE" + 제목 + [테스트 하기](로그인 없이 바로, 2026-10-26)·[내 결과 보기](로그인 전이면 로그인 화면을 거침). 하단 정보는 그림 아래(.intro-foot)에 따로.
 // 참여자 수는 실제 숫자가 아니면 표시하지 않는다(프로토타입의 숫자는 '예시'라고 적혀 있음 — 가짜 사회적 증거 금지).
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -80,8 +80,9 @@ export default function Intro() {
           </div>
           <h1 id="intro-title">쏠 아스트로 하우스</h1>
           <div className="intro-btns mt-4">
-            {/* 패키지 v3(2026-10-10): [테스트 하기] + [내 결과 보기]. 로그인 전이면 둘 다 로그인 화면을 거친다(로그인 먼저). */}
-            <Link href={loggedIn ? "/test" : "/login?next=/test"} className="btn block">
+            {/* owner 2026-10-26 (가): [테스트 하기]는 로그인 없이 바로 테스트로(첫 화면 이탈을 줄이려고 로그인을 뒤로 옮김).
+                로그인은 저장·쏘웰라·결제 후 보관·3장 끝 안내에서 권한다. [내 결과 보기]는 로그인 전이면 로그인 화면을 거친다. */}
+            <Link href="/test" className="btn block">
               테스트 하기
             </Link>
             <Link href={loggedIn ? "/results" : "/login?next=/results"} className="btn block ghost">
