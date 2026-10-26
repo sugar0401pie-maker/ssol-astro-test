@@ -36,8 +36,10 @@ export default function SowellaButton({ label, className, resultId, page, keepLa
       </>
     );
   }
+  // 쏘웰라가 이 결과의 맞춤 첫 인사(해석 DB B15, chat_summary의 [9. 대화 시작 정보])로 대화를 시작하도록 어디서 왔는지 붙인다(2026-10-26).
+  const href = `${SOWELLA_CHAT_URL}?from=astro${resultId ? `&result=${encodeURIComponent(resultId)}` : ""}`;
   return (
-    <a href={SOWELLA_CHAT_URL} className={className} onClick={() => track("sowella_start")}>
+    <a href={href} className={className} onClick={() => track("sowella_start")}>
       {label}
     </a>
   );
