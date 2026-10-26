@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { computeFree, parseResultRequest } from "@/lib/results/compute";
 import { countResultsSince, listResults, saveResult } from "@/lib/results/store";
-import { DAY_MS, IP_SAVE_LIMIT, SAVE_LIMIT_MESSAGE, dailySaveLimit } from "@/lib/results/saveLimit";
+import { DAY_MS, IP_SAVE_LIMIT, SAVE_LIMIT_MESSAGE, dailySaveLimit, ipBlocked } from "@/lib/results/saveLimit";
+import { countIpSaves, ipHash, recordIpSave } from "@/lib/results/ipLog";
 import { windowLimiter } from "@/lib/analytics/rateLimit";
 import { clientIp } from "@/lib/x/conversion";
 import { resolveOwner } from "@/lib/results/owner";
@@ -37,8 +38,12 @@ export async function POST(req: NextRequest) {
   // 돈·안전과 무관한 남용 방지라, DB 장애로 진짜 사용자의 결과를 막는 쪽이 더 나쁘다.
   const limit = dailySaveLimit();
   const recent = await countResultsSince(owner, new Date(Date.now() - DAY_MS)).catch(() => 0);
+  if (recent >= limit) return NextResponse.json({ error: SAVE_LIMIT_MESSAGE(limit), limited: true }, { status: 429 });
+  // 같은 IP: DB 기록(해시)으로 하루 20·7일 60(owner 2026-10-26 (나)). 표가 없거나 실패하면 서버 메모리로 하루 한도만.
   const ip = clientIp(req.headers);
-  if (recent >= limit || (ip && !ipLimiter.take(ip)))
+  const hash = ip ? ipHash(ip) : null;
+  const ipCounts = hash ? await countIpSaves(hash).catch(() => null) : null;
+  if (ipCounts ? ipBlocked(ipCounts.day, ipCounts.week) : ip && !ipLimiter.take(ip))
     return NextResponse.json({ error: SAVE_LIMIT_MESSAGE(limit), limited: true }, { status: 429 });
 
   let computed;
@@ -63,6 +68,7 @@ export async function POST(req: NextRequest) {
       // 유입 경로(브라우저가 보낸 값을 정해 둔 칸·형식만 남겨서)
       attribution: sanitizeAttribution(body.attribution),
     });
+    if (hash) await recordIpSave(hash).catch(() => {});
     // 출생 정보 화면의 필수 동의(화면이 모두 체크해야 넘어가고, 서버도 consent:true를 확인했다)
     // 로그인 없이(비회원)는 3가지(임시 계정은 이용약관에 포함), 로그인하면 결과 저장까지 4가지
     await recordConsents(owner, owner.kind === "user" ? ["age", "privacy", "terms", "store"] : ["age", "privacy", "terms"], CONSENT_VERSION, { resultId: id });
