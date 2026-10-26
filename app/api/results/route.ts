@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { computeFree, parseResultRequest } from "@/lib/results/compute";
-import { listResults, saveResult } from "@/lib/results/store";
+import { countResultsSince, listResults, saveResult } from "@/lib/results/store";
+import { DAY_MS, IP_SAVE_LIMIT, SAVE_LIMIT_MESSAGE, dailySaveLimit } from "@/lib/results/saveLimit";
+import { windowLimiter } from "@/lib/analytics/rateLimit";
+import { clientIp } from "@/lib/x/conversion";
 import { resolveOwner } from "@/lib/results/owner";
 import { chatSummaryFor } from "@/lib/results/chatSummary";
 import { recordConsents } from "@/lib/results/consentLog";
@@ -13,6 +16,8 @@ import { sanitizeAttribution } from "@/lib/attribution/attribution";
 // 로그인했으면 계정에, 아니면 이 브라우저의 비회원 열쇠로 익명 저장(owner 결정 2026-10-08: 먼저 보고 저장 권유).
 // GET: 내 결과 목록(계정 또는 이 브라우저의 비회원 결과). 출생 정보·답은 로그에 남기지 않는다.
 export const runtime = "nodejs";
+
+const ipLimiter = windowLimiter(IP_SAVE_LIMIT.max, IP_SAVE_LIMIT.windowMs);
 
 export async function POST(req: NextRequest) {
   const owner = await resolveOwner(req.headers);
@@ -27,6 +32,14 @@ export async function POST(req: NextRequest) {
   if (body?.consent !== true) return NextResponse.json({ error: "결과 저장 동의가 필요해요." }, { status: 400 });
   const parsed = parseResultRequest(body);
   if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
+
+  // 하루 저장 한도(owner 2026-10-26: 같은 기기·계정 24시간에 3개, 같은 IP는 넉넉히). 확인에 실패하면 막지 않는다 —
+  // 돈·안전과 무관한 남용 방지라, DB 장애로 진짜 사용자의 결과를 막는 쪽이 더 나쁘다.
+  const limit = dailySaveLimit();
+  const recent = await countResultsSince(owner, new Date(Date.now() - DAY_MS)).catch(() => 0);
+  const ip = clientIp(req.headers);
+  if (recent >= limit || (ip && !ipLimiter.take(ip)))
+    return NextResponse.json({ error: SAVE_LIMIT_MESSAGE(limit), limited: true }, { status: 429 });
 
   let computed;
   try {

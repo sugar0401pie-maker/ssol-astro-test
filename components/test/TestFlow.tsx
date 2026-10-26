@@ -4,6 +4,7 @@
 // (owner 2026-10-10 "html과 완전히 동일하게"). 환영·닉네임 → 경험 확인(→ 처음 안내) → 생년월일·시간·출생지 + 필수 동의 →
 // 질문 3개(한 화면) → 계산 중(최소 1.5초) → (후보가 갈리면) 유형 후보 선택 → 저장(로그인했으면 계정, 아니면 비회원 익명) → 결과.
 // 화면마다 주소가 있어(owner 2026-10-09) 휴대폰 뒤로 가기가 되고, 프로토타입 하단 줄의 빈 왼쪽 자리에 '← 이전'을 둔다.
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Q1_OPTIONS, Q2_OPTIONS, Q3_OPTIONS, q2Label, type Answers } from "@/lib/astro/answers";
 import { isPage, pathOf, prevStep, restorableStep, stepFromPath, type Progress, type Step } from "./steps";
@@ -169,6 +170,8 @@ export default function TestFlow() {
   const [typePick, setTypePick] = useState<{ competency: string; style: string } | null>(restored?.typePick ?? null);
   const [saving, setSaving] = useState(false);
   const [saveNote, setSaveNote] = useState<string | null>(null);
+  // 하루 저장 한도에 걸림(서버 429, owner 2026-10-26) — 다시 시도 버튼 대신 [내 결과 보기]
+  const [limited, setLimited] = useState(false);
   const [savedId, setSavedId] = useState<string | null>(null);
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [candidateGrade, setCandidateGrade] = useState<string>("B");
@@ -290,6 +293,7 @@ export default function TestFlow() {
         body: JSON.stringify({ ...requestBody(answers as Answers, p, tp), consent: true, firstTime: firstTime === true, attribution: getAttribution() }),
       });
       const data = await res.json();
+      setLimited(res.status === 429);
       if (!res.ok || !data.result) throw new Error(data.error ?? "저장하지 못했어요.");
       setResult(data.result);
       setSavedId(data.id ?? null);
@@ -805,12 +809,24 @@ export default function TestFlow() {
       {step === "consent" && (
         <section className="screen on">
           {/* 저장이 막혔을 때 다시 시도하는 자리(동의는 출생 정보 화면에서 이미 받았으므로 여기서 다시 묻지 않는다 — owner 2026-10-11) */}
-          <h1 className="big">{b14(copy, "ERR_SAVE", "title", "저장하는 동안 별이 깜빡였어요")}</h1>
-          <p className="small">{b14(copy, "ERR_SAVE", "body", "입력하신 정보는 그대로 있어요. 잠시 뒤 다시 시도해 주세요.")}</p>
-          {error && <p className="err">{error}</p>}
-          <button type="button" className="btn block" disabled={saving} onClick={() => void saveAndShow()}>
-            {saving ? "저장하는 중…" : b14(copy, "ERR_SAVE", "button", "다시 시도하기")}
-          </button>
+          {limited ? (
+            <>
+              <h1 className="big">오늘은 여기까지 볼 수 있어요</h1>
+              {error && <p className="small">{error}</p>}
+              <Link href="/results" className="btn block">
+                내 결과 보기
+              </Link>
+            </>
+          ) : (
+            <>
+              <h1 className="big">{b14(copy, "ERR_SAVE", "title", "저장하는 동안 별이 깜빡였어요")}</h1>
+              <p className="small">{b14(copy, "ERR_SAVE", "body", "입력하신 정보는 그대로 있어요. 잠시 뒤 다시 시도해 주세요.")}</p>
+              {error && <p className="err">{error}</p>}
+              <button type="button" className="btn block" disabled={saving} onClick={() => void saveAndShow()}>
+                {saving ? "저장하는 중…" : b14(copy, "ERR_SAVE", "button", "다시 시도하기")}
+              </button>
+            </>
+          )}
           {footerCtrl}
         </section>
       )}

@@ -80,6 +80,13 @@ export async function saveResult(args: {
   return data.id as string;
 }
 
+/** 이 주인(계정 또는 비회원 열쇠)이 since 이후 저장한 결과 수 — 하루 저장 한도용(saveLimit.ts) */
+export async function countResultsSince(owner: Owner, since: Date): Promise<number> {
+  const { count, error } = await byOwner(createAdminClient().from(TABLE).select("id", { count: "exact", head: true }), owner).gte("created_at", since.toISOString());
+  if (error) throw new Error(`결과 수 확인 실패: ${error.code}`);
+  return count ?? 0;
+}
+
 export async function listResults(
   owner: Owner,
 ): Promise<Array<Pick<StoredResult, "id" | "created_at" | "nickname" | "character" | "sun_sign" | "accuracy"> & { consent_version?: string; last_page?: number | null; paid_at?: string | null }>> {
