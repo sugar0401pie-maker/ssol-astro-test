@@ -5,6 +5,7 @@ import GoogleAnalytics from "@/components/analytics/GoogleAnalytics";
 import XPixel from "@/components/analytics/XPixel";
 import { Gowun_Batang, Noto_Sans_KR, Noto_Sans_Symbols, Noto_Sans_Symbols_2 } from "next/font/google";
 import "./globals.css";
+import { SEO_DESCRIPTION, SEO_TITLE } from "@/lib/seo";
 
 const notoSansKr = Noto_Sans_KR({
   variable: "--font-noto-sans-kr",
@@ -27,8 +28,9 @@ const DESCRIPTION = "출생차트로 나를 돌아보는 쏠 웰니스 하우스
 // 미리보기 그림은 전용 이미지를 받기 전까지 인트로 그림(관측소)을 쓴다.
 export const metadata: Metadata = {
   metadataBase: new URL("https://astro.ssolwellnesshouse.com"),
-  title: "쏠 아스트로 하우스",
-  description: DESCRIPTION,
+  // 검색 결과용 제목·설명(lib/seo.ts). 공유 미리보기(openGraph·twitter)는 짧은 이름 그대로.
+  title: SEO_TITLE,
+  description: SEO_DESCRIPTION,
   openGraph: {
     type: "website",
     siteName: "쏠 아스트로 하우스",
