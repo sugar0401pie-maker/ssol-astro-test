@@ -2,6 +2,7 @@ import { resolveOwner } from "@/lib/results/owner";
 import { NextRequest, NextResponse, after } from "next/server";
 import { runReportGeneration } from "@/lib/results/report";
 import { getPayState, isUuid } from "@/lib/results/store";
+import { grantIfComp } from "@/lib/results/comp";
 
 // 유료 리포트 받기(결제한 본인만). 아직 없거나 실패했으면 만들기를 다시 시작하고 'generating'을 알려 준다
 // — 화면은 몇 초마다 다시 물어본다. 결제 전이면 402(본문은 절대 보내지 않음).
@@ -16,7 +17,11 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/results/[id]
   try {
     const s = await getPayState(owner, id);
     if (!s) return NextResponse.json({ error: "결과를 찾을 수 없어요." }, { status: 404 });
-    if (!s.paid) return NextResponse.json({ error: "결제 후 볼 수 있어요." }, { status: 402 });
+    // 관리자 계정은 결제 없이(lib/billing/comp.ts) — 열람 가능으로 바꾸고 생성 시작, 화면은 다시 물어본다
+    if (!s.paid) {
+      if (await grantIfComp(owner, id)) return NextResponse.json({ status: "generating" });
+      return NextResponse.json({ error: "결제 후 볼 수 있어요." }, { status: 402 });
+    }
     if (s.reportStatus === "ready" && s.report) return NextResponse.json({ status: "ready", report: forBrowser(s.report) });
     // 없음·실패·오래 멈춘 생성 → 다시 시작(이미 진행 중이면 runReportGeneration이 알아서 건너뜀)
     // ?retry=1: 화면이 30초 동안 아무것도 받지 못했다(owner 2026-10-11 '30초 지나면 재시도') — 30초 넘게 멈춘 생성도 다시 시작.

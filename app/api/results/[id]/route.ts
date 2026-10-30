@@ -6,6 +6,7 @@ import { chatSummaryFor } from "@/lib/results/chatSummary";
 import { CHARACTER_GRID, STYLES, type Competency, type Style } from "@/lib/astro/constants";
 import { findOption } from "@/lib/astro/typeChoice";
 import type { BirthInput } from "@/lib/astro/birth";
+import { grantIfComp } from "@/lib/results/comp";
 
 // 저장한 결과 다시 보기(저장된 입력으로 다시 계산 — 해석 DB가 고쳐지면 새 문장으로 보인다) / 지우기. 본인 것만.
 export const runtime = "nodejs";
@@ -20,7 +21,9 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/results/[id]
     if (!row) return NextResponse.json({ error: "결과를 찾을 수 없어요." }, { status: 404 });
     const c = computeFree(row.birth_input, row.answers, row.nickname);
     if (c.kind !== "result") return NextResponse.json({ error: "결과를 다시 계산하지 못했어요." }, { status: 500 });
-    return NextResponse.json({ id: row.id, createdAt: row.created_at, nickname: row.nickname, firstTime: row.first_time, paid: !!row.paid_at, guest: owner.kind === "guest", result: c.result });
+    // 관리자 계정은 결제 없이 전체 리포트(lib/billing/comp.ts)
+    const paid = !!row.paid_at || (await grantIfComp(owner, row.id));
+    return NextResponse.json({ id: row.id, createdAt: row.created_at, nickname: row.nickname, firstTime: row.first_time, paid, guest: owner.kind === "guest", result: c.result });
   } catch (e) {
     console.error(e instanceof Error ? e.message : "결과 조회 실패");
     return NextResponse.json({ error: "결과를 불러오지 못했어요." }, { status: 500 });
