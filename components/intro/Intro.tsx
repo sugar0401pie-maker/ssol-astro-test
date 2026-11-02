@@ -3,7 +3,7 @@
 // 1. 인트로(마스터스펙 6-1 화면 1, 2026-10-09 프로토타입 #scr-intro 마크업·클래스 그대로):
 // 그림 6장이 화면 전체를 채우고 2초마다 무작위로 바뀐다(같은 그림 연속 금지, '동작 줄이기'면 정지)
 // + "SSOL WELLNESS HOUSE" + 제목 + [테스트 하기](로그인 없이 바로, 2026-10-26)·[내 결과 보기](로그인 전이면 로그인 화면을 거침). 하단 정보는 그림 아래(.intro-foot)에 따로.
-// 참여자 수는 실제 숫자가 아니면 표시하지 않는다(프로토타입의 숫자는 '예시'라고 적혀 있음 — 가짜 사회적 증거 금지).
+// 참여자 수는 실제 숫자만 표시한다(가짜 사회적 증거 금지). owner가 알려 준 실제 누적 이용자 수(2026-11-02 기준) — 자동으로 늘지 않으니 숫자가 바뀌면 PARTICIPANTS를 고친다.
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { track } from "@/lib/analytics/track";
@@ -13,6 +13,9 @@ import { getRealSession } from "@/lib/supabase/browser";
 import { INTRO_IMAGES, nextImage } from "./images";
 
 // 원본 jpg 그대로(화질 유지 — owner 결정: 그림은 줄이거나 다시 압축하지 않는다)
+/** 누적 이용자 수(owner 제공 실제 숫자, 2026-11-02) */
+const PARTICIPANTS = 7210;
+
 const src = (i: number) => `/intro/${INTRO_IMAGES[i]}.jpg`;
 
 export default function Intro() {
@@ -79,7 +82,8 @@ export default function Intro() {
             SSOL WELLNESS HOUSE
           </div>
           <h1 id="intro-title">쏠 아스트로 하우스</h1>
-          <div className="intro-btns mt-4">
+          <p className="count">✨ 벌써 {PARTICIPANTS.toLocaleString("ko-KR")}명이 참여했어요</p>
+          <div className="intro-btns">
             {/* owner 2026-10-26 (가): [테스트 하기]는 로그인 없이 바로 테스트로(첫 화면 이탈을 줄이려고 로그인을 뒤로 옮김).
                 로그인은 저장·쏘웰라·결제 후 보관·3장 끝 안내에서 권한다. [내 결과 보기]는 로그인 전이면 로그인 화면을 거친다. */}
             <Link href="/test" className="btn block">
