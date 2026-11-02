@@ -307,3 +307,46 @@ test("쏘웰라 첫 인사(16_쏘웰라연결 §4): SOFT > HEAD > OPEN > NOTIME 
   const q = db.dbs.B15.rows.find((r) => r.id === "GREET_QUESTION")!.text;
   assert.equal(fillGreeting(q, { nickname: "지우", sunSign: "양자리", wish: "안정", word: "배움" }), null); // 질문이 없으면 못 채움
 });
+
+// 2026-11-02 연말 보강(A10p·A10s·A19, 기획 검수본 v0.3): 날짜에 따라 4장 '연말' 항목이 바뀐다
+function eoyAt(iso: string) {
+  const now = new Date(iso);
+  const answers: Answers = { q1: "직업·커리어", q2: "변화", q3: "안정" };
+  const { chart, L } = computeNatal(new Date(Date.UTC(1996, 3, 1, 1, 17)), 37.2893, 127.0535);
+  const character = judgeCharacter(L, chart.elements, ref);
+  const events = buildTimeline(L, { start: "2026-01-01", end: "2031-12-31" }, periodWindows(now).eoy);
+  const periods = selectPeriods(events, answers.q1, now);
+  const wish = computeWish(L, answers.q3, { birthDate: "1996-04-01", dayChart: true });
+  const sk = buildPaidSkeleton({ db, chart, longitudes: L, character, answers, events, periods, wish, nickname: "지우" });
+  const s4 = sk.sections.find((s) => s.no === 4)!;
+  const head = s4.body.find((b) => b.t === "head" && /조심할 세 가지|연말에 살펴볼 것/.test((b as { text: string }).text)) as { text: string } | undefined;
+  const items = (s4.body.find((b) => b.t === "items") as { items: Array<{ title: string; note: string }> } | undefined)?.items ?? [];
+  const tail = (s4.tail ?? []).map((b) => ("text" in b ? (b as { text: string }).text : "")).join("\n");
+  return { head: head?.text, notes: items.map((i) => i.note), tail, careful4: sk.careful4 };
+}
+
+test("연말 4장: 11월 초에는 역행 세 가지 그대로", () => {
+  const r = eoyAt("2026-11-02T03:00:00Z");
+  assert.equal(r.head, "• 연말에 조심할 세 가지");
+  assert.equal(r.notes.length, 3);
+  assert.ok(r.notes.every((n) => /역행 ·/.test(n)));
+});
+
+test("연말 4장: 11월 20일 — 금성·수성은 역행 뒤 정리, 화성은 역행 앞 준비, 달마다 칸에 보름달", () => {
+  const r = eoyAt("2026-11-20T03:00:00Z");
+  assert.equal(r.head, "• 연말에 살펴볼 것");
+  assert.ok(r.notes.some((n) => n.startsWith("금성 역행 뒤 정리")));
+  assert.ok(r.notes.some((n) => n.startsWith("수성 역행 뒤 정리")));
+  assert.ok(r.notes.some((n) => n.startsWith("화성 역행 앞 준비")));
+  assert.match(r.tail, /11월 24일 쌍둥이자리 보름달 — /);
+  assert.match(r.tail, /12월 9일 사수자리 초승달 — /);
+  assert.doesNotMatch(r.tail, /11월 9일/); // 지난 초승달은 빼기
+  assert.equal(r.careful4.length, 2); // 소제목이 바뀌어도 서버 목록을 AI 글에 끼운다
+});
+
+test("연말 4장: 12월 20일 — 정리 시기가 끝난 금성·수성은 빠지고 화성 준비만", () => {
+  const r = eoyAt("2026-12-20T03:00:00Z");
+  assert.equal(r.head, "• 연말에 살펴볼 것");
+  assert.deepEqual(r.notes.map((n) => n.split(" · ")[0]), ["화성 역행 앞 준비"]);
+  assert.match(r.tail, /12월 24일 게자리 보름달 — /);
+});

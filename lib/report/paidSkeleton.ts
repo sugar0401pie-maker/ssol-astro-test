@@ -16,6 +16,7 @@ import { formatDate, formatRange, josa, QUARTER_LABELS } from "./format.ts";
 import { POINT_KO } from "./labels.ts";
 import { b9Id, edgeLines, movementLine } from "./movement.ts";
 import { ingressLine, selfAspectPhrase } from "./ingress.ts";
+import { lunations, postShadowEnd, preShadowStart } from "../astro/yearEnd.ts";
 import { a13Variant, b11, fillSummary } from "./variants.ts";
 
 /** 본문 조각. AI가 쓰면 p/head만 나오고, DB 뼈대는 아래 모양을 다 쓴다. */
@@ -142,6 +143,7 @@ function houseBase(L: Longitudes): number {
   return signIndex(L.asc ?? L.sun);
 }
 const houseOfSign = (base: number, sign: string) => ((((SIGNS as readonly string[]).indexOf(sign) - base) % 12) + 12) % 12 + 1;
+const addDay = (day: string, n: number) => new Date(Date.parse(`${day}T00:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);
 const houseOfLon = (base: number, lon: number) => (((signIndex(lon) - base) % 12) + 12) % 12 + 1;
 
 /** 기간 안 목성이 가장 오래 머문 하우스(같으면 번호가 작은 쪽 — 프로토타입 jupHouseIn) */
@@ -264,6 +266,9 @@ interface Rx {
   house: number;
   row: Record<string, string> | null;
 }
+
+/** 4장 연말 항목: 역행(A10) · 역행 뒤 정리(A10p) · 역행 앞 준비(A10s, 2026-11-02) */
+type CarefulItem = Rx & { phase: "rx" | "post" | "pre"; from: string; to: string | null; prow: Record<string, string> };
 
 /** 그 날짜 이후 처음 시작하는 역행(프로토타입 rx) */
 function rxFrom(db: AstroDb, events: TimelineEvent[], planet: Rx["planet"], from: string, base: number): Rx | null {
@@ -465,15 +470,34 @@ export function buildPaidSkeleton(args: {
   const three = [rxFrom(db, events, "venus", "2026-09-01", base), rxFrom(db, events, "mercury", "2026-10-01", base), rxFrom(db, events, "mars", "2026-12-01", base)].filter(
     (x): x is Rx & { row: Record<string, string> } => !!x?.row,
   );
-  // 소제목은 늘 둔다(프로토타입 renderEOY)
-  body4.push({ t: "head", text: "• 연말에 조심할 세 가지" });
-  if (three.length) {
+  // 2026-11-02 연말 보강(해석 DB A10p·A10s, 기획 검수본 v0.3): 역행이 끝났으면 '역행 뒤 정리'(제자리로 돌아오기까지),
+  // 화성 역행이 아직 시작 전이고 준비 시기(순행으로 돌아설 자리에 처음 닿은 뒤)면 '역행 앞 준비', 정리 시기도 끝났으면 뺀다.
+  const careful: CarefulItem[] = three.flatMap((x): CarefulItem[] => {
+    const P = x.planet.toUpperCase();
+    if (x.end && x.end < today) {
+      const until = postShadowEnd(x.planet, x.start, x.end);
+      const from = addDay(x.end, 1);
+      const r = until && today <= until ? row(db, "A10p", `RXPOST_${P}_H${pad2(x.house)}`) : null;
+      return r ? [{ ...x, phase: "post", from, to: until!, prow: r }] : [];
+    }
+    if (x.start > today && x.end) {
+      const pre = preShadowStart(x.planet, x.start, x.end);
+      const r = pre && today >= pre ? row(db, "A10s", `RXPRE_${P}_H${pad2(x.house)}`) : null;
+      if (r) return [{ ...x, phase: "pre", from: pre!, to: addDay(x.start, -1), prow: r }];
+    }
+    return [{ ...x, phase: "rx", from: x.start, to: x.end, prow: x.row }];
+  });
+  const allRx = careful.length === 3 && careful.every((c) => c.phase === "rx");
+  const PHASE_KO = { rx: "역행", post: "역행 뒤 정리", pre: "역행 앞 준비" } as const;
+  // 소제목은 늘 둔다(프로토타입 renderEOY). 셋이 모두 역행일 때만 '세 가지', 아니면 '연말에 살펴볼 것'(기획 v0.3 메모 — 숫자 없이)
+  body4.push({ t: "head", text: allRx ? "• 연말에 조심할 세 가지" : "• 연말에 살펴볼 것" });
+  if (careful.length) {
     body4.push({
       t: "items",
-      items: three.map((x) => ({
-        title: x.row.careful_cell,
-        text: `${stripRxLead(x.row.text)} ${x.row.action}`,
-        note: `${POINT_KO[x.planet]} 역행 · ${rangeText(x.start, x.end)} · ${x.sign} · ${x.house}하우스(${houseNick(db, x.house)})`,
+      items: careful.map((x) => ({
+        title: x.prow.careful_cell,
+        text: `${x.phase === "rx" ? stripRxLead(x.prow.text) : x.prow.text} ${x.prow.action}`,
+        note: `${POINT_KO[x.planet]} ${PHASE_KO[x.phase]} · ${rangeText(x.from, x.to)} · ${x.sign} · ${x.house}하우스(${houseNick(db, x.house)})`,
       })),
     });
   }
@@ -504,7 +528,7 @@ export function buildPaidSkeleton(args: {
     body4.push({ t: "p", text: [quiet, b8?.quiet_line ?? ""].filter(Boolean).join(" ") });
   }
   // 달마다 살펴볼 것(표 대신 줄글, 마스터스펙 6-1-1) — 역행은 시작 달에, 그 달의 느린 행성 트랜짓 하나를 덧붙인다.
-  const months: Array<{ y: number; m: number; rx: Rx[]; why: WhyItem[] }> = [];
+  const months: Array<{ y: number; m: number; rx: CarefulItem[]; why: WhyItem[] }> = [];
   for (let d = `${today.slice(0, 7)}-01`; d <= w4.end; ) {
     const y = Number(d.slice(0, 4));
     const m = month(d);
@@ -513,19 +537,19 @@ export function buildPaidSkeleton(args: {
   }
   const lastYm = `${w4.end.slice(0, 7)}`;
   const slotOf = (ym: string) => months.find((x) => `${x.y}-${pad2(x.m)}` === ym);
-  for (const x of three) {
-    const startYm = x.start.slice(0, 7);
+  for (const x of careful) {
+    const startYm = x.from.slice(0, 7);
     let sl = slotOf(startYm < today.slice(0, 7) ? today.slice(0, 7) : startYm > lastYm ? lastYm : startYm);
-    if (sl && sl.rx.length && x.end && x.end.slice(0, 7) > `${sl.y}-${pad2(sl.m)}` && x.end <= w4.end) {
+    if (sl && sl.rx.length && x.to && x.to.slice(0, 7) > `${sl.y}-${pad2(sl.m)}` && x.to <= w4.end) {
       const nx = months[months.indexOf(sl) + 1];
       if (nx && !nx.rx.length) sl = nx;
     }
     if (!sl) continue;
     sl.rx.push(x);
     sl.why.push({
-      title: `${POINT_KO[x.planet]} 역행 (${x.house}하우스)`,
-      when: x.start > w4.end ? `${formatDate(x.start, true)} 시작 예고` : rangeText(x.start, x.end),
-      meaning: x.row?.why_line ?? "",
+      title: `${POINT_KO[x.planet]} ${PHASE_KO[x.phase]} (${x.house}하우스)`,
+      when: x.from > w4.end ? `${formatDate(x.from, true)} 시작 예고` : rangeText(x.from, x.to),
+      meaning: x.prow.why_line ?? "",
     });
   }
   const tail4: Block[] = [{ t: "head", text: b11(db, "HEAD_EOY_MONTH") || "• 달마다 살펴볼 것" }];
@@ -543,14 +567,26 @@ export function buildPaidSkeleton(args: {
     }
     const parts: string[] = [];
     for (const x of mo.rx) {
-      const when = x.start > w4.end ? `${formatDate(x.start, true)}에 ${POINT_KO[x.planet]} 역행이 시작돼요.` : `${rangeText(x.start, x.end)} ${POINT_KO[x.planet]} 역행 기간이에요.`;
-      parts.push(`${x.row?.careful_cell}. ${when} ${x.row?.why_line ?? ""}`.trim());
+      const name = `${POINT_KO[x.planet]} ${PHASE_KO[x.phase]}`;
+      const when =
+        x.phase === "rx" && x.from > w4.end ? `${formatDate(x.from, true)}에 ${POINT_KO[x.planet]} 역행이 시작돼요.` : `${rangeText(x.from, x.to)} ${name} 기간이에요.`;
+      parts.push(`${x.prow.careful_cell}. ${when} ${x.prow.why_line ?? ""}`.trim());
     }
     const top = act.find((s) => !usedEv.has(evName(s.event)) && a8Id(s.event) && row(db, "A8", a8Id(s.event)!));
     if (top) {
       usedEv.add(evName(top.event));
       const ex = exactIn(top.event, mw) ?? exactIn(top.event);
       parts.push(`${evName(top.event)}${ex ? `(${formatDate(ex)} 정확)` : ""} — ${row(db, "A8", a8Id(top.event)!)!.table_future}`);
+    }
+    // 초승달·보름달(해석 DB A19, 기획 v0.3 — 4장에만): 오늘 이후 그 달의 것만, 날짜·별자리는 코드가 앞에 붙인다
+    for (const l of lunations(mw.start < today ? today : mw.start, mw.end < w4.end ? mw.end : w4.end)) {
+      const h = houseOfLon(base, l.lon);
+      const kind = l.kind === "new" ? "초승달" : "보름달";
+      const r = row(db, "A19", `LUNA_${l.kind === "new" ? "NEW" : "FULL"}_H${pad2(h)}`);
+      if (!r?.line) continue;
+      const sign = SIGNS[signIndex(l.lon)];
+      parts.push(`${formatDate(l.date)} ${sign} ${kind} — ${r.line}`);
+      mo.why.push({ title: `${sign} ${kind} (${h}하우스)`, when: formatDate(l.date), meaning: `${houseNick(db, h)}에 뜨는 ${kind}이에요.` });
     }
     if (!parts.length && quiet) parts.push(quiet);
     tail4.push({ t: "sub", text: `• ${mo.m}월` }, { t: "p", text: parts.join(" ") });
@@ -751,7 +787,7 @@ export function buildPaidSkeleton(args: {
     bridgeBasis27,
     desiredYear,
     careful4: (() => {
-      const i = body4.findIndex((b) => b.t === "head" && b.text.includes("조심할 세 가지"));
+      const i = body4.findIndex((b) => b.t === "head" && (b.text.includes("조심할 세 가지") || b.text.includes("연말에 살펴볼 것")));
       const items = body4[i + 1];
       return i >= 0 && items?.t === "items" ? [body4[i], items] : [];
     })(),
