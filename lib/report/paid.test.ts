@@ -341,6 +341,10 @@ test("연말 4장: 11월 20일 — 금성·수성은 역행 뒤 정리, 화성�
   assert.match(r.tail, /11월 24일 쌍둥이자리 보름달 — /);
   assert.match(r.tail, /12월 9일 사수자리 초승달 — /);
   assert.doesNotMatch(r.tail, /11월 9일/); // 지난 초승달은 빼기
+  // 수성 정리(11월 15일~12월 1일)는 11월 칸(owner 2026-11-02)
+  const nov = r.tail.split("• 12월")[0];
+  assert.match(nov, /수성 역행 뒤 정리 기간/);
+  assert.match(nov, /금성 역행 뒤 정리 기간/);
   assert.equal(r.careful4.length, 2); // 소제목이 바뀌어도 서버 목록을 AI 글에 끼운다
 });
 

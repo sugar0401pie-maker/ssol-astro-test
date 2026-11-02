@@ -540,7 +540,8 @@ export function buildPaidSkeleton(args: {
   for (const x of careful) {
     const startYm = x.from.slice(0, 7);
     let sl = slotOf(startYm < today.slice(0, 7) ? today.slice(0, 7) : startYm > lastYm ? lastYm : startYm);
-    if (sl && sl.rx.length && x.to && x.to.slice(0, 7) > `${sl.y}-${pad2(sl.m)}` && x.to <= w4.end) {
+    // 같은 달에 항목이 이미 있으면 다음 달로 넘기는 건 역행만(프로토타입). 역행 뒤 정리·앞 준비는 시작한 달 칸에 둔다(owner 2026-11-02: 수성 정리는 11월 칸)
+    if (x.phase === "rx" && sl && sl.rx.length && x.to && x.to.slice(0, 7) > `${sl.y}-${pad2(sl.m)}` && x.to <= w4.end) {
       const nx = months[months.indexOf(sl) + 1];
       if (nx && !nx.rx.length) sl = nx;
     }
