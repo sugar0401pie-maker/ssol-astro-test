@@ -91,14 +91,19 @@ export default function ResultsList() {
         {rows?.map((r) => (
           <li key={r.id} className="flex items-center justify-between gap-3 rounded-2xl border border-cream/30 px-4 py-3 text-cream">
             {/* 한 계정에 결과 여러 개(owner 2026-10-11 — 가족·친구 생년월일로 한 테스트 포함). 누구의 결과인지 닉네임을 앞에. 정확도 등급은 화면에서 숨김(10-11) */}
-            <Link href={`/results/${r.id}/${r.last_page ?? 1}`} className="flex flex-1 flex-col">
-              <span className="font-bold">{r.nickname}님 · {r.sun_sign}</span>
-              <span className="text-sm text-cream/85">{r.character}</span>
-              <span className="text-xs text-cream/70">
-                {dateKo(r.created_at)}
-                {r.paid_at ? " · 전체 리포트 결제함" : ""}
-              </span>
-            </Link>
+            <div className="flex flex-1 flex-col items-start">
+              <Link href={`/results/${r.id}/${r.last_page ?? 1}`} className="flex flex-col">
+                <span className="font-bold">{r.nickname}님 · {r.sun_sign}</span>
+                <span className="text-sm text-cream/85">{r.character}</span>
+                <span className="text-xs text-cream/70">{dateKo(r.created_at)}</span>
+              </Link>
+              {/* 결제한 결과: 별 색(금색) 바탕에 흰 글자 버튼 → 유료 리포트 첫 장(4장)으로 바로(owner 2026-11-02) */}
+              {r.paid_at && (
+                <Link href={`/results/${r.id}/4`} className="mt-2 rounded-full bg-gold px-3 py-1 text-xs font-bold text-white">
+                  전체 리포트 열람 가능
+                </Link>
+              )}
+            </div>
             <button className="shrink-0 text-xs text-cream/70 underline" onClick={() => remove(r.id)}>
               지우기
             </button>
