@@ -28,8 +28,13 @@ const DESCRIPTION = "출생차트로 나를 돌아보는 쏠 웰니스 하우스
 // 미리보기 그림은 전용 이미지를 받기 전까지 인트로 그림(관측소)을 쓴다.
 export const metadata: Metadata = {
   metadataBase: new URL("https://astro.ssolwellnesshouse.com"),
-  // Bing 웹마스터 도구 소유 확인(2026-11-03 owner) — 확인 뒤에도 지우지 않는다
-  verification: { other: { "msvalidate.01": "5F7F74F02C08FB70A6A250B0DB0A7ADF" } },
+  // Bing·네이버 서치어드바이저 소유 확인(2026-11-03 owner) — 확인 뒤에도 지우지 않는다
+  verification: {
+    other: {
+      "msvalidate.01": "5F7F74F02C08FB70A6A250B0DB0A7ADF",
+      "naver-site-verification": "a8872583b5154e500ccfa782f0a1a31aaf710635",
+    },
+  },
   // 검색 결과용 제목·설명(lib/seo.ts). 공유 미리보기(openGraph·twitter)는 짧은 이름 그대로.
   title: SEO_TITLE,
   description: SEO_DESCRIPTION,
