@@ -3,7 +3,7 @@
 export const SITE_URL = "https://astro.ssolwellnesshouse.com";
 
 /** 사이트맵에 넣는 공개 경로 */
-export const PUBLIC_PATHS = ["/", "/legal"] as const;
+export const PUBLIC_PATHS = ["/", "/about", "/legal"] as const;
 
 /** 검색엔진이 가져가지 않을 경로(앞부분 일치) */
 export const DISALLOW_PATHS = ["/api/", "/results", "/checkout", "/login", "/share/", "/test/"] as const;

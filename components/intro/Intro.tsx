@@ -11,10 +11,11 @@ import SiteFooter from "@/components/SiteFooter";
 import AuthFooterLink from "@/components/auth/AuthFooterLink";
 import { getRealSession } from "@/lib/supabase/browser";
 import { INTRO_IMAGES, nextImage } from "./images";
+import { PARTICIPANTS as PARTICIPANTS_DATA } from "@/lib/about/participants";
 
 // 원본 jpg 그대로(화질 유지 — owner 결정: 그림은 줄이거나 다시 압축하지 않는다)
-/** 누적 이용자 수(owner 제공 실제 숫자, 2026-11-02) */
-export const PARTICIPANTS = 7210;
+/** 누적 이용자 수 — lib/about/participants.ts 한 곳에서(홈·/about이 늘 같은 값) */
+export const PARTICIPANTS = PARTICIPANTS_DATA.count;
 
 const src = (i: number) => `/intro/${INTRO_IMAGES[i]}.jpg`;
 

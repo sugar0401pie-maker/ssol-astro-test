@@ -5,6 +5,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return PUBLIC_PATHS.map((p) => ({
     url: p === "/" ? SITE_URL : `${SITE_URL}${p}`,
     changeFrequency: p === "/" ? "weekly" : "monthly",
-    priority: p === "/" ? 1 : 0.3,
+    priority: p === "/" ? 1 : p === "/about" ? 0.8 : 0.3,
   }));
 }
