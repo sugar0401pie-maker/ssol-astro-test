@@ -49,13 +49,12 @@ export default function CheckoutEn({ resultId, page }: { resultId: string; page:
         const toss = await loadTossPayments(TOSS_CLIENT_KEY);
         const widgets = toss.widgets({ customerKey: session?.user?.id ?? ANONYMOUS });
         await widgets.setAmount({ currency: EN_CURRENCY, value: centsToUsd(EN_REPORT_PRICE_CENTS) });
-        await Promise.all([
-          widgets.renderPaymentMethods({ selector: "#toss-en-methods", variantKey: EN_VARIANT }),
-          widgets.renderAgreement({ selector: "#toss-en-agreement" }),
-        ]);
+        await widgets.renderPaymentMethods({ selector: "#toss-en-methods", variantKey: EN_VARIANT });
         if (cancelled) return;
         widgetsRef.current = widgets;
         setReady(true);
+        // 약관 UI는 결제 수단과 따로 — 외화결제 UI에 맞는 약관 UI가 없어도 결제 버튼은 쓸 수 있게(실패해도 무시)
+        void widgets.renderAgreement({ selector: "#toss-en-agreement" }).catch(() => undefined);
       } catch (e) {
         const x = e as { code?: string; message?: string };
         if (!cancelled) setErr(`We couldn’t load the payment window.${x?.code ? ` (${x.code}${x.message ? `: ${x.message}` : ""})` : ""}`);
