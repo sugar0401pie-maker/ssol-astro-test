@@ -15,9 +15,9 @@ import { getRealSession } from "@/lib/supabase/browser";
 import { EN as L } from "@/lib/report/lang";
 import { EN_QUESTIONS_BIG, EN_QUESTIONS_ERR, EN_QUESTION_LIST, completeAnswers } from "@/lib/en/questions";
 import type { Answers } from "@/lib/astro/answers";
-import { EN_PROGRESS_KEY } from "./BirthStartEn";
+import { EN_PROGRESS_KEY } from "./useEnProgress";
 
-type Progress = { nickname: string; birth: Record<string, unknown>; cityLabel?: string };
+type Progress = { nickname: string; birth: Record<string, unknown>; cityLabel?: string; firstTime?: boolean };
 type Candidate = { competency: string; style: string; pick?: string; card?: string };
 type Step = "questions" | "loading" | "candidates" | "error" | "limited";
 
@@ -73,7 +73,7 @@ export default function QuestionsEn() {
       const cd = await check.json();
       if (check.status === 400) {
         await wait();
-        router.replace("/en/start");
+        router.replace("/en/start/birth");
         return;
       }
       if (!check.ok) throw new Error("calc");
@@ -88,7 +88,7 @@ export default function QuestionsEn() {
       const res = await fetch("/api/results", {
         method: "POST",
         headers: apiHeaders(session, { "content-type": "application/json" }),
-        body: JSON.stringify({ ...body(a, pick, typePick), consent: true, firstTime: false, attribution: getAttribution() }),
+        body: JSON.stringify({ ...body(a, pick, typePick), consent: true, firstTime: progress?.firstTime === true, attribution: getAttribution() }),
       });
       const data = await res.json();
       await wait();
@@ -146,7 +146,7 @@ export default function QuestionsEn() {
             See my results
           </button>
           <div className="footer-ctrl">
-            <button type="button" className="linkish" onClick={() => router.push("/en/start")}>
+            <button type="button" className="linkish" onClick={() => router.push("/en/start/birth")}>
               ← Back
             </button>
           </div>

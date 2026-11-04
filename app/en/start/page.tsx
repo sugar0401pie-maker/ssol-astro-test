@@ -1,12 +1,9 @@
 import type { Metadata } from "next";
-import BirthStartEn from "@/components/en/BirthStartEn";
+import { WelcomeEn } from "@/components/en/StartStepsEn";
 
-// 영문 출생 정보 입력((나) 영문 전용, owner 2026-11-04). 테스트 중간 화면이라 검색엔진에 올리지 않는다.
-export const metadata: Metadata = {
-  title: "Your birth details — SSOL Astro House",
-  robots: { index: false, follow: false },
-};
+// 영문 테스트 단계(주소가 화면마다 따로). 테스트 중간 화면이라 검색엔진에 올리지 않는다.
+export const metadata: Metadata = { title: "Welcome — SSOL Astro House", robots: { index: false, follow: false } };
 
-export default function StartEn() {
-  return <BirthStartEn />;
+export default function Page() {
+  return <WelcomeEn />;
 }

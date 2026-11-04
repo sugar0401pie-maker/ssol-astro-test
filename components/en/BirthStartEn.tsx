@@ -3,24 +3,23 @@
 // 영문 출생 정보 입력 화면 /en/start((나) 영문 전용, owner 2026-11-04). 한국어 TestFlow의 생년월일 화면과 따로 관리 —
 // 한국어 입력 화면을 고쳐도 이 화면은 따라 바뀌지 않는다(바꿀 때마다 영문판에도 필요한지 owner에게 묻는다).
 // 한국어판과 다른 점(21_영문판 개발메모 §2·§3, 영문 정책 08_on-screen-texts §1·§2):
-//  - 닉네임을 이 화면에서 함께 받는다
+//  - 닉네임은 앞 단계(/en/start)에서 받고, 이 화면은 /en/start/birth(한국어판처럼 화면마다 주소가 따로)
 //  - 생년월일: 월 이름 · 일 · 연도(표시 "Apr 1, 1996"), 만 18세 미만은 다음으로 못 간다
 //  - 시간: 24시간제 시·분, 모르면 시간대 5개(영문)
 //  - 출생지: 도시 검색만(한국 도시 포함 영문 목록, 시·도 드롭다운 없음)
-//  - 동의: 빈 체크박스 2개(① 18세·이용약관·개인정보처리방침 ② 출생정보·답변 처리 별도 동의), 둘 다 체크해야 시작
+//  - 동의: 빈 체크박스 2개(① 18세·이용약관·개인정보처리방침 ② 출생정보·답변 처리 별도 동의), 둘 다 체크해야 시작.
+//    쿠키 선택 체크박스·[Details]는 owner 결정(2026-11-04)으로 뺐다 — 쿠키는 이용약관·쿠키 정책으로 안내하고 하단 Cookie settings에서 바꾼다.
 // 계산은 서버(/api/chart)가 한다 — 같은 엔진·같은 결과. 여기서는 확인만 하고 아무것도 저장하지 않는다(저장은 결과 저장 단계에서).
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import CitySearch, { type PickedCity } from "@/components/test/CitySearch";
-import BottomSheet from "@/components/ui/BottomSheet";
-import { LegalBody } from "@/components/legal/LegalDocEn";
+import GuideArt from "@/components/test/GuideArt";
 import SiteFooterEn from "@/components/SiteFooterEn";
 import AuthFooterLink from "@/components/auth/AuthFooterLink";
 import { track } from "@/lib/analytics/track";
-import { enLegalUrl, type LegalBlock } from "@/lib/legal/en/blocks";
-import { readChoice, saveChoice } from "@/lib/i18n/cookieConsent";
-import birthConsent from "@/lib/legal/en/birth-details-consent.json";
+import { enLegalUrl } from "@/lib/legal/en/blocks";
+import { parseEnProgress, saveEnProgress, useEnProgressRaw } from "./useEnProgress";
 import {
   EN_BANDS,
   EN_CONSENT_VERSION,
@@ -34,8 +33,7 @@ import {
   type EnErrors,
 } from "@/lib/en/birthForm";
 
-/** 다음 화면(질문)으로 넘기는 이 탭 한정 진행 상태 — 탭을 닫으면 사라진다 */
-export const EN_PROGRESS_KEY = "astro_en_progress_v1";
+export { EN_PROGRESS_KEY } from "./useEnProgress";
 
 const pad = (n: number) => String(n).padStart(2, "0");
 const numOrNull = (v: string) => (v === "" ? null : Number(v));
@@ -51,6 +49,12 @@ function Err({ msg, id }: { msg?: string; id?: string }) {
 
 export default function BirthStartEn() {
   const router = useRouter();
+  // 앞 단계에서 받은 닉네임 — 없으면 처음(/en/start)으로
+  const raw = useEnProgressRaw();
+  const nick = useMemo(() => (raw === undefined ? undefined : (parseEnProgress(raw)?.nickname ?? null)), [raw]);
+  useEffect(() => {
+    if (nick === null) router.replace("/en/start");
+  }, [nick, router]);
   const [f, setF] = useState<EnBirthForm>({
     nickname: "",
     year: null,
@@ -65,10 +69,7 @@ export default function BirthStartEn() {
     agreeBirth: false,
   });
   const [city, setCity] = useState<PickedCity | null>(null);
-  // 선택 쿠키(분석·광고 측정) — 배너 대신 이 화면의 선택 체크박스(owner 2026-11-04). 늘 빈 칸으로 시작한다.
-  const [cookies, setCookies] = useState(false);
   const [errs, setErrs] = useState<EnErrors>({});
-  const [details, setDetails] = useState(false);
   const [busy, setBusy] = useState(false);
   const [serverErr, setServerErr] = useState("");
 
@@ -76,15 +77,17 @@ export default function BirthStartEn() {
   const maxDay = f.month ? daysInMonth(f.year ?? 2000, f.month) : 31;
   const ready = f.agreeTerms && f.agreeBirth;
   // [Start]를 누른 뒤 보이는 오류는 그 칸을 고치는 즉시 사라지거나 바뀐다(눌렀을 때 걸린 칸만, 지금 값으로 다시 검사).
-  const live = validateEnBirth({ ...f, nickname: cleanNicknameEn(f.nickname), cityId: city?.id ?? null }, new Date());
+  const nickname = cleanNicknameEn(nick ?? "");
+  const live = validateEnBirth({ ...f, nickname, cityId: city?.id ?? null }, new Date());
   const shown: EnErrors = Object.fromEntries(Object.keys(errs).flatMap((k) => (live[k as keyof EnErrors] ? [[k, live[k as keyof EnErrors]]] : [])));
 
   async function start() {
-    const form = { ...f, nickname: cleanNicknameEn(f.nickname), cityId: city?.id ?? null };
+    const form = { ...f, nickname, cityId: city?.id ?? null };
     const e = validateEnBirth(form, new Date());
     setErrs(e);
     setServerErr("");
-    const first = (["nickname", "date", "time", "place", "agree"] as const).find((k) => e[k]);
+    if (e.nickname) return router.replace("/en/start");
+    const first = (["date", "time", "place", "agree"] as const).find((k) => e[k]);
     if (first) {
       document.getElementById(`fs-${first}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
@@ -98,18 +101,7 @@ export default function BirthStartEn() {
         return;
       }
       if (!res.ok) throw new Error("calc");
-      // 체크하면 둘 다 허용. 비워 두면: 처음이면 '거부'로 기록, 이미 Cookie settings에서 고른 값이 있으면 그대로 둔다
-      // (빈 칸이 이전 선택을 몰래 바꾸지 않게 — 바꾸는 곳은 Cookie settings).
-      if (cookies) saveChoice({ analytics: true, ads: true });
-      else if (!readChoice()) saveChoice({ analytics: false, ads: false });
-      try {
-        sessionStorage.setItem(
-          EN_PROGRESS_KEY,
-          JSON.stringify({ nickname: form.nickname, birth: enBirthBody(form), cityLabel: city?.label ?? "", consent: { version: EN_CONSENT_VERSION, terms: true, birth: true } }),
-        );
-      } catch {
-        /* 비공개 창 등 — 다음 화면에서 다시 입력 */
-      }
+      saveEnProgress({ birth: enBirthBody(form), cityLabel: city?.label ?? "", consent: { version: EN_CONSENT_VERSION, terms: true, birth: true } });
       track("birth_done", { from: "en" });
       router.push("/en/questions");
     } catch {
@@ -119,27 +111,14 @@ export default function BirthStartEn() {
     }
   }
 
+  if (!nick) return <div className="flex-1" />;
   return (
     <div lang="en" className="flex flex-1 flex-col">
       <section className="screen on" id="scr-birth" aria-labelledby="birth-big">
         <h1 className="big" id="birth-big" tabIndex={-1}>
-          Great. First, tell us your date of birth, birth time and birthplace.
+          Great. First, tell us your date of birth, birth time and birthplace, {nick}.
         </h1>
-
-        <fieldset className="field" id="fs-nickname">
-          <legend>Nickname</legend>
-          <label className="sr-only" htmlFor="en-nickname">Nickname</label>
-          <input
-            id="en-nickname"
-            type="text"
-            maxLength={12}
-            autoComplete="nickname"
-            placeholder="What should we call you?"
-            value={f.nickname}
-            onChange={(e) => set("nickname", e.target.value)}
-          />
-          <Err msg={shown.nickname} />
-        </fieldset>
+        <GuideArt id="04" small />
 
         <fieldset className="field" id="fs-date">
           <legend>Date of birth</legend>
@@ -270,18 +249,7 @@ export default function BirthStartEn() {
               <input type="checkbox" id="en-agree-birth" checked={f.agreeBirth} onChange={(e) => set("agreeBirth", e.target.checked)} />
               <span>I agree that SSOL may use my date, time and place of birth and my answers to calculate my birth chart and create my results.</span>
             </label>
-            <button type="button" className="view self-start underline" onClick={() => setDetails(true)}>Details</button>
-            <p className="agree-note">Used only for your chart · Kept until you delete your account (30 days if you don&apos;t sign in) · You can withdraw anytime.</p>
-          </div>
-          <div className="agree-row col">
-            <label className="check" htmlFor="en-agree-cookies">
-              <input type="checkbox" id="en-agree-cookies" checked={cookies} onChange={(e) => setCookies(e.target.checked)} />
-              <span>
-                (Optional) I allow analytics and ad-measurement cookies so SSOL can improve the site and measure its X ads. We never send them your birth details.{" "}
-                <Link href={enLegalUrl("cookies")} target="_blank" rel="noopener" className="underline">Cookie Policy</Link>
-              </span>
-            </label>
-            <p className="agree-note">You can change this anytime under Cookie settings.</p>
+            <p className="agree-note text-[11px] leading-snug">Used only for your chart · Kept until you delete your account (30 days if you don&apos;t sign in) · You can withdraw anytime.</p>
           </div>
           <Err id="err-agree" msg={shown.agree} />
         </fieldset>
@@ -290,16 +258,15 @@ export default function BirthStartEn() {
         <button type="button" className="btn block" aria-disabled={!ready} disabled={busy} onClick={() => void start()}>
           {busy ? "Reading your chart…" : "Start"}
         </button>
-      </section>
-
-      <BottomSheet open={details} onClose={() => setDetails(false)} labelledBy="en-birth-consent-title">
-        <h2 id="en-birth-consent-title" className="text-[17px] font-semibold text-navy">
-          Consent for Your Birth Details and Answers
-        </h2>
-        <div className="mt-3">
-          <LegalBody blocks={(birthConsent as LegalBlock[]).slice(1)} />
+        <div className="footer-ctrl">
+          <button type="button" className="linkish" onClick={() => router.back()}>
+            ← Back
+          </button>
+          <button type="button" className="linkish" onClick={() => router.push("/en")}>
+            Start over
+          </button>
         </div>
-      </BottomSheet>
+      </section>
 
       <div className="intro-foot">
         <AuthFooterLink lang="en" />
