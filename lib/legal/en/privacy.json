@@ -22,6 +22,15 @@
   ]
  },
  {
+  "type": "p",
+  "segs": [
+   {
+    "t": "This Privacy Policy explains how SSOL Astro House handles your personal information. Our Birth Details Consent, Consumer Health Data Privacy Policy, Cookie Policy, Terms of Use, Disclaimer and Refund Policy are published as separate pages.",
+    "b": false
+   }
+  ]
+ },
+ {
   "type": "h3",
   "segs": [
    {
@@ -41,6 +50,7 @@
  },
  {
   "type": "table",
+  "kv": true,
   "rows": [
    [
     "Operator",
@@ -201,6 +211,7 @@
  },
  {
   "type": "table",
+  "kv": false,
   "rows": [
    [
     "Purpose",
@@ -278,7 +289,7 @@
     "b": true
    },
    {
-    "t": " Before your reading starts you see two unticked boxes. The first confirms that you are 18 or older, agree to the Terms of Use and have read this Privacy Policy. The second is your separate, explicit consent: \"I agree that SSOL may use my date, time and place of birth and my answers to calculate my birth chart and create my results.\" Next to it we show what we collect, why, and how long we keep it, with a link to the full Birth Details Consent. Without the second box we cannot give you a reading. You can withdraw it at any time; we then delete this information.",
+    "t": " Before your reading starts you see two unticked boxes. The first confirms that you are 18 or older, agree to the Terms of Use and have read this Privacy Policy. The second is your separate, explicit consent: *\"I agree that SSOL may use my date, time and place of birth and my answers to calculate my birth chart and create my results.\"* Next to it we show what we collect, why, and how long we keep it, with a link to the full Birth Details Consent. Without the second box we cannot give you a reading. You can withdraw it at any time; we then delete this information.",
     "b": false
    }
   ]
@@ -433,6 +444,7 @@
  },
  {
   "type": "table",
+  "kv": false,
   "rows": [
    [
     "Provider",
@@ -551,6 +563,7 @@
  },
  {
   "type": "table",
+  "kv": false,
   "rows": [
    [
     "Data",

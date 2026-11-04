@@ -1,9 +1,9 @@
 // 영문 법적 고지 한 문서를 그린다((나) 영문 전용, owner 2026-11-04). 한국어 /legal과 같은 크림 상자 + 남색 글자 테마.
-// 내용은 lib/legal/en/*.json(owner Word 파일에서 변환) 그대로 — 여기서 문장을 고치지 않는다.
+// 내용은 lib/legal/en/*.json(owner Markdown에서 변환) 그대로 — 여기서 문장을 고치지 않는다.
 import Link from "next/link";
 import SiteFooterEn from "@/components/SiteFooterEn";
 import AuthFooterLink from "@/components/auth/AuthFooterLink";
-import { EN_LEGAL_PAGES, groupLists, type LegalBlock, type Seg } from "@/lib/legal/en/blocks";
+import { EN_LEGAL_PAGES, enLegalUrl, groupLists, type LegalBlock, type Seg } from "@/lib/legal/en/blocks";
 
 function Text({ segs }: { segs: Seg[] }) {
   return (
@@ -29,7 +29,7 @@ export default function LegalDocEn({ blocks, current }: { blocks: LegalBlock[]; 
             {EN_LEGAL_PAGES.map((p) => (
               <Link
                 key={p.slug}
-                href={`/en/legal/${p.slug}`}
+                href={enLegalUrl(p.slug)}
                 aria-current={p.slug === current ? "page" : undefined}
                 className={`rounded-full px-3 py-1.5 ${p.slug === current ? "bg-cream text-navy" : "bg-cream/15 text-cream"}`}
               >
@@ -40,19 +40,21 @@ export default function LegalDocEn({ blocks, current }: { blocks: LegalBlock[]; 
         )}
         <div className="mt-5 space-y-3 rounded-2xl bg-cream px-5 py-6 text-[14px] leading-6 text-navy/85">
           {groupLists(rest).map((b, i) => {
-            if (b.type === "ul")
+            if (b.type === "ul" || b.type === "ol") {
+              const L = b.type;
               return (
-                <ul key={i} className="list-disc space-y-1.5 pl-5">
+                <L key={i} className={`${L === "ul" ? "list-disc" : "list-decimal"} space-y-1.5 pl-5`}>
                   {b.items.map((it, j) => (
                     <li key={j}>
                       <Text segs={it} />
                     </li>
                   ))}
-                </ul>
+                </L>
               );
+            }
             if (b.type === "table") {
               const [head, ...body] = b.rows;
-              const keyValue = b.rows.every((r) => r.length === 2) && !["Purpose", "Provider", "Data"].includes(head[0]);
+              const keyValue = b.kv === true;
               // 칸이 많은 표는 휴대폰에서 글자가 세로로 쪼개져 읽을 수 없어서, 한 줄 = 카드 하나(제목: 내용)로 그린다.
               if (keyValue)
                 return (
@@ -84,6 +86,7 @@ export default function LegalDocEn({ blocks, current }: { blocks: LegalBlock[]; 
                 </div>
               );
             }
+            if (!("segs" in b)) return null;
             if (b.type === "h2" || b.type === "h1") return <h2 key={i} className="pt-2 text-[17px] font-semibold text-navy">{plain(b.segs)}</h2>;
             if (b.type === "h3") return <h3 key={i} className="pt-3 text-[15px] font-semibold text-navy">{plain(b.segs)}</h3>;
             return (

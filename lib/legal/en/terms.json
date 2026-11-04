@@ -1,0 +1,311 @@
+[
+ {
+  "type": "h2",
+  "segs": [
+   {
+    "t": "Terms of Use",
+    "b": false
+   }
+  ]
+ },
+ {
+  "type": "p",
+  "segs": [
+   {
+    "t": "Effective date:",
+    "b": true
+   },
+   {
+    "t": " November 6, 2026",
+    "b": false
+   }
+  ]
+ },
+ {
+  "type": "p",
+  "segs": [
+   {
+    "t": "These terms are the agreement between you and SSOL Wellness House (\"SSOL\", \"we\") for using SSOL Astro House. By creating an account, using a guest account or buying a report, you agree to them.",
+    "b": false
+   }
+  ]
+ },
+ {
+  "type": "h3",
+  "segs": [
+   {
+    "t": "1. For entertainment and self-reflection",
+    "b": false
+   }
+  ]
+ },
+ {
+  "type": "p",
+  "segs": [
+   {
+    "t": "SSOL Astro House offers astrology readings for entertainment and self-reflection. SSOL Wellness House offers non-clinical wellness coaching and wellness sessions. We don't provide psychotherapy, diagnosis or medical treatment. Readings are not facts or predictions you should rely on. They are not medical, psychological, legal or financial advice, and they do not replace a qualified professional. Do not use the Service in an emergency. If you are in crisis, contact local emergency services. The Disclaimer, Privacy Policy, Birth Details Consent, Consumer Health Data Privacy Policy, Cookie Policy and Refund Policy are part of these terms.",
+    "b": false
+   }
+  ]
+ },
+ {
+  "type": "h3",
+  "segs": [
+   {
+    "t": "2. Who can use the Service",
+    "b": false
+   }
+  ]
+ },
+ {
+  "type": "p",
+  "segs": [
+   {
+    "t": "You must be at least 18 years old. The Service, including Sowella AI, may not be suitable for minors. You must give accurate birth details; your reading depends on them. You can use the test and buy a report without an account; results saved that way stay on that device (browser) and are deleted 30 days after saving or payment, unless you sign in before then. Sowella AI requires an account. You may hold one account. Keep your sign-in details safe; you are responsible for what happens under your account.",
+    "b": false
+   }
+  ]
+ },
+ {
+  "type": "h3",
+  "segs": [
+   {
+    "t": "3. What we provide",
+    "b": false
+   }
+  ]
+ },
+ {
+  "type": "table",
+  "kv": false,
+  "rows": [
+   [
+    "Item",
+    "Price",
+    "What you get"
+   ],
+   [
+    "Birth chart, your type, 2026 look-back",
+    "Free",
+    "Shown on the site"
+   ],
+   [
+    "Star report",
+    "US$2.99, one-time",
+    "The rest of 2026, your 2027 reading, your 5-year flow, and personal wellness tips"
+   ],
+   [
+    "3-day Sowella AI pass",
+    "Included with the star report",
+    "3 days of chat with Sowella AI from the time you start"
+   ]
+  ]
+ },
+ {
+  "type": "p",
+  "segs": [
+   {
+    "t": "The star report is a one-time purchase. It does not renew automatically and we never charge you again. Because the report is digital content delivered right after payment, by buying it you ask us to deliver it immediately and agree that you lose your right to cancel once it is shown to you (see the Refund Policy for when we still refund). Prices include any taxes we must collect, unless the checkout page says otherwise. Your bank may add its own foreign-transaction fee.",
+    "b": false
+   }
+  ]
+ },
+ {
+  "type": "h3",
+  "segs": [
+   {
+    "t": "4. Payment",
+    "b": false
+   }
+  ]
+ },
+ {
+  "type": "p",
+  "segs": [
+   {
+    "t": "We accept Visa, Mastercard and JCB cards through Toss Payments, and PayPal. You are charged when you confirm the purchase. The report unlocks right after payment.",
+    "b": false
+   }
+  ]
+ },
+ {
+  "type": "h3",
+  "segs": [
+   {
+    "t": "5. AI-generated content",
+    "b": false
+   }
+  ]
+ },
+ {
+  "type": "p",
+  "segs": [
+   {
+    "t": "Your results and star report are created automatically by our system from your birth chart and answers, following rules and texts we wrote. Sowella AI replies are written by AI, using models from OpenAI. We do not promise that any of this content is complete or accurate, so use your own judgment. Sowella AI follows its own terms, will not give medical, legal or financial advice, and may refuse some requests. You can report content you find harmful to contact@ssolwellness.com.",
+    "b": false
+   }
+  ]
+ },
+ {
+  "type": "h3",
+  "segs": [
+   {
+    "t": "6. Rules of use",
+    "b": false
+   }
+  ]
+ },
+ {
+  "type": "p",
+  "segs": [
+   {
+    "t": "You agree not to:",
+    "b": false
+   }
+  ]
+ },
+ {
+  "type": "li",
+  "segs": [
+   {
+    "t": "copy, resell or publish the Service or its content for commercial purposes;",
+    "b": false
+   }
+  ]
+ },
+ {
+  "type": "li",
+  "segs": [
+   {
+    "t": "scrape, reverse-engineer or overload the Service;",
+    "b": false
+   }
+  ]
+ },
+ {
+  "type": "li",
+  "segs": [
+   {
+    "t": "enter another person's birth details without their permission;",
+    "b": false
+   }
+  ]
+ },
+ {
+  "type": "li",
+  "segs": [
+   {
+    "t": "use the Sowella AI chat to harass, threaten, or seek illegal or harmful content;",
+    "b": false
+   }
+  ]
+ },
+ {
+  "type": "li",
+  "segs": [
+   {
+    "t": "break any law while using the Service.",
+    "b": false
+   }
+  ]
+ },
+ {
+  "type": "p",
+  "segs": [
+   {
+    "t": "We may suspend or close an account that breaks these rules. We will tell you why unless the law stops us.",
+    "b": false
+   }
+  ]
+ },
+ {
+  "type": "h3",
+  "segs": [
+   {
+    "t": "7. Ownership",
+    "b": false
+   }
+  ]
+ },
+ {
+  "type": "p",
+  "segs": [
+   {
+    "t": "The Service, its design, texts and characters belong to SSOL or its licensors. Your report is for your personal use; you may share screenshots on social media. What you type into the Service stays yours; you let us use it only to provide the Service, as the Privacy Policy explains.",
+    "b": false
+   }
+  ]
+ },
+ {
+  "type": "h3",
+  "segs": [
+   {
+    "t": "8. Availability and changes",
+    "b": false
+   }
+  ]
+ },
+ {
+  "type": "p",
+  "segs": [
+   {
+    "t": "We work to keep the Service running but cannot promise it will be uninterrupted or error-free. We may change or end features. If we end a paid feature you bought and have not been able to use, we will refund you. We will post changes to these terms at least 7 days ahead, or 30 days ahead when they are less favorable to you. If you do not agree, you can stop using the Service and delete your account.",
+    "b": false
+   }
+  ]
+ },
+ {
+  "type": "h3",
+  "segs": [
+   {
+    "t": "9. Our liability",
+    "b": false
+   }
+  ]
+ },
+ {
+  "type": "p",
+  "segs": [
+   {
+    "t": "We are not liable for decisions you make based on a reading. To the extent the law allows, our total liability to you is limited to the amount you paid us in the 12 months before the claim. Nothing in these terms limits liability for our intentional misconduct or gross negligence, or any right you have as a consumer that cannot be waived.",
+    "b": false
+   }
+  ]
+ },
+ {
+  "type": "h3",
+  "segs": [
+   {
+    "t": "10. Governing law and disputes",
+    "b": false
+   }
+  ]
+ },
+ {
+  "type": "p",
+  "segs": [
+   {
+    "t": "These terms are governed by the laws of the Republic of Korea. Please contact us first; we will try to solve any problem within 30 days. Disputes go to the competent court under the Korean Civil Procedure Act. If you live in the EU or UK, you keep the protection of your home country's mandatory consumer laws and may bring claims in your local courts.",
+    "b": false
+   }
+  ]
+ },
+ {
+  "type": "h3",
+  "segs": [
+   {
+    "t": "11. Contact",
+    "b": false
+   }
+  ]
+ },
+ {
+  "type": "p",
+  "segs": [
+   {
+    "t": "SSOL Wellness House · Representative: Junseok Kim · Business registration no. 572-07-03549 · Mail-order business registration no. 2026-Seoul Mapo-2770 · Room 408, 4F, 100 Dongmak-ro, Mapo-gu, Seoul, Republic of Korea · Email: contact@ssolwellness.com · Contact number: +82-10-2835-2263",
+    "b": false
+   }
+  ]
+ }
+]

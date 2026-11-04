@@ -13,7 +13,7 @@ const isInt = (v: unknown): v is number => typeof v === "number" && Number.isInt
 export interface ParseOptions {
   now?: Date;
   /** 해외 도시 id → 좌표·시간대. 서버가 자기 도시 목록에서 찾는다(브라우저가 보낸 좌표는 믿지 않음). */
-  findCity?: (id: number) => Place | null;
+  findCity?: (id: number, lang?: string) => Place | null;
 }
 
 export function parseBirthRequest(body: unknown, opts: ParseOptions = {}): ValidationResult {
@@ -46,7 +46,7 @@ export function parseBirthRequest(body: unknown, opts: ParseOptions = {}): Valid
     place = koreaRegion(p.region);
   } else if (isInt(p?.cityId) && opts.findCity) {
     // 해외 도시: 검색 결과의 id만 받고 좌표·시간대는 서버 목록에서 가져온다. 상세 주소는 받지 않는다.
-    place = opts.findCity(p.cityId);
+    place = opts.findCity(p.cityId, p.lang === "en" ? "en" : undefined);
   }
   if (!place) return { ok: false, error: "태어난 곳을 다시 확인해 주세요." };
 

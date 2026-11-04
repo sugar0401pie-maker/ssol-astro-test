@@ -1,0 +1,181 @@
+[
+ {
+  "type": "h2",
+  "segs": [
+   {
+    "t": "Consent for Your Birth Details and Answers",
+    "b": false
+   }
+  ]
+ },
+ {
+  "type": "p",
+  "segs": [
+   {
+    "t": "Effective date:",
+    "b": true
+   },
+   {
+    "t": " November 6, 2026",
+    "b": false
+   }
+  ]
+ },
+ {
+  "type": "p",
+  "segs": [
+   {
+    "t": "We ask for this consent separately from the Terms of Use and Privacy Policy. Your birth details and answers say something personal about you, so we handle them with the same care as sensitive information, even though the law does not classify them that way.",
+    "b": false
+   }
+  ]
+ },
+ {
+  "type": "h3",
+  "segs": [
+   {
+    "t": "1. What we collect",
+    "b": false
+   }
+  ]
+ },
+ {
+  "type": "li",
+  "segs": [
+   {
+    "t": "Date of birth",
+    "b": false
+   }
+  ]
+ },
+ {
+  "type": "li",
+  "segs": [
+   {
+    "t": "Time of birth, a time range, or \"I don't know\"",
+    "b": false
+   }
+  ]
+ },
+ {
+  "type": "li",
+  "segs": [
+   {
+    "t": "Birth city name and its coordinates (never a street address)",
+    "b": false
+   }
+  ]
+ },
+ {
+  "type": "li",
+  "segs": [
+   {
+    "t": "Your answers to the three questions in the test",
+    "b": false
+   }
+  ]
+ },
+ {
+  "type": "h3",
+  "segs": [
+   {
+    "t": "2. Why we use it",
+    "b": false
+   }
+  ]
+ },
+ {
+  "type": "li",
+  "segs": [
+   {
+    "t": "To calculate your birth chart (Sun, Moon, Rising signs and planet positions) and show your results",
+    "b": false
+   }
+  ]
+ },
+ {
+  "type": "li",
+  "segs": [
+   {
+    "t": "To create your star report on our own servers, using rules and texts we wrote. We do not send this information to outside companies to create it.",
+    "b": false
+   }
+  ]
+ },
+ {
+  "type": "li",
+  "segs": [
+   {
+    "t": "To improve the Service with statistics, using your answers only in a form that cannot identify you. ",
+    "b": false
+   },
+   {
+    "t": "Your birth details are never used for statistics or anything other than your chart.",
+    "b": true
+   }
+  ]
+ },
+ {
+  "type": "h3",
+  "segs": [
+   {
+    "t": "3. How long we keep it",
+    "b": false
+   }
+  ]
+ },
+ {
+  "type": "p",
+  "segs": [
+   {
+    "t": "Until you delete your account or withdraw this consent. Results saved without an account are deleted 30 days after saving (30 days after payment for paid results). See \"How long we keep it\" in the Privacy Policy.",
+    "b": false
+   }
+  ]
+ },
+ {
+  "type": "h3",
+  "segs": [
+   {
+    "t": "4. Your right to say no",
+    "b": false
+   }
+  ]
+ },
+ {
+  "type": "p",
+  "segs": [
+   {
+    "t": "You can refuse this consent. If you do, we cannot calculate your chart or give you a reading, but nothing else happens.",
+    "b": false
+   }
+  ]
+ },
+ {
+  "type": "h3",
+  "segs": [
+   {
+    "t": "5. Withdrawing consent",
+    "b": false
+   }
+  ]
+ },
+ {
+  "type": "p",
+  "segs": [
+   {
+    "t": "You can withdraw at any time by deleting your account or emailing contact@ssolwellness.com. We then delete this information without delay.",
+    "b": false
+   }
+  ]
+ },
+ {
+  "type": "p",
+  "segs": [
+   {
+    "t": "Anything not covered here follows the Privacy Policy.",
+    "b": false
+   }
+  ]
+ }
+]
