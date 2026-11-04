@@ -392,3 +392,5 @@ details.why ul{list-style:disc}
 @keyframes breathe{0%,100%{opacity:.45}50%{opacity:1}}
 .report-writing .writing-note{margin:0;font-size:.8rem;color:var(--ink);opacity:.7;white-space:pre-line;line-height:1.55}
 @media (prefers-reduced-motion:reduce){.star-orbit .orb,.star-orbit .ring-rev,.star-orbit .core-glow,.star-orbit .tw,.report-writing .writing-msg{animation:none}}
+/* 영문 공유 버튼(owner 2026-11-04 '눈에 띄게'): 크림 바탕·남색 글자·아이콘 */
+.btn.share-en{background:var(--cream);border-color:var(--cream);color:var(--navy);gap:8px;font-weight:700}
