@@ -8,9 +8,9 @@ export const centsToUsd = (cents: number) => Math.round(cents) / 100;
 /** 토스가 돌려준 달러 금액(2.99 등)을 센트로 — 소수 비교 오차를 피하려고 센트로 맞춰 비교한다 */
 export const usdToCents = (usd: number) => Math.round(usd * 100);
 
-/** 결제 방식: 해외카드(Visa·Mastercard·JCB, 다국어 결제창) 또는 PayPal(토스 해외간편결제) — 둘 다 USD */
-export type EnPayMethod = "card" | "paypal";
-export const isEnPayMethod = (v: unknown): v is EnPayMethod => v === "card" || v === "paypal";
-
-/** 서버에 해외결제 키가 있는지(없으면 영문 결제를 열지 않는다) */
-export const enPaymentsConfigured = () => !!process.env.TOSS_EN_SECRET_KEY;
+/**
+ * 영문 결제는 한국어판과 같은 토스 결제위젯 키를 쓴다(외화결제 UI variantKey 'dollaronly' — owner 2026-11-04).
+ * TOSS_EN_SECRET_KEY(API 개별 연동 키)는 토스가 '계약된 곳이 아닙니다'로 거절해서 쓰지 않는다.
+ */
+export const enTossSecret = () => process.env.TOSS_SECRET_KEY;
+export const enPaymentsConfigured = () => !!enTossSecret() && !!process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY;

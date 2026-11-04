@@ -2,7 +2,7 @@ import { NextRequest, NextResponse, after } from "next/server";
 import { resolveOwner } from "@/lib/results/owner";
 import { cancelTossPayment, confirmTossPayment, getTossPayment } from "@/lib/billing/toss";
 import { decideAfterConfirmFailure } from "@/lib/billing/confirmDecision";
-import { usdToCents } from "@/lib/billing/pricingEn";
+import { enTossSecret, usdToCents } from "@/lib/billing/pricingEn";
 import { runReportGeneration } from "@/lib/results/report";
 import { getAccountEmail, getResultCard, getOrder, isResultPaid, markOrderPaid, markResultPaid, ownsOrder, settleOrder } from "@/lib/results/store";
 import { buildOrderEmailEn, isEmail } from "@/lib/billing/orderEmailEn";
@@ -17,7 +17,7 @@ import { sanitizeTouch } from "@/lib/attribution/attribution";
 import { allowedOn, CC_COOKIE, parseChoice } from "@/lib/i18n/cookieConsent";
 
 // 영문판 결제 승인(2026-11-04). 한국어 confirm과 같은 순서(내 주문·처리 전·금액 일치 → 시크릿 키로 승인 → 승인됐을 때만 결제 완료)를
-// 해외결제 키(TOSS_EN_SECRET_KEY)와 USD로 한다. 금액은 센트로 바꿔 비교한다(2.99 같은 소수 비교 오차 방지).
+// 결제위젯 시크릿 키(한국어판과 같은 키, 외화결제 UI)와 USD로 한다. 금액은 센트로 바꿔 비교한다(2.99 같은 소수 비교 오차 방지).
 // 처음 결제 완료로 바뀔 때 한 번: 주문 확인 이메일(08 §4, 계정 이메일 또는 결제 화면에서 받은 주소) + X 서버 전환(광고 쿠키에
 // 동의했고(swh_cc) Global Privacy Control(Sec-GPC)이 꺼진 경우만 — 영문 화면 쿠키 규칙과 같다).
 export const runtime = "nodejs";
@@ -26,7 +26,7 @@ export const maxDuration = 300;
 const RETRY = "Confirming your payment is taking longer than usual. Please refresh this page in a moment. If it keeps happening, email contact@ssolwellness.com.";
 
 export async function POST(req: NextRequest) {
-  const secret = process.env.TOSS_EN_SECRET_KEY;
+  const secret = enTossSecret();
   if (!secret) return NextResponse.json({ error: "Payments aren’t available right now." }, { status: 503 });
   const owner = await resolveOwner(req.headers);
   if (!owner) return NextResponse.json({ error: "We couldn’t find this result. Please start again." }, { status: 401 });

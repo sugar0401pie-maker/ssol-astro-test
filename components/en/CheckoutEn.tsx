@@ -1,16 +1,18 @@
 "use client";
 
-// 영문 결제 화면 /en/checkout/{resultId}((나) 영문 전용, owner 2026-11-04). 문구는 영문 정책 08_on-screen-texts §4 그대로
-// (청약철회 포기는 약관에 두고 버튼 바로 위에 안내만 — 체크박스 아님).
-// 결제는 한국어판(토스 결제위젯, 원화)과 다른 별도 연동(owner 2026-11-04): 토스 API 개별 연동 키(NEXT_PUBLIC_TOSS_EN_CLIENT_KEY)로
-// 결제창 v2를 열고, 해외카드(VISA·MASTER·JCB, 영어 결제창, useInternationalCardOnly) 또는 PayPal(토스 해외간편결제) — 둘 다 USD 2.99.
+// 영문 결제 화면 /en/checkout/{resultId}((나) 영문 전용). 2026-11-04 owner 설정에 맞춰 토스 '결제위젯'으로 연다:
+// 한국어판과 같은 결제위젯 키(NEXT_PUBLIC_TOSS_CLIENT_KEY / TOSS_SECRET_KEY) + 결제 UI variantKey 'dollaronly'(외화결제 — 해외카드·PayPal을
+// 토스 화면 안에서 고름), 금액은 USD 2.99. 처음엔 'API 개별 연동 키'로 결제창을 직접 열었지만 토스가 '계약된 곳이 아닙니다'로 거절했다 —
+// 해외결제 설정이 그 키가 아니라 결제위젯 쪽(dollaronly UI)에 되어 있어서. 화면에 들어오면 토스 결제 UI가 바로 그려진다.
 // 금액·주문은 서버(/api/en/checkout)가 정하고, 승인은 /en/checkout/success → /api/en/checkout/confirm에서 서버가 확인한다.
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { track } from "@/lib/analytics/track";
 import { enLegalUrl } from "@/lib/legal/en/blocks";
-import type { EnPayMethod } from "@/lib/billing/pricingEn";
-import { startEnPayment } from "@/lib/billing/enPayClient";
+import { EN_CURRENCY, EN_REPORT_PRICE_CENTS, centsToUsd } from "@/lib/billing/pricingEn";
+import { apiHeaders } from "@/lib/guest/client";
+import { getAttribution } from "@/lib/attribution/client";
+import { useRealSession } from "@/components/results/useSession";
 
 export const EN_PAY_COPY = {
   product: "Star report — US$2.99, one-time payment. No subscription, no automatic renewal.",
@@ -20,26 +22,79 @@ export const EN_PAY_COPY = {
   methods: "Visa · Mastercard · JCB · PayPal. Your bank may add a foreign-transaction fee.",
 } as const;
 
+const TOSS_CLIENT_KEY = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY;
+/** 토스 결제 어드민의 외화결제 UI(owner 설정 2026-11-04) */
+const EN_VARIANT = process.env.NEXT_PUBLIC_TOSS_EN_VARIANT || "dollaronly";
+
+type Widgets = ReturnType<Awaited<ReturnType<typeof import("@tosspayments/tosspayments-sdk")["loadTossPayments"]>>["widgets"]>;
+
 export default function CheckoutEn({ resultId, page }: { resultId: string; page: number }) {
-  const [busy, setBusy] = useState(true);
+  const session = useRealSession();
+  const [ready, setReady] = useState(false);
+  const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
-  // 결제 화면에 들어오면 곧바로 토스 카드 결제창을 연다(owner 2026-11-04 — 화면 안 '결제하기' 버튼 없이).
-  // 결제창을 닫거나 열지 못하면 다시 열기 버튼이 나온다. PayPal은 아래 버튼(나중에 토스 결제창 안에서 고르게 바뀔 예정).
-  const started = useRef(false);
-  async function go(method: EnPayMethod) {
+  const widgetsRef = useRef<Widgets | null>(null);
+
+  useEffect(() => {
+    track("pay_click", { page, from: "en" }, `pay_click:${resultId}`);
+  }, [resultId, page]);
+
+  // 들어오자마자 토스 결제 UI(외화결제)를 그린다
+  useEffect(() => {
+    if (session === undefined || !TOSS_CLIENT_KEY) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const { loadTossPayments, ANONYMOUS } = await import("@tosspayments/tosspayments-sdk");
+        const toss = await loadTossPayments(TOSS_CLIENT_KEY);
+        const widgets = toss.widgets({ customerKey: session?.user?.id ?? ANONYMOUS });
+        await widgets.setAmount({ currency: EN_CURRENCY, value: centsToUsd(EN_REPORT_PRICE_CENTS) });
+        await Promise.all([
+          widgets.renderPaymentMethods({ selector: "#toss-en-methods", variantKey: EN_VARIANT }),
+          widgets.renderAgreement({ selector: "#toss-en-agreement" }),
+        ]);
+        if (cancelled) return;
+        widgetsRef.current = widgets;
+        setReady(true);
+      } catch (e) {
+        const x = e as { code?: string; message?: string };
+        if (!cancelled) setErr(`We couldn’t load the payment window.${x?.code ? ` (${x.code}${x.message ? `: ${x.message}` : ""})` : ""}`);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [session]);
+
+  async function pay() {
+    if (!widgetsRef.current || busy) return;
     setBusy(true);
     setErr("");
-    const e = await startEnPayment(resultId, page, method);
-    if (e) setErr(e);
-    setBusy(false);
+    try {
+      const res = await fetch("/api/en/checkout", {
+        method: "POST",
+        headers: apiHeaders(session, { "content-type": "application/json" }),
+        body: JSON.stringify({ resultId, attributionLast: getAttribution()?.last ?? null }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (res.status === 409 && d.paid) return window.location.replace(`/en/results/${resultId}/${page}`);
+      if (!res.ok || !d.orderId) throw new Error(d.error ?? "We couldn’t start the payment. Please try again.");
+      track("pay_start", { page, from: "en" });
+      const origin = window.location.origin;
+      await widgetsRef.current.requestPayment({
+        orderId: d.orderId,
+        orderName: d.orderName,
+        successUrl: `${origin}/en/checkout/success?page=${page}`,
+        failUrl: `${origin}/en/checkout/fail?resultId=${resultId}&page=${page}`,
+      });
+    } catch (e) {
+      const x = e as { code?: string; message?: string };
+      if (x?.code !== "USER_CANCEL" && x?.code !== "PAY_PROCESS_CANCELED") setErr(x?.code ? `${x.message ?? "Payment failed."} (${x.code})` : (x?.message ?? "Payment failed."));
+    } finally {
+      setBusy(false);
+    }
   }
-  useEffect(() => {
-    if (started.current) return;
-    started.current = true;
-    track("pay_click", { page, from: "en" }, `pay_click:${resultId}`);
-    void go("card");
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- 들어왔을 때 한 번만
-  }, []);
+
   const [before, rest] = EN_PAY_COPY.notice.split("[Terms of Use]");
   const [mid, after] = rest.split("[Refund Policy]");
   return (
@@ -47,8 +102,13 @@ export default function CheckoutEn({ resultId, page }: { resultId: string; page:
       <Link href={`/en/results/${resultId}/${page}`} className="text-sm text-cream/80 underline">
         ← Back to results
       </Link>
-      <h1 className="big" id="pay-big">{busy ? "Opening secure payment…" : "Unlock your full star report"}</h1>
-      <p className="text-sm text-cream/80">
+      {!TOSS_CLIENT_KEY && <p className="err">Payments aren’t available right now. You won’t be charged.</p>}
+      {/* 토스 결제 UI가 그려지는 자리(흰 바탕) */}
+      <div className="overflow-hidden rounded-2xl bg-white">
+        <div id="toss-en-methods" />
+        <div id="toss-en-agreement" />
+      </div>
+      <p className="text-xs text-cream/80">
         {before}
         <Link href={enLegalUrl("terms")} target="_blank" rel="noopener" className="underline">Terms of Use</Link>
         {mid}
@@ -56,13 +116,8 @@ export default function CheckoutEn({ resultId, page }: { resultId: string; page:
         {after}
       </p>
       <p className="err" role="alert">{err}</p>
-      {!busy && (
-        <button type="button" className="btn block" onClick={() => void go("card")}>
-          Open card payment again
-        </button>
-      )}
-      <button type="button" className="btn ghost block" onClick={() => void go("paypal")} disabled={busy}>
-        Pay with PayPal
+      <button type="button" className="btn block" onClick={() => void pay()} disabled={!ready || busy} aria-busy={busy}>
+        {ready ? "Pay US$2.99" : "Opening secure payment…"}
       </button>
     </section>
   );

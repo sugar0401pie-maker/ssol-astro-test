@@ -15,7 +15,7 @@ const TOSS_ANONYMOUS = "@@ANONYMOUS";
 export const EN_WITHDRAWAL_NOTICE_VERSION = "en-withdrawal-2026-11-06-draft";
 
 export async function POST(req: NextRequest) {
-  if (!enPaymentsConfigured() || !process.env.NEXT_PUBLIC_TOSS_EN_CLIENT_KEY)
+  if (!enPaymentsConfigured())
     return NextResponse.json({ error: "Payments aren’t available right now. You haven’t been charged." }, { status: 503 });
   const owner = await resolveOwner(req.headers);
   if (!owner) return NextResponse.json({ error: "We couldn’t find this result. Please start again." }, { status: 401 });
