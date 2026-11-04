@@ -6,6 +6,7 @@ import type { BirthInput, BirthResult } from "@/lib/astro/birth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ASTRO_DB } from "@/lib/report/dbData";
 import { CONSENT_VERSION } from "./consent";
+import { EN_CONSENT_VERSION } from "@/lib/en/birthForm";
 import { guestExpiry } from "./guest";
 import type { Owner } from "./owner";
 import type { Attribution, ShareChannel, Touch } from "@/lib/attribution/attribution";
@@ -65,7 +66,7 @@ export async function saveResult(args: {
       sun_sign: chart.planets.sun!.sign,
       engine_version: birth.engineVersion,
       db_version: ASTRO_DB.version,
-      consent_version: CONSENT_VERSION,
+      consent_version: input.lang === "en" ? EN_CONSENT_VERSION : CONSENT_VERSION,
       consented_at: new Date().toISOString(),
   };
   const insert = (r: object) => createAdminClient().from(TABLE).insert(r).select("id").single();

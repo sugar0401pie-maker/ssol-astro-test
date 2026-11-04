@@ -19,7 +19,7 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/results/[id]
   try {
     const row = await getResult(owner, id);
     if (!row) return NextResponse.json({ error: "결과를 찾을 수 없어요." }, { status: 404 });
-    const c = computeFree(row.birth_input, row.answers, row.nickname);
+    const c = computeFree(row.birth_input, row.answers, row.nickname, { lang: "ko" });
     if (c.kind !== "result") return NextResponse.json({ error: "결과를 다시 계산하지 못했어요." }, { status: 500 });
     const { skeleton } = prepareSkeleton({
       db: ASTRO_DB,

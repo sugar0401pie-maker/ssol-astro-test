@@ -35,7 +35,7 @@ Only the service providers that run the Service for us process it, under contrac
 | Supabase, Inc. | Database (Mumbai region, India) |
 | Vercel Inc. | Website hosting |
 | OpenAI, L.L.C. | Writes Sowella AI replies |
-| [Hosting provider] (India) | Database and hosting for Sowella AI |
+| Vercel Inc. and Supabase, Inc. (servers in India, Mumbai region) | Hosting and database for Sowella AI |
 
 ## Your rights
 

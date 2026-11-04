@@ -10,6 +10,7 @@ import { resolveOwner } from "@/lib/results/owner";
 import { chatSummaryFor } from "@/lib/results/chatSummary";
 import { recordConsents } from "@/lib/results/consentLog";
 import { CONSENT_VERSION } from "@/lib/results/consent";
+import { EN_CONSENT_VERSION } from "@/lib/en/birthForm";
 import { characterLabel } from "@/lib/report/characterDisplay";
 import { ASTRO_DB } from "@/lib/report/dbData";
 import { sanitizeAttribution } from "@/lib/attribution/attribution";
@@ -74,6 +75,11 @@ export async function POST(req: NextRequest) {
     if (hash) await recordIpSave(hash).catch(() => {});
     // 출생 정보 화면의 필수 동의(화면이 모두 체크해야 넘어가고, 서버도 consent:true를 확인했다)
     // 로그인 없이(비회원)는 3가지(임시 계정은 이용약관에 포함), 로그인하면 결과 저장까지 4가지
+    if (parsed.input.lang === "en") {
+      // 영문판 체크박스 2개(owner 2026-11-04): ① 18세 이상·이용약관·개인정보처리방침 ② 출생 정보·답 처리 동의(Birth Details Consent).
+      // 동의 기록 표의 항목 이름(age·privacy·terms·store)에 맞춰 ②는 store로 남긴다 — 문구 버전으로 영문판임을 구분한다.
+      await recordConsents(owner, ["age", "privacy", "terms", "store"], EN_CONSENT_VERSION, { resultId: id });
+    } else
     await recordConsents(owner, owner.kind === "user" ? ["age", "privacy", "terms", "store"] : ["age", "privacy", "terms"], CONSENT_VERSION, { resultId: id });
     return NextResponse.json({ id, result: computed.result });
   } catch (e) {

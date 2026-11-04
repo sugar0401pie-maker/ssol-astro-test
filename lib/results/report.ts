@@ -60,7 +60,7 @@ export async function runReportGeneration(resultId: string, opts: { retry?: bool
   try {
     const row = await getResultForReport(resultId);
     if (!row) throw new Error("결과 없음");
-    const c = computeFree(row.birth_input, row.answers, row.nickname);
+    const c = computeFree(row.birth_input, row.answers, row.nickname, { lang: "ko" });
     if (c.kind !== "result") throw new Error("결과를 다시 계산하지 못함");
     const report = await generatePaidReport({ db: ASTRO_DB, resolved: c.birth.resolved, wishContext: wishContextOf(c.birth.stored, c.birth.accuracy), answers: row.answers, nickname: row.nickname, birthKey: birthKeyOf(row.birth_input), onPart: (partial) => savePartialReport(resultId, partial, attempt) });
     // 그사이 다른 시도가 자리를 넘겨받았으면 저장하지 않는다(그쪽 결과가 남는다)
@@ -82,7 +82,7 @@ export async function emailReportIfReady(resultId: string): Promise<void> {
   try {
     const row = await getResultForReport(resultId);
     if (!row || row.report_status !== "ready" || !row.report) return;
-    const c = computeFree(row.birth_input, row.answers, row.nickname);
+    const c = computeFree(row.birth_input, row.answers, row.nickname, { lang: "ko" });
     if (c.kind !== "result") return;
     await emailReport(resultId, row.user_id, row.nickname, cardOf(c));
   } catch (e) {

@@ -37,6 +37,8 @@ export interface BirthInput {
   competencyPick?: Competency;
   /** 4개 중 고른 유형(역량·방식, owner 2026-10-11). 선택지 안에 있을 때만 반영. 저장값에 함께 둔다. */
   typePick?: TypePick;
+  /** 영문판에서 만든 결과(2026-11-04) — 다시 볼 때 영문 DB로 계산한다 */
+  lang?: "en";
 }
 
 export interface CharacterCandidate {

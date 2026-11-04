@@ -54,10 +54,12 @@ export default function ResultView({ id, page }: { id: string; page?: number }) 
         const d = await res.json();
         if (res.status === 404 || res.status === 401) setNotFound(true);
         else if (!res.ok) setError(d.error ?? "결과를 불러오지 못했어요.");
+        // 영문판에서 만든 결과는 영문 주소로(2026-11-04)
+        else if (d.lang === "en") router.replace(`/en/results/${id}/${page ?? 1}`);
         else setData(d);
       })
       .catch(() => setError("결과를 불러오지 못했어요."));
-  }, [session, id]);
+  }, [session, id, page, router]);
 
   // 결제했으면 유료 리포트를 받아 온다. 아직 만드는 중이면 4초마다 다시 묻는다.
   // owner 2026-10-11: 30초 동안 아무것도 못 받으면 한 번 다시 만들기를 요청하고, 60초가 지나도 안 뜨면 고객센터 안내(10-14: 쓰는 중이어도 60초).

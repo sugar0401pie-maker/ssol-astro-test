@@ -9,6 +9,7 @@ import type { PointKey } from "@/lib/astro/constants";
 import type { NatalChart } from "@/lib/astro/natal";
 import type { WheelAspect } from "@/lib/report/freeResult";
 import { PLANET_GLYPHS, PLANET_ORDER, POINT_NAMES, SIGN_GLYPHS } from "./labels";
+import { EN } from "@/lib/report/lang";
 
 const SIGN_NAMES = ["양자리", "황소자리", "쌍둥이자리", "게자리", "사자자리", "처녀자리", "천칭자리", "전갈자리", "사수자리", "염소자리", "물병자리", "물고기자리"];
 const f = (n: number) => n.toFixed(2);
@@ -20,6 +21,7 @@ export default function Wheel({
   showAll,
   tipStep,
   onSelect,
+  lang = "ko",
 }: {
   chart: NatalChart;
   aspects: WheelAspect[];
@@ -29,7 +31,12 @@ export default function Wheel({
   tipStep: number;
   /** "sign:3" | "asp:0" | "asc" | "mc" | 행성 키 */
   onSelect: (key: string) => void;
+  /** 영문판: 화면 읽기 프로그램용 이름만 영어로(그림은 같다) */
+  lang?: "ko" | "en";
 }) {
+  const en = lang === "en";
+  const nm = (k: PointKey) => (en ? EN.point(k) : POINT_NAMES[k]);
+  const sg = (s: string) => (en ? EN.sign(s) : s);
   const P = chart.planets;
   const withTime = !!P.asc;
   const lonOf = (k: PointKey) => P[k]!.lon;
@@ -69,7 +76,7 @@ export default function Wheel({
   }
 
   return (
-    <svg viewBox="0 0 360 360" className={`wheel${tipStep ? ` tip-${tipStep}` : ""}`} id="wheel" role="group" aria-label="출생차트 휠. 바깥 고리는 별자리, 동그라미는 행성이에요.">
+    <svg viewBox="0 0 360 360" className={`wheel${tipStep ? ` tip-${tipStep}` : ""}`} id="wheel" role="group" aria-label={en ? "Birth chart wheel. The outer ring shows the signs, and the circles are the planets." : "출생차트 휠. 바깥 고리는 별자리, 동그라미는 행성이에요."}>
       <circle cx="180" cy="180" r="176" fill="rgba(11,30,63,.55)" stroke="#CBB27A" strokeWidth=".75" />
       {SIGN_NAMES.map((sign, i) => {
         const a0 = pt(i * 30, R0), a1 = pt(i * 30 + 30, R0), b1 = pt(i * 30 + 30, R1), b0 = pt(i * 30, R1);
@@ -81,7 +88,7 @@ export default function Wheel({
           <g key={sign}>
             <path
               className="sector hit"
-              {...hit(`sign:${i}`, sign + (withTime ? `, ${hn}하우스` : ""))}
+              {...hit(`sign:${i}`, sg(sign) + (withTime ? `, ${en ? EN.house(hn) : `${hn}하우스`}` : ""))}
               fill={i === sunS ? "rgba(203,178,122,.14)" : "rgba(0,0,0,0)"}
               d={`M${f(a0[0])} ${f(a0[1])} A${R0} ${R0} 0 0 0 ${f(a1[0])} ${f(a1[1])} L${f(b1[0])} ${f(b1[1])} A${R1} ${R1} 0 0 1 ${f(b0[0])} ${f(b0[1])} Z`}
             />
@@ -105,7 +112,7 @@ export default function Wheel({
         const extra = idx >= 8;
         const co = { x1: f(p1[0]), y1: f(p1[1]), x2: f(p2[0]), y2: f(p2[1]) };
         return (
-          <g key={idx} className={`asp hit${extra ? " extra" : ""}`} style={extra && !showAll ? { display: "none" } : undefined} {...hit(`asp:${idx}`, `${POINT_NAMES[a.a]}와 ${POINT_NAMES[a.b]} ${a.aspect} 선`)}>
+          <g key={idx} className={`asp hit${extra ? " extra" : ""}`} style={extra && !showAll ? { display: "none" } : undefined} {...hit(`asp:${idx}`, en ? `${nm(a.a)}–${nm(a.b)} ${EN.aspect(a.aspect)} line` : `${POINT_NAMES[a.a]}와 ${POINT_NAMES[a.b]} ${a.aspect} 선`)}>
             <line
               className="vis"
               {...co}
@@ -129,14 +136,14 @@ export default function Wheel({
             <>
               <line x1={f(as0[0])} y1={f(as0[1])} x2={f(as1[0])} y2={f(as1[1])} stroke="#CBB27A" strokeWidth="3" strokeLinecap="round" pointerEvents="none" />
               <line x1={f(ds0[0])} y1={f(ds0[1])} x2={f(ds1[0])} y2={f(ds1[1])} stroke="#CBB27A" strokeWidth="1" strokeOpacity=".6" pointerEvents="none" />
-              <g className="hit" {...hit("asc", `상승궁 ${P.asc!.sign} ${P.asc!.deg.toFixed(1)}도`)}>
+              <g className="hit" {...hit("asc", en ? `Ascendant ${sg(P.asc!.sign)} ${P.asc!.deg.toFixed(1)}°` : `상승궁 ${P.asc!.sign} ${P.asc!.deg.toFixed(1)}도`)}>
                 <rect x={f(al[0] - 4)} y={f(al[1] - 9)} width="30" height="17" rx="4" fill="rgba(11,30,63,.85)" className="ring-focus" stroke="none" />
                 <text x={f(al[0])} y={f(al[1])} dominantBaseline="central" fontSize="9.5" fontWeight="700" fill="#CBB27A">
                   ASC
                 </text>
               </g>
               <line x1={f(m0[0])} y1={f(m0[1])} x2={f(m1[0])} y2={f(m1[1])} stroke="#CBB27A" strokeWidth="2.2" pointerEvents="none" />
-              <g className="hit" {...hit("mc", `천정 ${P.mc!.sign}`)}>
+              <g className="hit" {...hit("mc", en ? `Midheaven ${sg(P.mc!.sign)}` : `천정 ${P.mc!.sign}`)}>
                 <rect x={f(ml[0] - 12)} y={f(ml[1] - 8)} width="24" height="16" rx="4" fill="rgba(11,30,63,.85)" className="ring-focus" />
                 <text x={f(ml[0])} y={f(ml[1])} textAnchor="middle" dominantBaseline="central" fontSize="9" fontWeight="700" fill="#CBB27A">
                   MC
@@ -156,7 +163,7 @@ export default function Wheel({
           <g key={k}>
             <line x1={f(tk0[0])} y1={f(tk0[1])} x2={f(tk1[0])} y2={f(tk1[1])} stroke="#FDF6E9" strokeWidth="1.2" pointerEvents="none" />
             {Math.abs(o.d - o.real) > 0.8 && <line x1={f(tk1[0])} y1={f(tk1[1])} x2={f(cc[0])} y2={f(cc[1])} stroke="rgba(253,246,233,.5)" strokeWidth=".8" pointerEvents="none" />}
-            <g className="pl hit" {...hit(k, `${POINT_NAMES[k]}, ${pp.sign} ${pp.deg.toFixed(1)}도${withTime ? `, ${pp.house}하우스` : ""}${retro.includes(k) ? ", 역행" : ""}`)}>
+            <g className="pl hit" {...hit(k, en ? `${nm(k)}, ${sg(pp.sign)} ${pp.deg.toFixed(1)}°${withTime ? `, ${EN.house(pp.house!)}` : ""}${retro.includes(k) ? ", retrograde" : ""}` : `${POINT_NAMES[k]}, ${pp.sign} ${pp.deg.toFixed(1)}도${withTime ? `, ${pp.house}하우스` : ""}${retro.includes(k) ? ", 역행" : ""}`)}>
               <circle className="body ring-focus" cx={f(cp[0])} cy={f(cp[1])} r={r} fill="#013566" stroke="#CBB27A" strokeWidth="1" />
               <text className="sym" x={f(cp[0])} y={f(cp[1] + 0.5)} textAnchor="middle" dominantBaseline="central" fontSize={big ? 15 : 13} fill="#FDF6E9">
                 {PLANET_GLYPHS[k]}

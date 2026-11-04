@@ -23,7 +23,7 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/results/[id]
     if (c.kind !== "result") return NextResponse.json({ error: "결과를 다시 계산하지 못했어요." }, { status: 500 });
     // 관리자 계정은 결제 없이 전체 리포트(lib/billing/comp.ts)
     const paid = !!row.paid_at || (await grantIfComp(owner, row.id));
-    return NextResponse.json({ id: row.id, createdAt: row.created_at, nickname: row.nickname, firstTime: row.first_time, paid, guest: owner.kind === "guest", result: c.result });
+    return NextResponse.json({ id: row.id, createdAt: row.created_at, nickname: row.nickname, firstTime: row.first_time, paid, guest: owner.kind === "guest", lang: row.birth_input.lang === "en" ? "en" : "ko", result: c.result });
   } catch (e) {
     console.error(e instanceof Error ? e.message : "결과 조회 실패");
     return NextResponse.json({ error: "결과를 불러오지 못했어요." }, { status: 500 });

@@ -13,10 +13,18 @@ import {
 } from "../astro/timeline.ts";
 import { ingressLine } from "./ingress.ts";
 import { POINT_ID, SIGN_ID, ELEMENT_ID, aspectGroup, findRow, pad2, row, tryFill, type AstroDb } from "./db.ts";
-import { batchim, formatDate, QUARTER_LABELS } from "./format.ts";
+import { batchim } from "./format.ts";
 import { a12Variant, b11, fillSummary, hashPick } from "./variants.ts";
 import { pickTheme, themeScores, themeTable } from "./theme2026.ts";
-import { POINT_KO } from "./labels.ts";
+import { KO, lx, PLANET_NAME_EN, MODALITY_EN, SIGN_DATES_EN, type Lx, type ReportLang } from "./lang.ts";
+
+// 영문판 유료 섹션 제목(번역 묶음 UI의 섹션 제목 — 없으면 Claude 초안, 원어민 검수 대상)
+export const PAID_SECTION_TITLES_EN = [
+  { no: 4, title: "What to watch for until the end of the year" },
+  { no: 5, title: "Your mindset for 2027" },
+  { no: 6, title: "The next five years, {닉네임}: how your life may flow" },
+  { no: 7, title: "Questions from the stars and wellness suggestions" },
+] as const;
 
 export const PAID_SECTION_TITLES = [
   { no: 4, title: "연말까지 조심하면 좋을 것" },
@@ -135,12 +143,21 @@ export interface FreeResult {
   /** 임시 계정(로그인 안 함) 결제 안내(B11, 2026-10-10): 결제 팝업 아래 작은 글씨 · 결제 직후 리포트 위 배너 · 그때의 가입 화면 제목 */
   tempPay: { note: string; banner: string; loginBigPaid: string };
   disclaimer: string;
-  paidSections: typeof PAID_SECTION_TITLES;
+  paidSections: typeof PAID_SECTION_TITLES | typeof PAID_SECTION_TITLES_EN;
 }
 
 const text = (db: AstroDb, table: string, id: string, col: string) => row(db, table, id)?.[col] ?? "";
 
 const BIG3_LABEL = { sun: "태양 (삶의 중심)", moon: "달 (감정의 욕구)", asc: "상승궁 (첫인상)" } as const;
+// 영문판 — 용어집(Sun/Moon/Ascendant) + 괄호 뜻은 Claude 초안(원어민 검수 대상)
+const BIG3_LABEL_EN = { sun: "Sun (your core)", moon: "Moon (emotional needs)", asc: "Ascendant (first impression)" } as const;
+/** 수호성(한국어 A1 ruler 칸 — 영문 DB에서는 비어 있어 한국어 DB 값으로 찾는다) */
+const RULER_KO: Record<string, string> = {
+  양자리: "화성", 황소자리: "금성", 쌍둥이자리: "수성", 게자리: "달", 사자자리: "태양", 처녀자리: "수성",
+  천칭자리: "금성", 전갈자리: "명왕성", 사수자리: "목성", 염소자리: "토성", 물병자리: "천왕성", 물고기자리: "해왕성",
+};
+const koRuler = (sign: string) => RULER_KO[sign] ?? "";
+const TERM_NAME_EN = { SUN: "Sun", MOON: "Moon", ASC: "Ascendant (rising sign)" } as const;
 
 // ---- 4원소 ----
 
@@ -160,20 +177,20 @@ export function elementTexts(db: AstroDb, elements: Record<Element, number>, dom
 
 // ---- 휠 탭 시트 ----
 
-function planetSheet(db: AstroDb, key: PointKey, chart: NatalChart, retro: readonly PointKey[]): WheelSheet | null {
+function planetSheet(db: AstroDb, key: PointKey, chart: NatalChart, retro: readonly PointKey[], L: Lx = KO): WheelSheet | null {
   const p = chart.planets[key];
   if (!p) return null;
   const sid = SIGN_ID[p.sign];
   const term = row(db, "A16", `TERM_${POINT_ID[key]}`);
-  const deg = `${p.sign} ${p.deg.toFixed(1)}°`;
+  const deg = `${L.sign(p.sign)} ${p.deg.toFixed(1)}°`;
   if (key === "asc") {
-    return { title: `상승궁 · ${p.sign} · 1하우스`, kicker: `${deg} — ${term ? `${term.nickname}: ${term.meaning_line}` : ""}`, paras: [{ t: text(db, "A4", `ASC_${sid}`, "text") }].filter((x) => x.t) };
+    return { title: `${L.lang === "en" ? "Ascendant" : "상승궁"} · ${L.sign(p.sign)} · ${L.house(1)}`, kicker: `${deg} — ${term ? `${term.nickname}: ${term.meaning_line}` : ""}`, paras: [{ t: text(db, "A4", `ASC_${sid}`, "text") }].filter((x) => x.t) };
   }
   if (key === "mc") {
-    return { title: `천정 · ${p.sign} · ${p.house}하우스`, kicker: deg, paras: term ? [{ t: `${term.meaning_line} ${term.detail}` }] : [] };
+    return { title: `${L.lang === "en" ? "Midheaven" : "천정"} · ${L.sign(p.sign)} · ${L.house(p.house ?? 10)}`, kicker: deg, paras: term ? [{ t: `${term.meaning_line} ${term.detail}` }] : [] };
   }
-  const title = `${POINT_KO[key]} · ${p.sign}${p.house ? ` · ${p.house}하우스` : ""}`;
-  const kicker = `${deg}${retro.includes(key) ? " · 역행" : ""}${term ? ` — ${term.nickname}: ${term.meaning_line}` : ""}`;
+  const title = `${L.point(key)} · ${L.sign(p.sign)}${p.house ? ` · ${L.house(p.house)}` : ""}`;
+  const kicker = `${deg}${retro.includes(key) ? ` · ${L.retro}` : ""}${term ? ` — ${term.nickname}: ${term.meaning_line}` : ""}`;
   const paras: WheelSheet["paras"] = [];
   if (key === "sun" || key === "moon") {
     const t = text(db, key === "sun" ? "A2" : "A3", `${POINT_ID[key]}_${sid}`, "text");
@@ -186,7 +203,7 @@ function planetSheet(db: AstroDb, key: PointKey, chart: NatalChart, retro: reado
   const b1 = row(db, outer ? "B1b" : "B1a", `PL_${POINT_ID[key]}_${sid}`);
   if (b1) paras.push({ b: b1.short_line, t: b1.text });
   const b2 = p.house ? row(db, key === "mercury" || key === "venus" || key === "mars" ? "B2a" : "B2b", `HS_${POINT_ID[key]}_H${pad2(p.house)}`) : null;
-  if (b2) paras.push({ b: `${p.house}하우스`, t: `· ${b2.short_line} ${b2.text}` });
+  if (b2) paras.push({ b: L.house(p.house!), t: `· ${b2.short_line} ${b2.text}` });
   return { title, kicker, paras };
 }
 
@@ -196,7 +213,9 @@ function planetSheet(db: AstroDb, key: PointKey, chart: NatalChart, retro: reado
  * 이름·어미를 떼어 잇는다 — 문장은 DB 그대로, 연결 말만 코드. 유형의 역량은 '힘이 많이 들어가는' 역량(가장 긴장을 받는
  * 행성)이라 '높다'고 쓰지 않는다. 표현은 owner 2026-10-12(요약 '마음이 많이 쓰이고'·이유 '마음을 많이 쓰는'과 겹치지 않게). 형식이 맞지 않으면 null(그 문단을 빼고 보여 준다).
  */
-export function wellnessTypeLine(db: AstroDb, competency: string, style: string): string | null {
+export function wellnessTypeLine(db: AstroDb, competency: string, style: string, L: Lx = KO): string | null {
+  // 영문 A6 문장은 형식이 달라 이어 붙이지 않는다 — 영문판은 역량·방식 정의 두 줄을 그대로 보여 준다(화면 쪽)
+  if (L.lang === "en") return null;
   const comp = a6Line(db, "역량", competency);
   const sty = a6Line(db, "방식", style);
   if (!comp || !sty) return null;
@@ -233,14 +252,14 @@ export function wheelAspects(db: AstroDb, chart: NatalChart): WheelAspect[] {
 }
 
 /** 각도 선 탭 시트(프로토타입 aspectSheet): B3 제목, kicker(두 행성 별자리·각도·오차 — 각도 별명), B3 두 줄 / 없으면 A16 각도 뜻 */
-function lineSheets(db: AstroDb, chart: NatalChart, list: WheelAspect[]): Record<string, WheelSheet> {
+function lineSheets(db: AstroDb, chart: NatalChart, list: WheelAspect[], L: Lx = KO): Record<string, WheelSheet> {
   const out: Record<string, WheelSheet> = {};
   list.forEach((a, i) => {
     const r = b3For(db, a.a, a.b, a.aspect);
     const ta = row(db, "A16", ASPECT_TERM[a.aspect]);
-    const kicker = `${POINT_KO[a.a]} ${chart.planets[a.a]?.sign} · ${POINT_KO[a.b]} ${chart.planets[a.b]?.sign} · ${a.aspect} (오차 ${a.orb.toFixed(1)}°)${ta ? ` — ${ta.nickname}` : ""}`;
+    const kicker = `${L.point(a.a)} ${L.sign(chart.planets[a.a]?.sign ?? "")} · ${L.point(a.b)} ${L.sign(chart.planets[a.b]?.sign ?? "")} · ${L.aspect(a.aspect)} (${L.orb(a.orb)})${ta ? ` — ${ta.nickname}` : ""}`;
     out[String(i)] = {
-      title: r ? r.title : `${POINT_KO[a.a]}-${POINT_KO[a.b]} ${GROUP_KO[aspectGroup(a.aspect)]}`,
+      title: r ? r.title : L.pair(L.point(a.a), L.point(a.b), L.lang === "en" ? (aspectGroup(a.aspect) === "CONJ" ? "conjunction" : aspectGroup(a.aspect) === "HARM" ? "harmony" : "tension") : GROUP_KO[aspectGroup(a.aspect)]),
       kicker,
       paras: r ? [{ t: r.line_meaning }, { t: r.text }] : ta ? [{ t: ta.meaning_line }] : [],
     };
@@ -254,7 +273,7 @@ const READING_WEIGHT: Partial<Record<PointKey, number>> = { sun: 3, moon: 3, mer
 const READING_ASPECT_W: Record<string, number> = { 합: 1, 충: 0.9, 사각: 0.9, 삼분: 0.7, 육분: 0.5 };
 
 /** 섹션 1 '나의 행성 읽기'·'행성끼리의 관계'(2026-10-09, 마스터스펙 6-1-1). 하우스 문장은 A·B등급만. */
-export function planetReading(db: AstroDb, chart: NatalChart): FreeResult["planetReading"] {
+export function planetReading(db: AstroDb, chart: NatalChart, L: Lx = KO): FreeResult["planetReading"] {
   const planets = READING_PLANETS.flatMap((k) => {
     const p = chart.planets[k];
     if (!p) return [];
@@ -264,10 +283,10 @@ export function planetReading(db: AstroDb, chart: NatalChart): FreeResult["plane
     const b2 = p.house ? row(db, k === "mercury" || k === "venus" || k === "mars" ? "B2a" : "B2b", `HS_${POINT_ID[k]}_H${pad2(p.house)}`) : null;
     return [{
       key: k as PointKey,
-      title: `${POINT_KO[k]} · ${p.sign}${p.house ? ` · ${p.house}하우스` : ""}`,
+      title: `${L.point(k)} · ${L.sign(p.sign)}${p.house ? ` · ${L.house(p.house)}` : ""}`,
       shortLine: b1?.short_line ?? "",
       text: b1?.text ?? "",
-      houseLine: b2 ? `${p.house}하우스 · ${b2.short_line}` : null,
+      houseLine: b2 ? `${L.house(p.house!)} · ${b2.short_line}` : null,
     }];
   });
   const group = (a: string) => (a === "합" ? "CONJ" : a === "삼분" || a === "육분" ? "HARM" : "TENSE");
@@ -278,14 +297,14 @@ export function planetReading(db: AstroDb, chart: NatalChart): FreeResult["plane
     .flatMap(({ a }) => {
       const g = group(a.aspect);
       const r = row(db, "B3", `ASP_${POINT_ID[a.a]}_${POINT_ID[a.b]}_${g}`) ?? row(db, "B3", `ASP_${POINT_ID[a.b]}_${POINT_ID[a.a]}_${g}`);
-      return r ? [{ title: r.title, sub: `${a.aspect} · 오차 ${a.orb.toFixed(1)}°`, lineMeaning: r.line_meaning, text: r.text }] : [];
+      return r ? [{ title: r.title, sub: `${L.aspect(a.aspect)} · ${L.orb(a.orb)}`, lineMeaning: r.line_meaning, text: r.text }] : [];
     })
     .slice(0, 3);
   return { head: b11(db, "HEAD_PLANETS"), planets, aspectsHead: b11(db, "HEAD_ASPECTS"), aspects };
 }
 
 /** 별자리 칸 탭 시트(프로토타입 signSheet): 기호+이름, kicker(기간·원소·양태·수호성·키워드), 한 줄·용어, (시간 앎) 하우스 뜻, 이 칸의 행성 */
-function signSheets(db: AstroDb, chart: NatalChart): Record<string, WheelSheet> {
+function signSheets(db: AstroDb, chart: NatalChart, L: Lx = KO): Record<string, WheelSheet> {
   const out: Record<string, WheelSheet> = {};
   const asc = chart.planets.asc;
   SIGNS.forEach((sign, i) => {
@@ -295,15 +314,18 @@ function signSheets(db: AstroDb, chart: NatalChart): Record<string, WheelSheet> 
     if (asc) {
       const hn = (((i - SIGNS.indexOf(asc.sign)) % 12) + 12) % 12 + 1;
       const t = row(db, "A16", `TERM_H${pad2(hn)}`);
-      if (t) paras.push({ b: `${hn}하우스 · ${t.nickname}`, t: `— ${t.meaning_line}` });
+      if (t) paras.push({ b: `${L.house(hn)} · ${t.nickname}`, t: `— ${t.meaning_line}` });
     }
-    const inside = PLANET_KEYS.filter((k) => chart.planets[k]?.sign === sign).map((k) => POINT_KO[k]);
+    const inside = PLANET_KEYS.filter((k) => chart.planets[k]?.sign === sign).map((k) => L.point(k));
     out[sign] = {
-      title: r.sign,
+      title: L.sign(r.sign),
       glyph: r.symbol,
-      kicker: `${r.dates} · ${r.element} · ${r.modality} · 수호성 ${r.ruler} · ${r.keywords}`,
+      kicker:
+        L.lang === "en"
+          ? `${SIGN_DATES_EN[sign]} · ${L.element(r.element)} · ${MODALITY_EN[row(db, "A1", `SIGN_${SIGN_ID[sign]}`)?.modality ?? ""] ?? ""} · ${L.rulerLabel} ${PLANET_NAME_EN[koRuler(sign)] ?? ""} · ${r.keywords}`
+          : `${r.dates} · ${r.element} · ${r.modality} · ${L.rulerLabel} ${r.ruler} · ${r.keywords}`,
       paras,
-      muted: inside.length ? `이 칸에 있는 행성: ${inside.join(", ")}` : undefined,
+      muted: inside.length ? `${L.insideLabel}: ${inside.join(", ")}` : undefined,
     };
   });
   return out;
@@ -393,10 +415,11 @@ const TP_INGRESS: Record<string, [string, number]> = {
  * 프로토타입에 없는 나이 마일스톤(목성 리턴 80·천왕성 충 85·해왕성 사각 85)도 A18 행이 있어 같은 규칙에 넣었다
  * (마스터스펙 6-2 '나이 마일스톤 포함' — Claude 판단, owner 검토 가능).
  */
-export function turningPointTexts(db: AstroDb, events: TimelineEvent[], chart: NatalChart, birthYear: number, opts: { birthDate?: string; domainHouses?: number[]; today?: string } = {}): string[] {
+export function turningPointTexts(db: AstroDb, events: TimelineEvent[], chart: NatalChart, birthYear: number, opts: { birthDate?: string; domainHouses?: number[]; today?: string; L?: Lx } = {}): string[] {
+  const L = opts.L ?? KO;
   const ascSign = chart.planets.asc?.sign ?? null;
   const timed = !!ascSign;
-  const houseArea = (h: number) => `${text(db, "A16", `TERM_H${pad2(h)}`, "nickname")}(${h}하우스)`;
+  const houseArea = (h: number) => (L.lang === "en" ? L.houseArea(text(db, "A16", `TERM_H${pad2(h)}`, "nickname").toLowerCase(), h) : L.houseArea(text(db, "A16", `TERM_H${pad2(h)}`, "nickname"), h));
   const ageAt = (date: string) => {
     if (!opts.birthDate) return Number(date.slice(0, 4)) - birthYear;
     const [by, bm, bd] = opts.birthDate.split("-").map(Number);
@@ -412,10 +435,10 @@ export function turningPointTexts(db: AstroDb, events: TimelineEvent[], chart: N
       const m = e.milestone;
       const [id, pri] =
         m === "saturn_return" ? [ageAt(date) < 45 ? "TP_SATURN_RETURN_1" : "TP_SATURN_RETURN_2", 100] : m === "jupiter_return" ? ["TP_JUPITER_RETURN", 80] : m === "uranus_opposition" ? ["TP_URANUS_OPPOSITION", 85] : ["TP_NEPTUNE_SQUARE", 85];
-      tps.push({ pri: pri as number, date, text: tryFill(text(db, "A18", id as string, "text"), { 날짜: formatDate(date) }) });
+      tps.push({ pri: pri as number, date, text: tryFill(text(db, "A18", id as string, "text"), { 날짜: L.date(date) }) });
     } else if (e.kind === "chiron_return") {
       const date = e.intervals.find((iv) => iv.exact?.startsWith("2026"))?.exact;
-      if (date) tps.push({ pri: 95, date, text: tryFill(text(db, "A18", "TP_CHIRON_RETURN", "text"), { 날짜: formatDate(date) }) });
+      if (date) tps.push({ pri: 95, date, text: tryFill(text(db, "A18", "TP_CHIRON_RETURN", "text"), { 날짜: L.date(date) }) });
     }
   }
   const seen = new Set<string>();
@@ -436,7 +459,7 @@ export function turningPointTexts(db: AstroDb, events: TimelineEvent[], chart: N
       // 패키지 v3: 고민 영역 하우스 가산 30 → 15(개인 트랜짓이 모두에게 같은 별자리 이동보다 앞서게)
       pri = TP_INGRESS[key][1] + (timed && e.house && (opts.domainHouses ?? []).includes(e.house) ? 15 : 0);
     }
-    tps.push({ pri, date, gen: pri < 90, text: tryFill(text(db, "A18", id, "text"), { 날짜: formatDate(date), 별자리: e.sign, 하우스영역: e.house ? houseArea(e.house) : "", 행성: POINT_KO[e.planet] }) });
+    tps.push({ pri, date, gen: pri < 90, text: tryFill(text(db, "A18", id, "text"), { 날짜: L.date(date), 별자리: L.sign(e.sign), 하우스영역: e.house ? houseArea(e.house) : "", 행성: L.point(e.planet) }) });
   }
   // 개인 트랜짓(TP_PERSONAL, 패키지 v3 2026-10-10): 출생 태양·달·상승궁·천정과 맺은 각도로 2026년(오늘까지) 정확한 날이 있는 것.
   // 토성 긴장 80/조화 60, 천왕성·해왕성·명왕성 긴장 85/조화 65, 목성 사각·충 55/그 밖 72. 행성마다 하나만.
@@ -455,7 +478,7 @@ export function turningPointTexts(db: AstroDb, events: TimelineEvent[], chart: N
     if (!a8?.table_past) continue;
     const head = String(a8.meaning_line ?? "").split(" — ")[0].trim();
     if (!head) continue;
-    pers.push({ pri, date, pl: e.transit, text: `${formatDate(date)} 무렵은 ${head}${batchim(head)?.has ? "이었어요" : "였어요"}. ${a8.table_past}` });
+    pers.push({ pri, date, pl: e.transit, text: L.personalTurn(date, head, a8.table_past) });
   }
   const usedPl = new Set<string>();
   for (const t of pers.sort((a, b) => b.pri - a.pri)) {
@@ -496,8 +519,11 @@ export function buildFreeResult(args: {
   /** 정확한 시각이 서머타임 경계(없는/두 번 있는 시각)면 정확도 B로 표시(17_해외도시 ③) */
   dstBoundary?: "gap" | "ambiguous";
   now?: Date;
+  /** 영문판(2026-11-04): en이면 영문 DB(db 인자)와 영문 연결 말을 쓴다 */
+  lang?: ReportLang;
 }): FreeResult {
   const { db, chart, longitudes, character, answers, nickname, birthYear } = args;
+  const L = lx(args.lang);
   const today = new Date((args.now ?? new Date()).getTime() + 9 * 3_600_000).toISOString().slice(0, 10);
   const nick = { 닉네임: nickname };
   const w = { start: "2026-01-01", end: "2026-12-31" };
@@ -520,7 +546,7 @@ export function buildFreeResult(args: {
       return d && qOf(d) === qn;
     });
     if (qn === 4 && today <= qEnd) {
-      return { label: QUARTER_LABELS[3], cell: "지금 지나고 있는 시기예요. 아래 ‘연말까지 조심하면 좋을 것’에서 이어집니다.", reasons: [] };
+      return { label: L.quarter[3], cell: L.quarterNow, reasons: [] };
     }
     const top = list[0];
     const id = top ? a8Id(top.event) : null;
@@ -529,18 +555,18 @@ export function buildFreeResult(args: {
       const d = exactOf(s)!;
       const e = s.event as Extract<TimelineEvent, { kind: "transit" }>;
       const a8 = a8Id(e) ? row(db, "A8", a8Id(e)!) : null;
-      return { iso: d, title: e.milestone === "saturn_return" ? "토성 리턴" : `${POINT_KO[e.transit]}-${POINT_KO[e.target]} ${e.aspect}`, when: formatDate(d), meaning: a8?.meaning_line ?? "" };
+      return { iso: d, title: e.milestone === "saturn_return" ? L.saturnReturn : L.pair(L.point(e.transit), L.point(e.target), L.aspect(e.aspect)), when: L.date(d), meaning: a8?.meaning_line ?? "" };
     });
     for (const e of events) {
       if (e.kind !== "ingress" || !e.intervals[0].from.startsWith("2026") || qOf(e.intervals[0].from) !== qn) continue;
       const d = e.intervals[0].from;
-      reasons.push({ iso: d, title: `${POINT_KO[e.planet]} ${e.sign}${e.house ? `(${e.house}하우스)` : ""} 이동`, when: formatDate(d), meaning: ingressLine(db, e.planet, e.house) });
+      reasons.push({ iso: d, title: L.ingress(L.point(e.planet), L.sign(e.sign), e.house), when: L.date(d), meaning: ingressLine(db, e.planet, e.house) });
     }
     reasons.sort((a, b) => (a.iso < b.iso ? -1 : 1));
-    return { label: QUARTER_LABELS[qn - 1], cell, reasons: reasons.map(({ title, when, meaning }) => ({ title, when, meaning })) };
+    return { label: L.quarter[qn - 1], cell, reasons: reasons.map(({ title, when, meaning }) => ({ title, when, meaning })) };
   });
 
-  const tps = turningPointTexts(db, events, chart, birthYear, { birthDate: args.birthDate, domainHouses: DOMAIN_MAP[answers.q1].houses, today });
+  const tps = turningPointTexts(db, events, chart, birthYear, { birthDate: args.birthDate, domainHouses: DOMAIN_MAP[answers.q1].houses, today, L });
   const q2 = findRow(db, "A12", (r) => r.word === answers.q2);
   const hasTp = turningPoints(events, w).length > 0;
   const match = q2Matches(answers.q2, scored.slice(0, 5), db, hasTp);
@@ -565,7 +591,7 @@ export function buildFreeResult(args: {
   const retro = args.retro ?? [];
   const planets: FreeResult["wheelSheets"]["planets"] = {};
   for (const k of Object.keys(chart.planets) as PointKey[]) {
-    const sh = planetSheet(db, k, chart, retro);
+    const sh = planetSheet(db, k, chart, retro, L);
     if (sh) planets[k] = sh;
   }
   const wAspects = wheelAspects(db, chart);
@@ -576,16 +602,16 @@ export function buildFreeResult(args: {
     dbDraft: db.status.startsWith("DRAFT"),
     terms: (["SUN", "MOON", "ASC"] as const)
       .filter((k) => k !== "ASC" || chart.planets.asc)
-      .map((k) => ({ name: text(db, "A16", `TERM_${k}`, "name"), line: text(db, "A16", `TERM_${k}`, "meaning_line") })),
+      .map((k) => ({ name: L.lang === "en" ? TERM_NAME_EN[k] : text(db, "A16", `TERM_${k}`, "name"), line: text(db, "A16", `TERM_${k}`, "meaning_line") })),
     accuracy: args.dstBoundary && chart.accuracy === "A" ? "B" : chart.accuracy,
-    header: { title: `${nickname}님의 별 리포트`, line: args.birthLine ?? "" },
+    header: { title: L.reportTitle(nickname), line: args.birthLine ?? "" },
     retro,
     utcLabel: args.utc ? `UTC ${args.utc.slice(0, 16).replace("T", " ")}` : "",
     wheelAspects: wAspects,
     // 4개 중 고르기(owner 2026-10-11): 역량 2 × 방식 2. 카드는 해석 DB B6(유형별 '요즘 나는…' 문장).
     tie: character.options?.length
       ? {
-          intro: TYPE_CHOICE_INTRO,
+          intro: L.lang === "en" ? TYPE_CHOICE_INTRO_EN : TYPE_CHOICE_INTRO,
           options: character.options.map((o) => ({
             competency: o.competency,
             style: o.style,
@@ -597,38 +623,38 @@ export function buildFreeResult(args: {
     gradeNote:
       args.dstBoundary && chart.accuracy === "A"
         ? // 서머타임 경계: 계산은 입력한 시각 그대로(첫 번째 해석) 하되 1시간 안의 차이를 알린다 — 안내 문장은 Claude 초안(owner 검토 가능)
-          `${args.dstBoundary === "gap" ? "태어난 시각이 서머타임으로 시계를 건너뛴 시간에 있어, 건너뛴 만큼 뒤로 옮겨 계산했어요." : "태어난 시각이 서머타임이 끝나며 두 번 있었던 시간이라, 첫 번째(서머타임 쪽)로 계산했어요."} 1시간 안의 차이로 상승궁·하우스가 바뀔 수 있어요.`
+          L.dst(args.dstBoundary)
         : text(db, "A15", `FIX_GRADE_${chart.accuracy}`, "text"),
     addTimeNote: chart.accuracy === "A" ? null : text(db, "A15", "FIX_ADD_TIME", "text").replace(/\s*→\s*\[.*\]\s*$/, ""),
     chart,
     elements: elementTexts(db, chart.elements, dominant),
-    wheelSheets: { planets, signs: signSheets(db, chart), lines: lineSheets(db, chart, wAspects) },
+    wheelSheets: { planets, signs: signSheets(db, chart, L), lines: lineSheets(db, chart, wAspects, L) },
     wheelTips: [1, 2, 3].map((i) => text(db, "A15", `FIX_WHEEL_TIP_${i}`, "text")).filter(Boolean),
-    planetReading: planetReading(db, chart),
+    planetReading: planetReading(db, chart, L),
     character: {
       // owner 2026-10-10: B11 SUM_TYPE에서 '별이 본'과 '(역량 × 방식)'을 뺀 줄 — "{태양별자리} · {닉네임}님은 {유형문장}입니다."
       // (엑셀 B11 SUM_TYPE도 같은 문장으로 고치면 코드와 맞는다)
-      summary: charRow.type_line ? `${sunSign} · ${nickname}님은 ${charRow.type_line}입니다.` : null,
+      summary: charRow.type_line ? L.typeSummary(L.sign(sunSign), nickname, charRow.type_line) : null,
       name: SHOW_CHARACTER ? character.name : null,
       typeLine: charRow.type_line,
       competency: character.competency,
       style: character.style,
-      why: whyWithSource(charRow.why_text, character),
+      why: L.lang === "en" ? whyWithSourceEn(charRow.why_text, character) : whyWithSource(charRow.why_text, character),
       intro: SHOW_CHARACTER ? charRow.intro : null,
       strength: SHOW_CHARACTER ? charRow.strength : null,
       energyMoment: SHOW_CHARACTER ? charRow.energy_moment : null,
       careTip: SHOW_CHARACTER ? charRow.care_tip : null,
-      sunMoonLine: tryFill(temp?.sun_moon_line, { 태양별자리: sunSign, 달별자리: moonSign }),
+      sunMoonLine: tryFill(temp?.sun_moon_line, { 태양별자리: L.sign(sunSign), 달별자리: L.sign(moonSign) }),
       competencyLine: a6Line(db, "역량", character.competency),
       styleLine: a6Line(db, "방식", character.style),
-      wellnessLine: wellnessTypeLine(db, character.competency, character.style),
+      wellnessLine: wellnessTypeLine(db, character.competency, character.style, L),
     },
     big3: (["sun", "moon", "asc"] as const)
       .filter((k) => chart.planets[k])
       .map((k) => ({
         key: k,
-        label: BIG3_LABEL[k],
-        sign: chart.planets[k]!.sign,
+        label: (L.lang === "en" ? BIG3_LABEL_EN : BIG3_LABEL)[k],
+        sign: L.sign(chart.planets[k]!.sign),
         house: chart.planets[k]!.house ?? null,
         line: text(db, k === "sun" ? "A2" : k === "moon" ? "A3" : "A4", `${POINT_ID[k]}_${SIGN_ID[chart.planets[k]!.sign]}`, "table_line"),
       })),
@@ -670,7 +696,7 @@ export function buildFreeResult(args: {
       loginBigPaid: fillSummary(b11(db, "LOGIN_BIG_PAID"), { 닉네임: nickname }) ?? "",
     },
     disclaimer: text(db, "A15", "FIX_DISCLAIMER", "text"),
-    paidSections: PAID_SECTION_TITLES,
+    paidSections: L.lang === "en" ? PAID_SECTION_TITLES_EN : PAID_SECTION_TITLES,
   };
 }
 
@@ -701,6 +727,8 @@ export function tieOptions(db: AstroDb, c: CharacterResult): { intro: string; op
 
 /** 4개 중 고르기 안내(Claude 초안 — owner 검토 가능, 해석 DB A15 FIX_TIE_CHOICE는 '두 캐릭터' 문구라 쓰지 않음) */
 export const TYPE_CHOICE_INTRO = "출생차트에서 비슷한 무게로 나온 모습을 네 가지로 나눠 봤어요. 요즘의 나와 가장 가까운 모습을 골라 주세요.";
+/** 영문(Claude 초안 — 원어민 검수 대상) */
+export const TYPE_CHOICE_INTRO_EN = "Your birth chart shows four sides of you with similar weight. Pick the one that feels most like you lately.";
 
 /**
  * '왜 이 유형인가' 마지막 문장 바꾸기(A5c, owner 확정 2026-10-12 — `docs/spec/11_해석DB/변경_A5c_근거문장.json`의 text 그대로,
@@ -730,4 +758,27 @@ export function whyWithSource(why: string, c: Pick<CharacterResult, "style" | "s
   const strong = c.strong_element ?? el;
   const template = STYLE_WHY_TEMPLATES[c.style_source];
   return why.replace(/차트에서 (불|흙|공기|물)의 기운이 가장 강하기 때문(입니다|이에요)\.?\s*$/, (_m, _e, end: string) => `${fillWhy(template, strong, el)}${end}.`);
+}
+
+/**
+ * 영문 '왜 이 유형인가': 영문 A5 why_text는 원소 문장이 문장 중간에 있어 한국어처럼 끝부분만 바꿀 수 없다.
+ * 1등 원소가 아닌 방식을 골랐으면 원소를 말하는 문장을 빼고 출처 문장(A5c 영문, Claude 초안 — 원어민 검수 대상)을 덧붙인다.
+ */
+export const STYLE_WHY_EN = {
+  time: "Your Moon shifts sign depending on your birth time, so at some hours of the day {picked} becomes the strongest energy.",
+  sun: "The strongest energy in your chart is {strong}, but the {picked} energy of your Sun steps forward when you feel unsettled.",
+  second: "After {strong}, {picked} is the next strongest energy in your chart, and it steps forward when you feel unsettled.",
+  other: "The strongest energy in your chart is {strong}, but the {picked} energy beside it steps forward when you feel unsettled.",
+  zero: "There is little {picked} in your chart, yet when you feel unsettled, the wish to fill what's missing steps forward.",
+} as const;
+
+export function whyWithSourceEn(why: string, c: Pick<CharacterResult, "style" | "style_source" | "strong_element">): string {
+  if (!why || !c.style_source || c.style_source === "dominant") return why;
+  const el = (Object.keys(STYLE_BY_ELEMENT) as Element[]).find((e) => STYLE_BY_ELEMENT[e] === c.style)!;
+  const strong = c.strong_element ?? el;
+  const EN_EL: Record<string, string> = { 불: "Fire", 흙: "Earth", 공기: "Air", 물: "Water" };
+  const sentences = why.match(/[^.!?]+[.!?]+(\s|$)/g) ?? [why];
+  const kept = sentences.filter((x) => !/\b(Fire|Earth|Air|Water)\b/.test(x)).join("").trim();
+  const add = STYLE_WHY_EN[c.style_source].replace("{strong}", EN_EL[strong]).replace("{picked}", EN_EL[el]);
+  return `${kept} ${add}`.trim();
 }

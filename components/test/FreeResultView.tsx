@@ -23,6 +23,8 @@ import Toast, { useToast } from "@/components/ui/Toast";
 import { WhyList } from "@/components/results/PaidReportView";
 import type { PointKey } from "@/lib/astro/constants";
 import type { FreeResult, WheelSheet } from "@/lib/report/freeResult";
+import { EN as LEN, KO as LKO } from "@/lib/report/lang";
+import ActionRowEn from "@/components/en/ActionRowEn";
 
 const noopSubscribe = () => () => {};
 const SESSION_URL = "https://app.ssolwellnesshouse.com/session-reserve";
@@ -35,6 +37,123 @@ const SIGN_NAMES = ["양자리", "황소자리", "쌍둥이자리", "게자리",
 const ELEM_ORDER = ["불", "흙", "공기", "물"] as const;
 const ELEM_SHADE: Record<string, string> = { 불: "#013566", 흙: "#2B5486", 공기: "#5878A3", 물: "#8AA0C2" };
 const TABLE_KEYS: PointKey[] = ["sun", "moon", "mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune", "pluto"];
+
+// 화면 고정 문구(영문판 2026-11-04, 결과 화면은 (가) — 같은 화면을 언어만 바꿔 쓴다). en은 번역 묶음
+// 영문번역_화면문구·안내 › UI 시트 그대로, 그 시트에 없는 몇 줄(★)만 Claude 초안(원어민 검수 대상).
+const KO_T = {
+  sec1: (n: string) => `${n}님이 태어난 순간의 하늘`,
+  sec2: "별이 본 나의 유형",
+  sec3: (n: string) => `2026년, ${n}님의 한 해는 이랬어요`,
+  topics: "결과 주제",
+  eyebrow: "쏠 아스트로 하우스 · 별 리포트",
+  editTimeAria: "태어난 시간 수정",
+  edit: "수정",
+  tipAria: (n: number) => `휠 읽는 법 ${n}/3`,
+  tipHead: (n: number) => `휠 읽는 법 ${n}/3 · ${TIP_STEP[n]}`,
+  close: "닫기",
+  next: "다음",
+  ok: "확인",
+  tapHint: "행성이나 별자리 칸을 눌러 보세요.",
+  mainLines: "주요 선만 보기",
+  allLines: "모든 선 보기",
+  tableSummary: "표로 보기 (행성 / 별자리 / 하우스)",
+  tableCaption: "출생차트 행성 위치",
+  thPlanet: "행성",
+  thSign: "별자리",
+  thHouse: "하우스",
+  aspCaption: "행성 사이의 각도",
+  thAspect: "각도",
+  thMeaning: "뜻",
+  wholeSign: (utc: string) => `하우스는 홀사인 기준이에요. 출생 시각은 ${utc}로 계산했어요.`,
+  elements: "4원소의 균형",
+  elemAria: (e: string, v: number, strong: boolean) => `${e} ${v}점${strong ? ", 가장 강함" : ""}`,
+  elemPoints: "태양·달 3점, 수성·금성·화성 2점, 목성·토성 1점",
+  planetsHead: "• 나의 행성 읽기",
+  aspectsHead: "• 행성끼리의 관계",
+  tieHead: "요즘의 나와 더 가까운 건?",
+  legacyPick: (c: string, st: string) => `지금 결과는 예전에 고르신 ${c} × ${st} 유형으로 보여요. 아래에서 다시 고를 수도 있어요.`,
+  big3Caption: "태양·달·상승궁 한 줄 해석",
+  thCard: "카드",
+  thLine: "한 줄 해석",
+  turning: "• 올해의 전환점",
+  quarterHead: "• 분기별로 돌아보면",
+  q2026Caption: "2026년 분기별 회고",
+  thPeriod: "시기",
+  forYou: (n: string) => `${n}님에게는`,
+  skyHappened: "▸ 하늘에서 일어난 일",
+  shareNote: "결제하지 않더라도 지금까지의 결과를 공유할 수 있어요.",
+  prev: "‹ 이전",
+  nextStory: "다음 이야기 ›",
+  first: "처음 주제로 돌아가기",
+  endNote: "별 리포트를 끝까지 읽었어요.",
+  myResults: "내 결과 모아 보기",
+  saveToPay: "결과를 저장하면 전체 리포트를 볼 수 있어요.",
+  payAria: "결제 안내",
+  payButton: `${REPORT_PRICE.toLocaleString("ko-KR")}원 결제하기`,
+  saveFail: "결과를 저장하지 못했어요. 잠시 뒤 다시 눌러 주세요.",
+  saveFirst: "결제하려면 먼저 결과를 저장해야 해요. 버튼을 누르면 저장부터 해 볼게요.",
+  switched: "고르신 유형으로 리포트를 다시 맞췄어요",
+  switchFail: "바꾸지 못했어요.",
+  shortDisclaimer: SHORT_DISCLAIMER,
+};
+type ViewT = typeof KO_T;
+const EN_TIP_STEP = ["", "Outer ring = signs", "Circle = planet", "Line = how planets relate"];
+const EN_T: ViewT = {
+  sec1: (n) => `${n} — the sky at the moment you were born`,
+  sec2: "Your type, as the stars see it",
+  sec3: (n) => `2026: ${n}’s year went like this`,
+  topics: "Result topics",
+  eyebrow: "SSOL Astro House · Star report",
+  editTimeAria: "Edit your birth time", // ★
+  edit: "Edit", // ★
+  tipAria: (n) => `How to read the wheel ${n}/3`,
+  tipHead: (n) => `How to read the wheel ${n}/3 · ${EN_TIP_STEP[n]}`,
+  close: "Close", // ★
+  next: "Next", // ★
+  ok: "Got it", // ★
+  tapHint: "Tap a planet or a sign to explore.",
+  mainLines: "Show main lines only",
+  allLines: "Show all lines",
+  tableSummary: "View as a table (planet / sign / house)",
+  tableCaption: "Planet positions in your birth chart",
+  thPlanet: "Planet", // ★
+  thSign: "Sign", // ★
+  thHouse: "House",
+  aspCaption: "Angles between planets", // ★
+  thAspect: "Aspect", // ★
+  thMeaning: "Meaning", // ★
+  wholeSign: (utc) => `Houses use the Whole Sign system. Your birth time was calculated as ${utc}.`,
+  elements: "Balance of the four elements",
+  elemAria: (e, v, strong) => `${e} ${v} pts${strong ? ", strongest" : ""}`,
+  elemPoints: "Sun & Moon 3 pts · Mercury, Venus & Mars 2 pts · Jupiter & Saturn 1 pt",
+  planetsHead: "• Your planets, decoded",
+  aspectsHead: "• How your planets get along",
+  tieHead: "Which sounds more like you these days?",
+  legacyPick: (c, st) => `This result uses the ${c} × ${st} type you chose earlier. You can choose again below.`, // ★
+  big3Caption: "One-line readings for your Sun, Moon and Ascendant",
+  thCard: "Card",
+  thLine: "One-line reading",
+  turning: "• This year’s turning point",
+  quarterHead: "• Your year, quarter by quarter",
+  q2026Caption: "Looking back on 2026, quarter by quarter",
+  thPeriod: "Period",
+  forYou: (n) => `${n}, for you`,
+  skyHappened: "▸ What happened in the sky",
+  shareNote: "You can share your results so far, no payment needed.",
+  prev: "‹ Back",
+  nextStory: "Next story ›",
+  first: "Back to the first topic",
+  endNote: "You’ve reached the end of your star report.",
+  myResults: "See all my results", // ★
+  saveToPay: "Save your results to unlock the full report.", // ★
+  payAria: "Payment", // ★
+  payButton: "Pay US$2.99 and get my report now",
+  saveFail: "We couldn’t save your results. Please try again in a moment.", // ★
+  saveFirst: "Your results need to be saved before you pay. Tap the button and we’ll save them first.", // ★
+  switched: "Your report now matches the type you chose",
+  switchFail: "We couldn’t change it.", // ★
+  shortDisclaimer: "Astrology is not a prediction tool. These results are wellness content for self-reflection.", // ★
+};
 
 /** 섹션 틀(프로토타입 sec): '무료'/'유료' 표시는 하지 않는다(2026-10-09) */
 export function Section({ no, title, art, children }: { no: number; title: string; art?: React.ReactNode; children: React.ReactNode }) {
@@ -105,6 +224,7 @@ export default function FreeResultView({
   paidPending,
   savePrefill,
   onResult,
+  lang = "ko",
 }: {
   result: FreeResult;
   nickname: string;
@@ -130,7 +250,13 @@ export default function FreeResultView({
   savePrefill?: { birthDate?: string; nickname?: string };
   /** 2번 섹션에서 유형을 바꿨을 때 새 결과 */
   onResult?: (r: FreeResult) => void;
+  /** 영문판(/en/results) — 결과 내용은 서버가 영문 DB로 만들어 보낸다. 여기서는 화면 고정 문구와 이름(별자리·각도 등)만 바꾼다 */
+  lang?: "ko" | "en";
 }) {
+  const en = lang === "en";
+  const T = en ? EN_T : KO_T;
+  const L = en ? LEN : LKO;
+  const pointName = (k: PointKey) => (en ? L.point(k) : POINT_NAMES[k]);
   const [sheetKey, setSheetKey] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
   const [tip, setTip] = useState(() => (tipsSeen() ? 0 : 1));
@@ -143,7 +269,8 @@ export default function FreeResultView({
   useEffect(() => {
     void getRealSession().then((s) => setLoggedIn(!!s));
   }, []);
-  const wantPreview = !paidSection && !!resultId;
+  // 영문판 유료 미리보기는 아직 없다(유료 리포트 영문화 전) — 잠긴 자리만 보인다
+  const wantPreview = !paidSection && !!resultId && !en;
   // 유형을 바꾸면 4~7장 미리보기 문장도 새 유형 기준으로 다시 받는다
   const typeKey = `${result.character.competency}|${result.character.style}`;
   useEffect(() => {
@@ -187,11 +314,11 @@ export default function FreeResultView({
     rememberPage(resultId, page);
     // 테스트 직후 결과(/test/result)도 저장이 끝나면 장마다 /results/{id}/{n} 주소로(owner 2026-10-10) — 새로고침·공유된 주소로 다시 열어도 그 장
     const path = window.location.pathname;
-    if (path.startsWith("/results/") || path === "/test/result") {
-      const url = `/results/${resultId}/${page}`;
+    if (path.startsWith("/results/") || path === "/test/result" || path.startsWith("/en/results/")) {
+      const url = `${en ? "/en" : ""}/results/${resultId}/${page}`;
       if (path !== url) window.history.replaceState(null, "", url);
     }
-  }, [resultId, page]);
+  }, [resultId, page, en]);
   function go(n: number) {
     setPage(n);
     requestAnimationFrame(() => {
@@ -231,13 +358,13 @@ export default function FreeResultView({
       const session = await getRealSession();
       const res = await fetch(`/api/results/${resultId}`, { method: "PATCH", headers: apiHeaders(session, { "content-type": "application/json" }), body: JSON.stringify({ typePick: { competency: comp, style } }) });
       const data = await res.json();
-      if (!res.ok || !data.result) throw new Error(data.error ?? "바꾸지 못했어요.");
+      if (!res.ok || !data.result) throw new Error(en ? T.switchFail : (data.error ?? T.switchFail));
       const y = (document.getElementById("sec-2")?.getBoundingClientRect().top ?? 0) + window.scrollY;
       onResult?.(data.result);
       requestAnimationFrame(() => window.scrollTo(0, y - 10));
-      setToast("고르신 유형으로 리포트를 다시 맞췄어요");
+      setToast(T.switched);
     } catch (e) {
-      setToast(e instanceof Error ? e.message : "바꾸지 못했어요.");
+      setToast(e instanceof Error ? e.message : T.switchFail);
     } finally {
       setSwitching(false);
     }
@@ -245,9 +372,9 @@ export default function FreeResultView({
 
 
   const titles = [
-    `${nickname}님이 태어난 순간의 하늘`,
-    "별이 본 나의 유형",
-    `2026년, ${nickname}님의 한 해는 이랬어요`,
+    T.sec1(nickname),
+    T.sec2,
+    T.sec3(nickname),
     ...[4, 5, 6, 7].map((no) => (result.paidSections.find((x) => x.no === no)?.title ?? "").replace("{닉네임}", nickname)),
   ];
   const lockedPage = page >= 4 && !paidSection;
@@ -259,7 +386,7 @@ export default function FreeResultView({
       <p className="disclaimer">{result.disclaimer}</p>
     ) : (
       <p className="disclaimer" style={{ fontSize: ".74rem", opacity: 0.8 }}>
-        {SHORT_DISCLAIMER}
+        {T.shortDisclaimer}
       </p>
     );
   const next = page < RESULT_PAGES ? page + 1 : null;
@@ -268,7 +395,7 @@ export default function FreeResultView({
     <div ref={rootRef}>
       {/* 위쪽 고정 진행 막대: 주제 수만큼 칸, 칸을 누르면 그 주제로 */}
       <div className="pg-bar">
-        <div className="pg-dots" role="tablist" aria-label="결과 주제">
+        <div className="pg-dots" role="tablist" aria-label={T.topics}>
           {titles.map((t, i) => (
             <button key={i} type="button" role="tab" aria-label={`${i + 1}. ${t}`} aria-selected={page === i + 1} className={page === i + 1 ? "cur" : i + 1 < page ? "done" : ""} onClick={() => go(i + 1)} />
           ))}
@@ -285,7 +412,7 @@ export default function FreeResultView({
         {page === 1 && (
           <>
           <header className="res-head">
-            <p className="eyebrow">쏠 아스트로 하우스 · 별 리포트</p>
+            <p className="eyebrow">{T.eyebrow}</p>
             <h1 className="big" id="res-title">
               {result.header.title}
             </h1>
@@ -294,7 +421,7 @@ export default function FreeResultView({
 
 
             {/* ===== 1. 태어난 순간의 하늘 ===== */}
-          <Section no={1} title={`${nickname}님이 태어난 순간의 하늘`} art={<PageArt page={1} signIndex={result.sunSignIndex} />}>
+          <Section no={1} title={T.sec1(nickname)} art={<PageArt page={1} signIndex={result.sunSignIndex} />}>
             {/* 정확도 배지: owner 2026-10-11 모든 등급 숨김(시간을 모를 때는 아래 안내와 [수정]이 한계를 알린다) */}
             {/* 서머타임 경계(시간은 알지만 1시간 차이가 날 수 있음)는 [수정] 안내가 없으므로 등급 글자 없이 안내 문장만 */}
             {!result.addTimeNote && result.accuracy !== "A" && result.gradeNote && <p className="small">{result.gradeNote}</p>}
@@ -302,26 +429,26 @@ export default function FreeResultView({
               <div className="grade" style={{ alignItems: "center" }}>
                 <div>{result.addTimeNote}</div>
                 {onAddTime && (
-                  <button className="btn ghost small-btn" type="button" onClick={onAddTime} style={{ whiteSpace: "nowrap", flexShrink: 0 }} aria-label="태어난 시간 수정">
-                    수정
+                  <button className="btn ghost small-btn" type="button" onClick={onAddTime} style={{ whiteSpace: "nowrap", flexShrink: 0 }} aria-label={T.editTimeAria}>
+                    {T.edit}
                   </button>
                 )}
               </div>
             )}
             <div className="wheel-wrap" id="wheel-wrap">
-              <Wheel chart={chart} aspects={result.wheelAspects} retro={result.retro} showAll={showAll} tipStep={tip} onSelect={setSheetKey} />
+              <Wheel chart={chart} aspects={result.wheelAspects} retro={result.retro} showAll={showAll} tipStep={tip} onSelect={setSheetKey} lang={lang} />
               {tip > 0 && result.wheelTips[tip - 1] && (
-                <div className="tip" id="wheel-tip" role="dialog" aria-label={`휠 읽는 법 ${tip}/3`} style={{ top: TIP_TOP[tip] }}>
+                <div className="tip" id="wheel-tip" role="dialog" aria-label={T.tipAria(tip)} style={{ top: TIP_TOP[tip] }}>
                   <p className="tip-step">
-                    휠 읽는 법 {tip}/3 · {TIP_STEP[tip]}
+                    {T.tipHead(tip)}
                   </p>
                   <p>{result.wheelTips[tip - 1]}</p>
                   <div className="tip-btns">
                     <button className="btn ghost" type="button" onClick={endTips}>
-                      닫기
+                      {T.close}
                     </button>
                     <button className="btn" type="button" onClick={() => (tip < 3 ? setTip(tip + 1) : endTips())}>
-                      {tip < 3 ? "다음" : "확인"}
+                      {tip < 3 ? T.next : T.ok}
                     </button>
                   </div>
                 </div>
@@ -329,21 +456,21 @@ export default function FreeResultView({
             </div>
             <div className="wheel-tools">
               <span className="hint" style={{ margin: 0 }}>
-                행성이나 별자리 칸을 눌러 보세요.
+                {T.tapHint}
               </span>
               <button className="btn ghost small-btn" type="button" aria-pressed={showAll} onClick={() => setShowAll((v) => !v)}>
-                {showAll ? "주요 선만 보기" : "모든 선 보기"}
+                {showAll ? T.mainLines : T.allLines}
               </button>
             </div>
             <details className="night-details" id="chart-table">
-              <summary>표로 보기 (행성 / 별자리 / 하우스)</summary>
+              <summary>{T.tableSummary}</summary>
               <table className="tbl t3">
-                <caption className="sr-only">출생차트 행성 위치</caption>
+                <caption className="sr-only">{T.tableCaption}</caption>
                 <thead>
                   <tr>
-                    <th scope="col">행성</th>
-                    <th scope="col">별자리</th>
-                    <th scope="col">하우스</th>
+                    <th scope="col">{T.thPlanet}</th>
+                    <th scope="col">{T.thSign}</th>
+                    <th scope="col">{T.thHouse}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -353,13 +480,13 @@ export default function FreeResultView({
                     return (
                       <tr key={k}>
                         <td>
-                          {POINT_NAMES[k]}
+                          {pointName(k)}
                           {k === "asc" ? " (ASC)" : k === "mc" ? " (MC)" : ""}
                         </td>
                         <td>
-                          {p.sign} {p.deg.toFixed(1)}°{result.retro.includes(k) && <span className="sub">역행</span>}
+                          {L.sign(p.sign)} {p.deg.toFixed(1)}°{result.retro.includes(k) && <span className="sub">{L.retro}</span>}
                         </td>
-                        <td>{withTime ? `${p.house}하우스` : "—"}</td>
+                        <td>{withTime ? L.house(p.house!) : "—"}</td>
                       </tr>
                     );
                   })}
@@ -367,22 +494,22 @@ export default function FreeResultView({
               </table>
               {result.wheelAspects.length > 0 && (
                 <table className="tbl t3" style={{ marginTop: 14 }}>
-                  <caption className="sr-only">행성 사이의 각도</caption>
+                  <caption className="sr-only">{T.aspCaption}</caption>
                   <thead>
                     <tr>
-                      <th scope="col">행성</th>
-                      <th scope="col">각도</th>
-                      <th scope="col">뜻</th>
+                      <th scope="col">{T.thPlanet}</th>
+                      <th scope="col">{T.thAspect}</th>
+                      <th scope="col">{T.thMeaning}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {result.wheelAspects.map((a, i) => (
                       <tr key={i}>
                         <td>
-                          {POINT_NAMES[a.a]}–{POINT_NAMES[a.b]}
+                          {pointName(a.a)}–{pointName(a.b)}
                         </td>
                         <td>
-                          {a.aspect} <span className="sub">오차 {a.orb.toFixed(1)}°</span>
+                          {L.aspect(a.aspect)} <span className="sub">{L.orb(a.orb)}</span>
                         </td>
                         <td>{a.meaning}</td>
                       </tr>
@@ -391,20 +518,20 @@ export default function FreeResultView({
                 </table>
               )}
               <p className="hint" style={{ marginBottom: 12 }}>
-                하우스는 홀사인 기준이에요. 출생 시각은 {result.utcLabel}로 계산했어요.
+                {T.wholeSign(result.utcLabel)}
               </p>
             </details>
 
             <div className="box" id="elements">
-              <h3>4원소의 균형</h3>
+              <h3>{T.elements}</h3>
               {ELEM_ORDER.map((e) => {
                 const v = chart.elements[e];
                 const w = Math.round((v / 14) * 100);
                 const strong = e === result.elements.strongest;
                 return (
                   <div key={e} className="elem-row">
-                    <span>{e}</span>
-                    <div className="elem-bar" role="img" aria-label={`${e} ${v}점${strong ? ", 가장 강함" : ""}`}>
+                    <span>{L.element(e)}</span>
+                    <div className="elem-bar" role="img" aria-label={T.elemAria(L.element(e), v, strong)}>
                       <i style={{ width: `${w}%`, background: ELEM_SHADE[e] }} />
                       {strong && <span className="dot" style={{ left: `${w}%` }} />}
                     </div>
@@ -413,7 +540,7 @@ export default function FreeResultView({
                 );
               })}
               <p className="hint" style={{ color: "var(--navy-70)" }}>
-                태양·달 3점, 수성·금성·화성 2점, 목성·토성 1점
+                {T.elemPoints}
               </p>
               {result.elements.texts.map((t) => (
                 <p key={t}>{t}</p>
@@ -422,7 +549,7 @@ export default function FreeResultView({
 
             <div className="box" id="planet-reading">
               <h3 className="sub-h" style={{ marginTop: 0 }}>
-                {result.planetReading.head || "• 나의 행성 읽기"}
+                {result.planetReading.head || T.planetsHead}
               </h3>
               {result.planetReading.planets.map((p) => (
                 <div key={p.key} className="pcard">
@@ -442,7 +569,7 @@ export default function FreeResultView({
               ))}
               {result.planetReading.aspects.length > 0 && (
                 <>
-                  <h3 className="sub-h">{result.planetReading.aspectsHead || "• 행성끼리의 관계"}</h3>
+                  <h3 className="sub-h">{result.planetReading.aspectsHead || T.aspectsHead}</h3>
                   {result.planetReading.aspects.map((a) => (
                     <div key={a.title + a.sub} className="pcard">
                       <p className="pc-h">
@@ -464,27 +591,27 @@ export default function FreeResultView({
         {/* ===== 2. 별이 본 나의 유형 ===== */}
         {page === 2 && (
           <>
-          <Section no={2} title="별이 본 나의 유형" art={<PageArt page={2} signIndex={result.sunSignIndex} />}>
+          <Section no={2} title={T.sec2} art={<PageArt page={2} signIndex={result.sunSignIndex} />}>
             <div className="box">
               <Summary text={character.summary} />
               {/* 결제한 결과는 유형이 리포트와 묶여 바꿀 수 없으므로 고르기 자체를 보이지 않는다 */}
               {result.tie && !paidSection && !paidPending && (
                 <>
-                  <h3>요즘의 나와 더 가까운 건?</h3>
+                  <h3>{T.tieHead}</h3>
                   <p className="muted" style={{ fontSize: ".9rem" }}>
                     {result.tie.intro}
                   </p>
                   {/* 예전 규칙으로 고른 유형이라 아래 네 가지에 없을 때 — 지금 어떤 유형이 적용됐는지 알려 준다 */}
                   {!result.tie.options.some((o) => o.selected) && (
                     <p className="muted" style={{ fontSize: ".9rem" }}>
-                      지금 결과는 예전에 고르신 {character.competency} × {character.style} 유형으로 보여요. 아래에서 다시 고를 수도 있어요.
+                      {T.legacyPick(L.competency(character.competency), L.style(character.style))}
                     </p>
                   )}
                   <div className="choice">
                     {result.tie.options.map((o, i) => (
                       <button key={`${o.competency}-${o.style}`} type="button" id={`choice-${i}`} aria-pressed={o.selected} disabled={switching} onClick={() => !o.selected && void chooseType(o.competency, o.style)}>
                         <b>
-                          {o.competency} × {o.style}
+                          {L.competency(o.competency)} × {L.style(o.style)}
                         </b>
                         {o.card}
                       </button>
@@ -497,18 +624,21 @@ export default function FreeResultView({
               {/* A6 역량·방식 쉬운 정의(owner 2026-10-10: 프로토타입에 없지만 유지) */}
               {/* owner 2026-10-10: 역량·방식 두 줄 대신 '웰니스 유형으로 분류하면…' 한 문단 */}
               {character.wellnessLine && <p>{character.wellnessLine}</p>}
+              {/* 영문판: 한 문단으로 이어 붙이지 않고 역량·방식 정의 두 줄(A6 영문 그대로) */}
+              {en && character.competencyLine && <p>{character.competencyLine}</p>}
+              {en && character.styleLine && <p>{character.styleLine}</p>}
               <table className="tbl">
-                <caption className="sr-only">태양·달·상승궁 한 줄 해석</caption>
+                <caption className="sr-only">{T.big3Caption}</caption>
                 <thead>
                   <tr>
-                    <th scope="col">카드</th>
-                    <th scope="col">한 줄 해석</th>
+                    <th scope="col">{T.thCard}</th>
+                    <th scope="col">{T.thLine}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {result.big3.map((b, i) => {
                     const p = P[b.key]!;
-                    const sub = b.key === "asc" ? `${b.sign} ${p.deg.toFixed(1)}°` : `${b.sign}${withTime ? ` · ${p.house}하우스` : ""}`;
+                    const sub = b.key === "asc" ? `${b.sign} ${p.deg.toFixed(1)}°` : `${b.sign}${withTime ? ` · ${L.house(p.house!)}` : ""}`;
                     return (
                       <tr key={b.key}>
                         <td>
@@ -534,24 +664,24 @@ export default function FreeResultView({
         {/* ===== 3. 2026 회고 ===== */}
         {page === 3 && (
           <>
-          <Section no={3} title={`2026년, ${nickname}님의 한 해는 이랬어요`} art={<PageArt page={3} signIndex={result.sunSignIndex} />}>
+          <Section no={3} title={T.sec3(nickname)} art={<PageArt page={3} signIndex={result.sunSignIndex} />}>
             <div className="box">
               <Summary text={year2026.summary} />
               {year2026.intro && <p>{year2026.intro}</p>}
-              <p className="bul">• 올해의 전환점</p>
+              <p className="bul">{T.turning}</p>
               {year2026.turningPoints.map((t) => (
                 <p key={t}>{t}</p>
               ))}
               {/* 해석 DB v1.3 RULE_ORDER: 전환점 뒤에 단어 × 고민 영역(A12d) */}
               {year2026.areaLine && <p>{year2026.areaLine}</p>}
-              <p className="bul">{year2026.quarterHead || "• 분기별로 돌아보면"}</p>
+              <p className="bul">{year2026.quarterHead || T.quarterHead}</p>
               {year2026.closing && <p>{year2026.closing}</p>}
               <table className="tbl" id="tbl-2026">
-                <caption className="sr-only">2026년 분기별 회고</caption>
+                <caption className="sr-only">{T.q2026Caption}</caption>
                 <thead>
                   <tr>
-                    <th scope="col">시기</th>
-                    <th scope="col">{nickname}님에게는</th>
+                    <th scope="col">{T.thPeriod}</th>
+                    <th scope="col">{T.forYou(nickname)}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -563,12 +693,21 @@ export default function FreeResultView({
                   ))}
                 </tbody>
               </table>
-              <WhyList head="▸ 하늘에서 일어난 일" groups={year2026.quarters.map((q) => ({ label: q.label, items: q.reasons }))} />
+              <WhyList head={T.skyHappened} groups={year2026.quarters.map((q) => ({ label: q.label, items: q.reasons }))} />
             </div>
           </Section>
 
           {/* 웰니스 상담 안내(owner 2026-10-10: 모든 사람에게 3장에서). 2026 한 단어가 '그만하자·이별·고생'이면
               그 톤에 맞춘 해석 DB 문장(A12 care_note + A15 FIX_CARE_CARD), 아니면 기본 안내(Claude 초안 — owner 검토 가능). 진행은 막지 않는다. */}
+          {en ? (
+            // 영문판: 쏘웰라 AI 영문 채팅·영문 상담 신청 화면이 아직 없어 버튼 없이 안내 문장만(부드러운 톤일 때 DB 영문 문장)
+            result.care && (
+              <div className="care">
+                {result.care.note && <p>{result.care.note}</p>}
+                <p>{result.care.card}</p>
+              </div>
+            )
+          ) : (
           <div className="care">
             {result.care ? (
               <>
@@ -588,9 +727,10 @@ export default function FreeResultView({
               <SowellaButton label="쏘웰라와 이야기 나누기" className="btn ghost small-btn" resultId={resultId} page={3} keepLabel />
             </div>
           </div>
+          )}
 
             {/* owner 2026-10-26 (가): 로그인하지 않은 사람에게만, 막지 않는 로그인 권유 한 줄(문구 owner 확정) */}
-            {!loggedIn && resultId && (
+            {!loggedIn && resultId && !en && (
               <p className="hint text-center">
                 로그인하면 결과가 보관되고 쏘웰라와 이어서 이야기할 수 있어요.{" "}
                 <a className="underline" href={`/login?next=${encodeURIComponent(`/results/${resultId}/3`)}`} onClick={() => track("save_click", { from: "page3" }, undefined)}>
@@ -599,7 +739,7 @@ export default function FreeResultView({
               </p>
             )}
             {/* 무료 구간 끝: [SNS 공유하기] + [저장하기] */}
-            <ActionRow share={share} copy={result.saveCopy} resultId={resultId ?? null} prefill={savePrefill} onRetrySave={onRetrySave} />
+            {en ? <ActionRowEn resultId={resultId ?? null} page={3} saveDone={result.saveCopy.saveDone} /> : <ActionRow share={share} copy={result.saveCopy} resultId={resultId ?? null} prefill={savePrefill} onRetrySave={onRetrySave} />}
           </>
         )}
 
@@ -633,7 +773,7 @@ export default function FreeResultView({
                     </div>
                   </div>
                 </section>
-                {!resultId && <p className="hint text-center">결과를 저장하면 전체 리포트를 볼 수 있어요.</p>}
+                {!resultId && <p className="hint text-center">{T.saveToPay}</p>}
               </div>
             )}
             {/* 임시 계정으로 결제한 사람에게만(ResultView가 guest·로그인 안 함·결제함일 때만 넘김): 리포트 아래에 보관(가입) 안내 — owner 2026-10-17 */}
@@ -641,8 +781,8 @@ export default function FreeResultView({
             {disclaimer}
             {/* 4~7번 페이지마다 [SNS 공유하기][저장하기] — 결제 전이면 B11 SHARE_NOTE_LOCKED */}
             <div className="page-share">
-              {!paidSection && !paidPending && <p className="share-note">{result.shareNoteLocked || "결제하지 않더라도 지금까지의 결과를 공유할 수 있어요."}</p>}
-              <ActionRow share={share} copy={result.saveCopy} resultId={resultId ?? null} prefill={savePrefill} onRetrySave={onRetrySave} />
+              {!paidSection && !paidPending && <p className="share-note">{result.shareNoteLocked || T.shareNote}</p>}
+              {en ? <ActionRowEn resultId={resultId ?? null} page={page} saveDone={result.saveCopy.saveDone} /> : <ActionRow share={share} copy={result.saveCopy} resultId={resultId ?? null} prefill={savePrefill} onRetrySave={onRetrySave} />}
             </div>
           </>
         )}
@@ -651,24 +791,24 @@ export default function FreeResultView({
         <div className="pg-nav">
           {page > 1 && (
             <button type="button" className="btn ghost prev" onClick={() => go(page - 1)}>
-              ‹ 이전
+              {T.prev}
             </button>
           )}
           {next ? (
             <button type="button" className="btn next" onClick={() => go(next)}>
-              다음 이야기 ›
+              {T.nextStory}
             </button>
           ) : (
             <button type="button" className="btn ghost next" onClick={() => go(1)}>
-              처음 주제로 돌아가기
+              {T.first}
             </button>
           )}
         </div>
-        {!next && <p className="pg-end-note">별 리포트를 끝까지 읽었어요.</p>}
+        {!next && <p className="pg-end-note">{T.endNote}</p>}
         {!next && paidSection && (
           <p className="mt-4 text-center">
-            <Link href="/results" className="linkish">
-              내 결과 모아 보기
+            <Link href={en ? "/en/results" : "/results"} className="linkish">
+              {T.myResults}
             </Link>
           </p>
         )}
@@ -681,15 +821,15 @@ export default function FreeResultView({
       {mounted && !paidSection && !paidPending && page >= 4 &&
         createPortal(
         // 결제 카드 하나(패키지 v3): 4~7장을 볼 때만. 가짜 카운트다운·'지금만 할인' 없음. 결제 후 이 페이지로 돌아온다(마지막 페이지 기억).
-        <div className="paybar pay-float" role="region" aria-label="결제 안내">
+        <div className="paybar pay-float" role="region" aria-label={T.payAria}>
           <div className="pf-in">
             <div className="pf-txt">
               <p className="pp-t">{popup.message}</p>
               {popup.sub && <p className="pp-s">{popup.sub}</p>}
             </div>
             {resultId ? (
-              <Link href={`/checkout/${resultId}?page=${page}`} className="btn block">
-                {popup.button || `${REPORT_PRICE.toLocaleString("ko-KR")}원 결제하기`}
+              <Link href={`${en ? "/en" : ""}/checkout/${resultId}?page=${page}`} className="btn block">
+                {popup.button || T.payButton}
               </Link>
             ) : (
               <>
@@ -699,12 +839,12 @@ export default function FreeResultView({
                   className="btn block"
                   disabled={!onRetrySave}
                   onClick={async () => {
-                    if (onRetrySave && !(await onRetrySave())) setToast("결과를 저장하지 못했어요. 잠시 뒤 다시 눌러 주세요.");
+                    if (onRetrySave && !(await onRetrySave())) setToast(T.saveFail);
                   }}
                 >
-                  {popup.button || `${REPORT_PRICE.toLocaleString("ko-KR")}원 결제하기`}
+                  {popup.button || T.payButton}
                 </button>
-                <p className="pp-temp">결제하려면 먼저 결과를 저장해야 해요. 버튼을 누르면 저장부터 해 볼게요.</p>
+                <p className="pp-temp">{T.saveFirst}</p>
               </>
             )}
           </div>

@@ -7,7 +7,9 @@ import type { CalibrationTable } from "@/lib/astro/character";
 import { placeFromCityId } from "@/lib/astro/cityData";
 import { parseBirthRequest } from "@/lib/astro/validate";
 import { ASTRO_DB } from "@/lib/report/dbData";
-import { buildFreeResult, candidateCards, TYPE_CHOICE_INTRO, type FreeResult } from "@/lib/report/freeResult";
+import { ASTRO_DB_EN } from "@/lib/report/dbDataEn";
+import { formatDateEn } from "@/lib/report/lang";
+import { buildFreeResult, candidateCards, TYPE_CHOICE_INTRO, TYPE_CHOICE_INTRO_EN, type FreeResult } from "@/lib/report/freeResult";
 import { CHARACTER_GRID, STYLES } from "@/lib/astro/constants";
 import { birthKeyOf } from "@/lib/report/variants";
 import calibration from "@/data/astro/calibration.json";
@@ -27,6 +29,16 @@ export function birthLine(input: BirthInput): string {
   return `${input.year}.${p2(input.month)}.${p2(input.day)} ${time} · ${input.place.label.split(",")[0].trim()}`;
 }
 
+const BAND_EN: Record<string, string> = { dawn: "early morning", morning: "morning", afternoon: "afternoon", evening: "evening" };
+/** 영문 결과 머리 줄: "Apr 1, 1996 · 10:17 · Busan" (용어집: 월 이름, 24시간제) */
+export function birthLineEn(input: BirthInput): string {
+  const p2 = (n: number) => String(n).padStart(2, "0");
+  const t = input.time;
+  const d = formatDateEn(`${input.year}-${p2(input.month)}-${p2(input.day)}`, true).replace(/^(\w{3})\w*/, "$1");
+  const time = t.kind === "exact" ? `${p2(t.hour)}:${p2(t.minute)}` : t.kind === "band" ? `${BAND_EN[t.band] ?? t.band}` : "time unknown";
+  return `${d} · ${time} · ${input.place.label.split(",")[0].trim()}`;
+}
+
 export function cleanNickname(v: unknown): string {
   return typeof v === "string" ? v.replace(/[{}]/g, "").trim().slice(0, 12) : "";
 }
@@ -37,7 +49,9 @@ export function parseResultRequest(body: Record<string, unknown> | null): Parsed
   if (!isAnswers(body?.answers)) return { ok: false, error: "질문 답을 다시 확인해 주세요." };
   const nickname = cleanNickname(body?.nickname);
   if (!nickname) return { ok: false, error: "닉네임을 다시 확인해 주세요." };
-  return { ok: true, input: parsed.input, answers: body.answers, nickname };
+  // 영문판(/en)에서 온 요청이면 저장값에 언어를 남긴다 — 다시 볼 때도 영문으로 계산(birth_input.lang)
+  const input = body?.lang === "en" ? { ...parsed.input, lang: "en" as const } : parsed.input;
+  return { ok: true, input, answers: body.answers, nickname };
 }
 
 export type Computed =
@@ -45,19 +59,22 @@ export type Computed =
   | { kind: "result"; birth: BirthResult & { resolved: NonNullable<BirthResult["resolved"]> }; result: FreeResult };
 
 /** RangeError(고른 후보 시각이 구간 밖 등)는 호출한 쪽에서 400으로 돌려준다. 역량 동점은 결과 2번 섹션에서 고른다(별도 화면 없음, owner 2026-10-10). */
-export function computeFree(input: BirthInput, answers: Answers, nickname: string): Computed {
+/** lang을 주지 않으면 저장값(input.lang)을 따른다. 유료 리포트(한국어 뼈대)는 "ko"로 부른다 — 영문 유료 리포트는 아직 없다. */
+export function computeFree(input: BirthInput, answers: Answers, nickname: string, opts: { lang?: "ko" | "en" } = {}): Computed {
+  const lang = opts.lang ?? (input.lang === "en" ? "en" : "ko");
+  const db = lang === "en" ? ASTRO_DB_EN : ASTRO_DB;
   // 무료 결과에는 2026년만 필요하다(트랜짓 기간을 짧게).
   const birth = computeBirth(input, ref, { start: "2026-01-01", end: "2026-01-01" });
   if (!birth.resolved) {
     // 4개 중 고르기(owner 2026-10-11): 후보에서 역량 2 × 방식 2. 카드는 B6, 동물 이름은 보내지 않는다(SHOW_CHARACTER=false).
     const options = birth.options ?? [];
     const names = options.map((o) => CHARACTER_GRID[o.competency][STYLES.indexOf(o.style)]);
-    const { cards, labels } = candidateCards(ASTRO_DB, names);
+    const { cards, labels } = candidateCards(db, names);
     return {
       kind: "candidates",
       payload: {
         candidates: options.map((o, i) => ({ competency: o.competency, style: o.style, pick: o.pick, label: labels[names[i]], card: cards[names[i]] })),
-        candidateIntro: TYPE_CHOICE_INTRO,
+        candidateIntro: lang === "en" ? TYPE_CHOICE_INTRO_EN : TYPE_CHOICE_INTRO,
         accuracy: birth.accuracy,
       },
     };
@@ -66,7 +83,7 @@ export function computeFree(input: BirthInput, answers: Answers, nickname: strin
   return {
     kind: "result",
     birth: { ...birth, resolved: birth.resolved },
-    result: buildFreeResult({ db: ASTRO_DB, chart, longitudes, character, answers, nickname, birthYear: input.year, birthDate: birth.stored.local.slice(0, 10), birthKey: birthKeyOf(input),
-      birthLine: birthLine(input), retro: retrogradeAt(new Date(birth.stored.utc)), utc: birth.stored.utc, dstBoundary: birth.dstBoundary }),
+    result: buildFreeResult({ db, lang, chart, longitudes, character, answers, nickname, birthYear: input.year, birthDate: birth.stored.local.slice(0, 10), birthKey: birthKeyOf(input),
+      birthLine: lang === "en" ? birthLineEn(input) : birthLine(input), retro: retrogradeAt(new Date(birth.stored.utc)), utc: birth.stored.utc, dstBoundary: birth.dstBoundary }),
   };
 }

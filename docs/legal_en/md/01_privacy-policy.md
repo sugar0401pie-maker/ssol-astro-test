@@ -85,7 +85,7 @@ We use the service providers below to run the Service. They act on our behalf un
 | Google LLC (Google Analytics) | United States | Visitor statistics | See the Cookie Policy | Only with your consent |
 | X Corp. | United States | Measuring our X ads | See the Cookie Policy | Only with your consent |
 | OpenAI, L.L.C. | United States | Writes Sowella AI replies | The report items passed to Sowella AI and your chat messages | Only when you chat with Sowella AI |
-| [Hosting provider] for Sowella AI | India | Database and hosting for Sowella AI | Your account details, the report items passed to Sowella AI, your chat messages | When you start a chat with Sowella AI |
+| Vercel Inc. (servers) and Supabase, Inc. (database) for Sowella AI | India (Mumbai region); both are US companies | Hosting and database for Sowella AI | Your account details, the report items passed to Sowella AI, your chat messages | When you start a chat with Sowella AI |
 
 We never send your birth details, nickname, answers, email address or phone number to Google Analytics or X.
 
