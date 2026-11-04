@@ -26,7 +26,7 @@ SSOL Wellness House offers non-clinical wellness coaching and wellness sessions.
 ## At a glance
 
 - **Your birth details are used only for your chart.** We ask for your date, time and city of birth to calculate your birth chart, and use them for nothing else. You give separate, explicit consent first.
-- **Your report is made on our own servers in Korea.** We do not send your birth details or answers to outside AI companies to create it.
+- **Your report is built from texts we wrote.** An AI model from OpenAI only checks its tone and flow. We only send OpenAI your nickname, your three answers and your chart details — never your date, time or place of birth.
 - **No account needed.** You can save results and pay without signing in.
 - **We never sell your data.** We share it only with the services that run the site, take payments and measure our ads.
 - **Your data may leave Korea.** Some of those services are in the United States, and Sowella AI runs on servers in India. The section "Where your data goes" lists them.
@@ -40,7 +40,7 @@ This summary helps you read the policy. The full text below is what applies.
 | --- | --- | --- | --- |
 | Calculate your birth chart | Date of birth; time of birth (or a time range, or "I don't know"); birth city name and its coordinates only, never a street address | Your explicit consent | Required for readings |
 | Write your results and star report | Nickname, your answers to the three questions | Your explicit consent | Required for readings |
-| Create your account (optional) | Email address and a one-time verification code; or the ID that Google or Apple sign-in gives us | Contract | Only if you sign up |
+| Create your account (optional) | Email address and a one-time verification code; or the ID that Google sign-in (or another sign-in we may add, such as Apple) gives us | Contract | Only if you sign up |
 | Save results without an account | A random ID stored only on your device | Contract | Automatic when you save |
 | Process purchases and refunds | Approval number, payment method details provided by the payment company (such as card issuer), amount, date and time | Contract; legal obligation | Required to buy |
 | Start a tailored Sowella AI chat | Nickname, Sun/Moon/Rising signs, wellness type, your three answers, a summary of your report (see below) | Your request when you tap the button | Only if you start a chat |
@@ -49,7 +49,7 @@ This summary helps you read the policy. The full text below is what applies.
 | Measure our X ads | See the Cookie Policy | Your consent | Optional |
 | Answer your questions | Email address and what you write to us | Legitimate interests | When you contact us |
 
-**Two consent boxes.** Before your reading starts you see two unticked boxes. The first confirms that you are 18 or older, agree to the Terms of Use and have read this Privacy Policy. The second is your separate, explicit consent: *"I agree that SSOL may use my date, time and place of birth and my answers to calculate my birth chart and create my results."* Next to it we show what we collect, why, and how long we keep it, with a link to the full Birth Details Consent. Without the second box we cannot give you a reading. You can withdraw it at any time; we then delete this information.
+**Consent boxes.** Before your reading starts you see two required unticked boxes and one optional unticked box for cookies. The first confirms that you are 18 or older, agree to the Terms of Use and have read this Privacy Policy. The second is your separate, explicit consent: *"I agree that SSOL may use my date, time and place of birth and my answers to calculate my birth chart and create my results."* Next to it we show what we collect, why, and how long we keep it, with a link to the full Birth Details Consent. Without the second box we cannot give you a reading. You can withdraw it at any time; we then delete this information. The optional third box lets you allow analytics and ad-measurement cookies; leave it unticked and they stay off (see the Cookie Policy).
 
 **Legitimate interests.** Where we rely on legitimate interests, those interests are keeping the Service secure and free of abuse, understanding which channels bring visitors, and answering your messages. We weigh them against your rights, and you can object at any time (see "Your rights").
 
@@ -59,7 +59,7 @@ This summary helps you read the policy. The full text below is what applies.
 
 **What we do not collect.** We do not ask for your phone number, home address or ID number.
 
-**How your report is made.** Your results and star report are created automatically on our own servers from rules and texts we wrote. We do not send your birth details or answers to outside companies to create them. Your report is for entertainment and self-reflection and does not make decisions with legal or similarly significant effects on you.
+**How your report is made.** Your results and star report are put together automatically from rules and texts we wrote. For the paid star report, an AI model from OpenAI checks the tone and flow of the text. We only send OpenAI, L.L.C. (United States) your nickname, your answers to the three questions and your chart details (signs, houses and planet positions) — never your date, time or place of birth, your email or payment details. Your report is for entertainment and self-reflection and does not make decisions with legal or similarly significant effects on you.
 
 **Using your results in Sowella AI.** When you tap **Start a chat with Sowella AI** on your report, we pass the items in the table above to Sowella AI, which runs on servers in India, so it can greet you and tailor the chat. We do not pass your original birth date, time or place, or any payment details. Sowella AI writes its replies with models from OpenAI, L.L.C. (United States); we send OpenAI only these items and your chat messages, never your email or payment details. Under OpenAI's API terms, this data is not used to train its models. Anything you share about your health is covered by our Consumer Health Data Privacy Policy. Sowella AI has its own terms and privacy notice. You can remove the report summary it uses with **Delete chat history** in Sowella AI, or by emailing contact@ssolwellness.com.
 
@@ -76,12 +76,12 @@ We use the service providers below to run the Service. They act on our behalf un
 
 | Provider | Country | What they do | What they receive | When it is sent |
 | --- | --- | --- | --- | --- |
-| Supabase, Inc. | Republic of Korea (Seoul region, ap-northeast-2); Supabase, Inc. is a US company | Database and account sign-in | All Service data | When you use the Service |
+| Supabase, Inc. | India (Mumbai region, ap-south-1); Supabase, Inc. is a US company | Database and account sign-in | All Service data | When you use the Service |
 | Vercel Inc. | United States | Website hosting | Access data, page requests | When you use the Service |
 | Resend | United States | Sends sign-up verification emails | Email address, verification code | When you sign up |
 | Toss Payments Co., Ltd. | Republic of Korea | Card payments (Visa, Mastercard, JCB) | Order number, amount, currency, payment result | When you pay |
 | PayPal | Contract through Toss Payments (Republic of Korea); PayPal processes your PayPal account data on its own servers, which may be outside Korea | PayPal payments | Order number, amount, currency, payment result | When you pay with PayPal |
-| Google LLC, Apple Inc. | United States | Sign-in with Google or Apple | Sign-in identifiers | When you choose that sign-in |
+| Google LLC (and Apple Inc., if we add Apple sign-in) | United States | Sign-in with Google (or Apple) | Sign-in identifiers | When you choose that sign-in |
 | Google LLC (Google Analytics) | United States | Visitor statistics | See the Cookie Policy | Only with your consent |
 | X Corp. | United States | Measuring our X ads | See the Cookie Policy | Only with your consent |
 | OpenAI, L.L.C. | United States | Writes Sowella AI replies | The report items passed to Sowella AI and your chat messages | Only when you chat with Sowella AI |

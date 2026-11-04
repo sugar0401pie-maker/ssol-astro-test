@@ -19,6 +19,7 @@ import SiteFooterEn from "@/components/SiteFooterEn";
 import AuthFooterLink from "@/components/auth/AuthFooterLink";
 import { track } from "@/lib/analytics/track";
 import { enLegalUrl, type LegalBlock } from "@/lib/legal/en/blocks";
+import { readChoice, saveChoice } from "@/lib/i18n/cookieConsent";
 import birthConsent from "@/lib/legal/en/birth-details-consent.json";
 import {
   EN_BANDS,
@@ -64,6 +65,8 @@ export default function BirthStartEn() {
     agreeBirth: false,
   });
   const [city, setCity] = useState<PickedCity | null>(null);
+  // 선택 쿠키(분석·광고 측정) — 배너 대신 이 화면의 선택 체크박스(owner 2026-11-04). 늘 빈 칸으로 시작한다.
+  const [cookies, setCookies] = useState(false);
   const [errs, setErrs] = useState<EnErrors>({});
   const [details, setDetails] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -95,6 +98,10 @@ export default function BirthStartEn() {
         return;
       }
       if (!res.ok) throw new Error("calc");
+      // 체크하면 둘 다 허용. 비워 두면: 처음이면 '거부'로 기록, 이미 Cookie settings에서 고른 값이 있으면 그대로 둔다
+      // (빈 칸이 이전 선택을 몰래 바꾸지 않게 — 바꾸는 곳은 Cookie settings).
+      if (cookies) saveChoice({ analytics: true, ads: true });
+      else if (!readChoice()) saveChoice({ analytics: false, ads: false });
       try {
         sessionStorage.setItem(
           EN_PROGRESS_KEY,
@@ -265,6 +272,16 @@ export default function BirthStartEn() {
             </label>
             <button type="button" className="view self-start underline" onClick={() => setDetails(true)}>Details</button>
             <p className="agree-note">Used only for your chart · Kept until you delete your account (30 days if you don&apos;t sign in) · You can withdraw anytime.</p>
+          </div>
+          <div className="agree-row col">
+            <label className="check" htmlFor="en-agree-cookies">
+              <input type="checkbox" id="en-agree-cookies" checked={cookies} onChange={(e) => setCookies(e.target.checked)} />
+              <span>
+                (Optional) I allow analytics and ad-measurement cookies so SSOL can improve the site and measure its X ads. We never send them your birth details.{" "}
+                <Link href={enLegalUrl("cookies")} target="_blank" rel="noopener" className="underline">Cookie Policy</Link>
+              </span>
+            </label>
+            <p className="agree-note">You can change this anytime under Cookie settings.</p>
           </div>
           <Err id="err-agree" msg={shown.agree} />
         </fieldset>

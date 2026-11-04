@@ -4,6 +4,7 @@
 import { gaEventFor, gaPageLocation, isGaId } from "./ga";
 import type { FunnelEvent } from "./events";
 import { REPORT_PRICE } from "@/lib/billing/pricing";
+import { allowedNow } from "@/lib/i18n/cookieConsent";
 
 export const GA_ID = isGaId(process.env.NEXT_PUBLIC_GA_ID) ? process.env.NEXT_PUBLIC_GA_ID : null;
 
@@ -16,6 +17,8 @@ let ready = false;
  */
 function gtag(): Gtag | null {
   if (!GA_ID || typeof window === "undefined") return null;
+  // 영문 화면은 분석 쿠키에 동의한 사람만(쿠키 동의, owner 2026-11-04) — 동의 전 이벤트는 쌓아 두지도 않는다
+  if (!allowedNow("analytics")) return null;
   const w = window as unknown as { dataLayer?: unknown[]; gtag?: Gtag };
   if (!ready) {
     w.dataLayer = w.dataLayer ?? [];

@@ -97,7 +97,7 @@
   "type": "li",
   "segs": [
    {
-    "t": "To create your star report on our own servers, using rules and texts we wrote. We do not send this information to outside companies to create it.",
+    "t": "To create your star report from rules and texts we wrote. For the paid star report, an AI model from OpenAI, L.L.C. (United States) checks the tone and flow of the text. We only send it your nickname, your answers and your chart details (signs, houses and planet positions) — never your date, time or place of birth.",
     "b": false
    }
   ]

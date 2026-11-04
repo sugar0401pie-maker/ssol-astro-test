@@ -16,7 +16,7 @@ Astrology is a symbolic tradition, not a scientifically proven way to predict ev
 
 ## How readings are made
 
-Your results and star report are created automatically by our system, using rules and texts we wrote. Sowella AI replies are written by AI. Automated and AI content can be wrong, incomplete or not right for you. Use your own judgment.
+Your results and star report are created automatically by our system, using rules and texts we wrote; for the paid star report, an AI model checks the tone and flow of the text. Sowella AI replies are written by AI. Automated and AI content can be wrong, incomplete or not right for you. Use your own judgment.
 
 ## Accuracy depends on your details
 

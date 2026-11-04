@@ -130,11 +130,11 @@
   "type": "li",
   "segs": [
    {
-    "t": "Your report is made on our own servers in Korea.",
+    "t": "Your report is built from texts we wrote.",
     "b": true
    },
    {
-    "t": " We do not send your birth details or answers to outside AI companies to create it.",
+    "t": " An AI model from OpenAI only checks its tone and flow. We only send OpenAI your nickname, your three answers and your chart details — never your date, time or place of birth.",
     "b": false
    }
   ]
@@ -233,7 +233,7 @@
    ],
    [
     "Create your account (optional)",
-    "Email address and a one-time verification code; or the ID that Google or Apple sign-in gives us",
+    "Email address and a one-time verification code; or the ID that Google sign-in (or another sign-in we may add, such as Apple) gives us",
     "Contract",
     "Only if you sign up"
    ],
@@ -285,11 +285,11 @@
   "type": "p",
   "segs": [
    {
-    "t": "Two consent boxes.",
+    "t": "Consent boxes.",
     "b": true
    },
    {
-    "t": " Before your reading starts you see two unticked boxes. The first confirms that you are 18 or older, agree to the Terms of Use and have read this Privacy Policy. The second is your separate, explicit consent: *\"I agree that SSOL may use my date, time and place of birth and my answers to calculate my birth chart and create my results.\"* Next to it we show what we collect, why, and how long we keep it, with a link to the full Birth Details Consent. Without the second box we cannot give you a reading. You can withdraw it at any time; we then delete this information.",
+    "t": " Before your reading starts you see two required unticked boxes and one optional unticked box for cookies. The first confirms that you are 18 or older, agree to the Terms of Use and have read this Privacy Policy. The second is your separate, explicit consent: *\"I agree that SSOL may use my date, time and place of birth and my answers to calculate my birth chart and create my results.\"* Next to it we show what we collect, why, and how long we keep it, with a link to the full Birth Details Consent. Without the second box we cannot give you a reading. You can withdraw it at any time; we then delete this information. The optional third box lets you allow analytics and ad-measurement cookies; leave it unticked and they stay off (see the Cookie Policy).",
     "b": false
    }
   ]
@@ -354,7 +354,7 @@
     "b": true
    },
    {
-    "t": " Your results and star report are created automatically on our own servers from rules and texts we wrote. We do not send your birth details or answers to outside companies to create them. Your report is for entertainment and self-reflection and does not make decisions with legal or similarly significant effects on you.",
+    "t": " Your results and star report are put together automatically from rules and texts we wrote. For the paid star report, an AI model from OpenAI checks the tone and flow of the text. We only send OpenAI, L.L.C. (United States) your nickname, your answers to the three questions and your chart details (signs, houses and planet positions) — never your date, time or place of birth, your email or payment details. Your report is for entertainment and self-reflection and does not make decisions with legal or similarly significant effects on you.",
     "b": false
    }
   ]
@@ -455,7 +455,7 @@
    ],
    [
     "Supabase, Inc.",
-    "Republic of Korea (Seoul region, ap-northeast-2); Supabase, Inc. is a US company",
+    "India (Mumbai region, ap-south-1); Supabase, Inc. is a US company",
     "Database and account sign-in",
     "All Service data",
     "When you use the Service"
@@ -489,9 +489,9 @@
     "When you pay with PayPal"
    ],
    [
-    "Google LLC, Apple Inc.",
+    "Google LLC (and Apple Inc., if we add Apple sign-in)",
     "United States",
-    "Sign-in with Google or Apple",
+    "Sign-in with Google (or Apple)",
     "Sign-in identifiers",
     "When you choose that sign-in"
    ],

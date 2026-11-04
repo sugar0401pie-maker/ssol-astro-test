@@ -28,7 +28,7 @@ We accept Visa, Mastercard and JCB cards through Toss Payments, and PayPal. You 
 
 ## 5. AI-generated content
 
-Your results and star report are created automatically by our system from your birth chart and answers, following rules and texts we wrote. Sowella AI replies are written by AI, using models from OpenAI. We do not promise that any of this content is complete or accurate, so use your own judgment. Sowella AI follows its own terms, will not give medical, legal or financial advice, and may refuse some requests. You can report content you find harmful to contact@ssolwellness.com.
+Your results and star report are created automatically by our system from your birth chart and answers, following rules and texts we wrote. For the paid star report, an AI model from OpenAI checks the tone and flow of the text. Sowella AI replies are written by AI, using models from OpenAI. We do not promise that any of this content is complete or accurate, so use your own judgment. Sowella AI follows its own terms, will not give medical, legal or financial advice, and may refuse some requests. You can report content you find harmful to contact@ssolwellness.com.
 
 ## 6. Rules of use
 

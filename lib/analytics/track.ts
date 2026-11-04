@@ -7,6 +7,7 @@ import type { FunnelEvent } from "./events";
 import { attributionProps } from "@/lib/attribution/attribution";
 import { captureAttribution, getAttribution } from "@/lib/attribution/client";
 import { gaFromFunnel } from "./gaClient";
+import { allowedNow } from "@/lib/i18n/cookieConsent";
 
 const KEY = "astro_anon_v1";
 let memoryId: string | null = null;
@@ -30,6 +31,8 @@ const sentOnce = new Set<string>();
 /** 한 번 보낸다. once를 주면 같은 키로는 이 페이지에서 한 번만(예: 같은 장을 여러 번 그려도 한 번). */
 export function track(event: FunnelEvent, props: Record<string, string | number> = {}, once?: string): void {
   if (typeof window === "undefined") return;
+  // 영문 화면은 분석 쿠키에 동의한 사람만 이용 흐름도 남긴다(브라우저 식별값을 쓰므로 GA와 같은 기준, owner 2026-11-04)
+  if (!allowedNow("analytics")) return;
   if (once) {
     if (sentOnce.has(once)) return;
     sentOnce.add(once);

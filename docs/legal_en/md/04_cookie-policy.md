@@ -25,7 +25,7 @@ We never send your birth details, nickname, answers, email address or phone numb
 
 ## Your choices
 
-When you first visit, a banner lets you accept or refuse each optional type. Optional cookies stay off until you choose. You can change your mind any time under **Cookie settings** in the footer.
+Optional cookies stay off until you allow them. You can allow analytics and ad-measurement cookies with the optional checkbox when you start the test, and change your mind any time under **Cookie settings** in the footer.
 
 You can also block or delete cookies in your browser settings. If you block essential cookies, sign-in and payment will not work. To limit personalized ads more widely, see your X ad settings, www.youronlinechoices.eu (EU) or optout.aboutads.info (US).
 

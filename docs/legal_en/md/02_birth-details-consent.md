@@ -14,7 +14,7 @@ We ask for this consent separately from the Terms of Use and Privacy Policy. You
 ## 2. Why we use it
 
 - To calculate your birth chart (Sun, Moon, Rising signs and planet positions) and show your results
-- To create your star report on our own servers, using rules and texts we wrote. We do not send this information to outside companies to create it.
+- To create your star report from rules and texts we wrote. For the paid star report, an AI model from OpenAI, L.L.C. (United States) checks the tone and flow of the text. We only send it your nickname, your answers and your chart details (signs, houses and planet positions) — never your date, time or place of birth.
 - To improve the Service with statistics, using your answers only in a form that cannot identify you. **Your birth details are never used for statistics or anything other than your chart.**
 
 ## 3. How long we keep it
