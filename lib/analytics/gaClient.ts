@@ -48,12 +48,12 @@ export function gaFromFunnel(event: FunnelEvent, props: Record<string, string | 
 }
 
 /** 결제 완료(GA4 표준 purchase). transaction_id = 주문 번호(무작위 값) — 같은 주문을 두 번 세지 않게. */
-export function gaPurchase(orderId: string, amount: number): void {
+export function gaPurchase(orderId: string, amount: number, currency: "KRW" | "USD" = "KRW"): void {
   const g = gtag();
   if (!g) return;
   g("event", "purchase", {
     transaction_id: orderId,
-    currency: "KRW",
+    currency,
     value: amount,
     items: [{ item_id: "astro_report", item_name: "쏠 아스트로 하우스 전체 리포트", price: amount, quantity: 1 }],
   });

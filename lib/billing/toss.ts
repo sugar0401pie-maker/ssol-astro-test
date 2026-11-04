@@ -10,13 +10,14 @@ export type TossConfirmResult =
   // network: 토스까지 닿지 못했거나 응답을 못 읽음 — 토스에서는 승인됐을 수도 있다(그래서 바로 취소하지 않는다)
   | { ok: false; error: string; code: string | null; network: boolean };
 
-function authHeader(): string | null {
-  const secretKey = process.env.TOSS_SECRET_KEY;
+/** secretKey를 주면 그 키로(영문판 해외결제 TOSS_EN_SECRET_KEY), 안 주면 한국어판 TOSS_SECRET_KEY */
+function authHeader(override?: string): string | null {
+  const secretKey = override ?? process.env.TOSS_SECRET_KEY;
   return secretKey ? `Basic ${Buffer.from(`${secretKey}:`).toString("base64")}` : null;
 }
 
-export async function confirmTossPayment(params: { paymentKey: string; orderId: string; amount: number }): Promise<TossConfirmResult> {
-  const auth = authHeader();
+export async function confirmTossPayment(params: { paymentKey: string; orderId: string; amount: number }, secretKey?: string): Promise<TossConfirmResult> {
+  const auth = authHeader(secretKey);
   if (!auth) return { ok: false, error: "결제 연동이 아직 설정되지 않았어요.", code: "NO_KEY", network: false };
   try {
     const res = await fetch("https://api.tosspayments.com/v1/payments/confirm", {
@@ -36,8 +37,8 @@ export async function confirmTossPayment(params: { paymentKey: string; orderId: 
 }
 
 /** 결제 한 건의 실제 상태(승인 응답을 못 받았거나 '이미 처리됨'일 때 확인용). 못 물어보면 null. */
-export async function getTossPayment(paymentKey: string): Promise<TossLookup | null> {
-  const auth = authHeader();
+export async function getTossPayment(paymentKey: string, secretKey?: string): Promise<TossLookup | null> {
+  const auth = authHeader(secretKey);
   if (!auth) return null;
   try {
     const res = await fetch(`https://api.tosspayments.com/v1/payments/${encodeURIComponent(paymentKey)}`, { headers: { authorization: auth } });
@@ -51,8 +52,8 @@ export async function getTossPayment(paymentKey: string): Promise<TossLookup | n
 }
 
 /** 승인된 결제를 전액 취소(같은 결과를 두 번 결제한 경우 등). 성공하면 true. */
-export async function cancelTossPayment(paymentKey: string, reason: string): Promise<boolean> {
-  const auth = authHeader();
+export async function cancelTossPayment(paymentKey: string, reason: string, secretKey?: string): Promise<boolean> {
+  const auth = authHeader(secretKey);
   if (!auth) return false;
   try {
     const res = await fetch(`https://api.tosspayments.com/v1/payments/${encodeURIComponent(paymentKey)}/cancel`, {

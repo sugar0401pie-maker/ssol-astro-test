@@ -2,13 +2,17 @@
 
 // 영문 결제 화면 /en/checkout/{resultId}((나) 영문 전용, owner 2026-11-04). 문구는 영문 정책 08_on-screen-texts §4 그대로
 // (청약철회 포기는 약관에 두고 버튼 바로 위에 안내만 — 체크박스 아님).
-// 결제는 한국어판(토스 결제위젯, 원화)과 다른 별도 연동이다: 토스 해외카드(VISA·MASTER·JCB, USD) + PayPal(토스 해외간편결제).
-// 아직 열지 않는다 — ① 해외 결제용 키(NEXT_PUBLIC_TOSS_EN_CLIENT_KEY·TOSS_EN_SECRET_KEY) ② 영문 유료 리포트(영문 AI 지시문·검증기)가
-// 생기기 전에 결제를 받으면 산 사람에게 줄 영문 리포트가 없어서다. 둘이 준비되면 결제 요청·승인 API를 붙인다.
+// 결제는 한국어판(토스 결제위젯, 원화)과 다른 별도 연동(owner 2026-11-04): 토스 API 개별 연동 키(NEXT_PUBLIC_TOSS_EN_CLIENT_KEY)로
+// 결제창 v2를 열고, 해외카드(VISA·MASTER·JCB, 영어 결제창, useInternationalCardOnly) 또는 PayPal(토스 해외간편결제) — 둘 다 USD 2.99.
+// 금액·주문은 서버(/api/en/checkout)가 정하고, 승인은 /en/checkout/success → /api/en/checkout/confirm에서 서버가 확인한다.
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { track } from "@/lib/analytics/track";
 import { enLegalUrl } from "@/lib/legal/en/blocks";
+import { apiHeaders } from "@/lib/guest/client";
+import { getRealSession } from "@/lib/supabase/browser";
+import { getAttribution } from "@/lib/attribution/client";
+import type { EnPayMethod } from "@/lib/billing/pricingEn";
 
 export const EN_PAY_COPY = {
   product: "Star report — US$2.99, one-time payment. No subscription, no automatic renewal.",
@@ -18,12 +22,63 @@ export const EN_PAY_COPY = {
   methods: "Visa · Mastercard · JCB · PayPal. Your bank may add a foreign-transaction fee.",
 } as const;
 
+type Order = { orderId: string; orderName: string; amount: { currency: string; value: number }; customerKey: string; country: string };
+
 export default function CheckoutEn({ resultId, page }: { resultId: string; page: number }) {
+  const [method, setMethod] = useState<EnPayMethod>("card");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const clientKey = process.env.NEXT_PUBLIC_TOSS_EN_CLIENT_KEY;
   useEffect(() => {
     track("pay_click", { page, from: "en" }, `pay_click:${resultId}`);
   }, [resultId, page]);
   const [before, rest] = EN_PAY_COPY.notice.split("[Terms of Use]");
   const [mid, after] = rest.split("[Refund Policy]");
+
+  async function pay() {
+    if (busy || !clientKey) return;
+    setBusy(true);
+    setErr("");
+    try {
+      const session = await getRealSession();
+      const res = await fetch("/api/en/checkout", {
+        method: "POST",
+        headers: apiHeaders(session, { "content-type": "application/json" }),
+        body: JSON.stringify({ resultId, attributionLast: getAttribution()?.last ?? null }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (res.status === 409 && d.paid) {
+        window.location.replace(`/en/results/${resultId}/${page}`);
+        return;
+      }
+      if (!res.ok || !d.orderId) throw new Error(d.error ?? "We couldn’t start the payment. Please try again.");
+      const o = d as Order;
+      track("pay_start", { page, from: "en" });
+      const { loadTossPayments } = await import("@tosspayments/tosspayments-sdk");
+      const toss = await loadTossPayments(clientKey);
+      const payment = toss.payment({ customerKey: o.customerKey });
+      const origin = window.location.origin;
+      const common = {
+        amount: o.amount,
+        orderId: o.orderId,
+        orderName: o.orderName,
+        successUrl: `${origin}/en/checkout/success?page=${page}`,
+        failUrl: `${origin}/en/checkout/fail?resultId=${resultId}&page=${page}`,
+      };
+      // SDK 타입은 일반 결제를 원화로 적어 두었지만, 해외카드·PayPal은 USD로 계약됨(owner 확인) — 요청 모양은 SDK 문서(PaymentRequest.d.ts)대로
+      const request =
+        method === "card"
+          ? { ...common, method: "CARD", card: { useInternationalCardOnly: true, language: "EN" } }
+          : { ...common, method: "FOREIGN_EASY_PAY", foreignEasyPay: { provider: "PAYPAL", country: o.country } };
+      await payment.requestPayment(request as never);
+    } catch (e) {
+      const code = (e as { code?: string })?.code;
+      // 사용자가 결제창을 닫은 경우는 오류로 보이지 않게
+      if (code !== "USER_CANCEL" && code !== "PAY_PROCESS_CANCELED") setErr(e instanceof Error && /^[\x00-\x7F]*$/.test(e.message) ? e.message : "We couldn’t open the payment window. Please try again.");
+      setBusy(false);
+    }
+  }
+
   return (
     <section className="screen on flex flex-col gap-4" lang="en" aria-labelledby="pay-big">
       <Link href={`/en/results/${resultId}/${page}`} className="text-sm text-cream/80 underline">
@@ -34,6 +89,22 @@ export default function CheckoutEn({ resultId, page }: { resultId: string; page:
         <p className="font-bold">{EN_PAY_COPY.product}</p>
         <p className="mt-1 text-sm text-cream/80">{EN_PAY_COPY.methods}</p>
       </div>
+      <fieldset className="field">
+        <legend className="lbl">Payment method</legend>
+        <div className="chips">
+          {(
+            [
+              ["card", "Card (Visa · Mastercard · JCB)"],
+              ["paypal", "PayPal"],
+            ] as const
+          ).map(([v, label]) => (
+            <label key={v} className="chip" htmlFor={`pm-${v}`}>
+              <input type="radio" name="pay-method" id={`pm-${v}`} value={v} checked={method === v} onChange={() => setMethod(v)} />
+              <span>{label}</span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
       <p className="text-sm text-cream/90">
         {before}
         <Link href={enLegalUrl("terms")} target="_blank" rel="noopener" className="underline">Terms of Use</Link>
@@ -41,11 +112,19 @@ export default function CheckoutEn({ resultId, page }: { resultId: string; page:
         <Link href={enLegalUrl("refund")} target="_blank" rel="noopener" className="underline">Refund Policy</Link>
         {after}
       </p>
-      {/* 해외 결제 연동 전: 버튼은 보이되 눌리지 않는다(Claude 초안 안내 — 원어민 검수 대상) */}
-      <button type="button" className="btn block" disabled aria-disabled="true">
-        {EN_PAY_COPY.button}
-      </button>
-      <p className="hint text-center">Payments for the English site are opening soon. You won’t be charged.</p>
+      <p className="err" role="alert">{err}</p>
+      {clientKey ? (
+        <button type="button" className="btn block" onClick={() => void pay()} disabled={busy} aria-busy={busy}>
+          {busy ? "Opening payment…" : EN_PAY_COPY.button}
+        </button>
+      ) : (
+        <>
+          <button type="button" className="btn block" disabled aria-disabled="true">
+            {EN_PAY_COPY.button}
+          </button>
+          <p className="hint text-center">Payments for the English site are opening soon. You won’t be charged.</p>
+        </>
+      )}
     </section>
   );
 }

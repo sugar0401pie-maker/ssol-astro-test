@@ -154,13 +154,18 @@ export async function getPayState(owner: Owner, resultId: string): Promise<(PayS
   return { paid: !!data.paid_at, reportStatus: data.report_status, reportStartedAt: data.report_started_at, report: data.report };
 }
 
-export async function createOrder(owner: Owner, resultId: string, amount: number, withdrawalVersion: string, attributionLast: Touch | null = null): Promise<string> {
+/**
+ * currency USD(영문판, 2026-11-04)면 amount는 센트. USD 주문은 통화 칸 마이그레이션(20261104000000)이 없으면 만들지 않는다 —
+ * 칸 없이 저장되면 기본값 KRW가 붙어 299가 '299원'으로 읽히므로(fail closed).
+ */
+export async function createOrder(owner: Owner, resultId: string, amount: number, withdrawalVersion: string, attributionLast: Touch | null = null, currency: "KRW" | "USD" = "KRW"): Promise<string> {
   const who = owner.kind === "user" ? { user_id: owner.userId } : { user_id: null, guest_token_hash: owner.tokenHash };
-  const row = { ...who, result_id: resultId, amount, status: "pending" };
+  const row = { ...who, result_id: resultId, amount, status: "pending", ...(currency === "USD" ? { currency } : {}) };
   const insert = (r: object) => createAdminClient().from("astro_orders").insert(r).select("id").single();
   const notice = { withdrawal_notice_at: new Date().toISOString(), withdrawal_notice_version: withdrawalVersion };
   let { data, error } = await insert({ ...row, ...notice, ...(attributionLast ? { attribution_last: attributionLast } : {}) });
   // 유입 경로 마이그레이션(20261015000000) 전이면 attribution_last 칸이 없다(42703) — 칸 없이 다시(결제는 막지 않음)
+  if (error?.code === "42703" && currency === "USD") throw new Error("주문 생성 실패: 통화 칸 마이그레이션 필요");
   if (error?.code === "42703" && attributionLast) ({ data, error } = await insert({ ...row, ...notice }));
   // 동의 기록 마이그레이션(20261011000000) 전이면 칸이 없다(42703) — 결제는 막지 않고 칸 없이 다시(동의는 astro_consents에도 남김 시도)
   if (error?.code === "42703") ({ data, error } = await insert(row));
@@ -171,7 +176,9 @@ export async function createOrder(owner: Owner, resultId: string, amount: number
 export async function getOrder(orderId: string) {
   const base = "id, user_id, guest_token_hash, result_id, amount, status";
   const q = (cols: string) => createAdminClient().from("astro_orders").select(cols).eq("id", orderId).maybeSingle();
-  let { data, error } = await q(`${base}, attribution_last`);
+  let { data, error } = await q(`${base}, attribution_last, currency`);
+  // 통화 칸 마이그레이션(20261104000000) 전이면 currency가 없다 — 그때 주문은 모두 원화
+  if (error?.code === "42703") ({ data, error } = await q(`${base}, attribution_last`));
   // 유입 경로 마이그레이션(20261015000000) 전이면 칸이 없다(42703) — 칸 없이 다시
   if (error?.code === "42703") ({ data, error } = await q(base));
   if (error) throw new Error(`주문 조회 실패: ${error.code}`);
@@ -185,6 +192,8 @@ export interface OrderRow {
   result_id: string | null;
   amount: number;
   status: string;
+  /** KRW(원) / USD(센트). 칸이 없던 예전 주문은 undefined = KRW */
+  currency?: "KRW" | "USD";
   /** 주문을 만들 때의 유입 경로(이번 방문) — X 광고 클릭 식별자(twclid)도 여기에 */
   attribution_last?: { twclid?: string } | null;
 }

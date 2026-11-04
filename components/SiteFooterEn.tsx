@@ -34,9 +34,14 @@ export default function SiteFooterEn() {
         {" · "}
         <Link href="/en/do-not-sell" prefetch={false}>Do Not Sell or Share My Personal Information</Link>
       </p>
-      <p>SSOL Wellness House · Representative: Junseok Kim · Business registration no. 572-07-03549 · Mail-order business registration no. 2026-Seoul Mapo-2770</p>
-      <p>Room 408, 4F, 100 Dongmak-ro, Mapo-gu, Seoul, Republic of Korea</p>
-      <p>Contact number: +82-10-2835-2263 · contact@ssolwellness.com</p>
+      {/* owner 2026-11-04: 길어서 사업자 정보만 접는다. 정책 링크(특히 Consumer Health Data·Do Not Sell)는 늘 보이게 둔다 —
+          워싱턴주 건강정보법은 홈에서 눈에 띄는 링크를, 캘리포니아 Do Not Sell도 쉽게 찾을 수 있는 링크를 요구한다. */}
+      <details className="mt-1">
+        <summary className="cursor-pointer select-none">Business information</summary>
+        <p>SSOL Wellness House · Representative: Junseok Kim · Business registration no. 572-07-03549 · Mail-order business registration no. 2026-Seoul Mapo-2770</p>
+        <p>Room 408, 4F, 100 Dongmak-ro, Mapo-gu, Seoul, Republic of Korea</p>
+        <p>Contact number: +82-10-2835-2263 · contact@ssolwellness.com</p>
+      </details>
       <p>© 2026 SSOL Wellness House</p>
     </footer>
   );

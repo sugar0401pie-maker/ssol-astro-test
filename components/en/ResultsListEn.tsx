@@ -5,6 +5,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRealSession } from "@/components/results/useSession";
+import GuideArt from "@/components/test/GuideArt";
 import { apiHeaders } from "@/lib/guest/client";
 import { EN, formatDateEn } from "@/lib/report/lang";
 
@@ -33,6 +34,8 @@ export default function ResultsListEn() {
       {!rows && !failed && <p className="small">Loading…</p>}
       {rows && rows.length === 0 && (
         <>
+          {/* owner 2026-11-04: 테스트를 본 적이 없으면 캐릭터 그림(환영 화면과 같은 안내 그림 02 — 열 때마다 무작위) */}
+          <GuideArt id="02" />
           <p className="small">No saved results yet. Ready to take the test?</p>
           {!session && (
             <Link href="/en/login?next=/en/results" className="btn ghost block">
