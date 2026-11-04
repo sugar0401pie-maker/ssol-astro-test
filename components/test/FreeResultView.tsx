@@ -9,6 +9,7 @@ import SowellaButton from "@/components/results/SowellaButton";
 import PageArt from "@/components/results/PageArt";
 import { RESULT_PAGES, rememberPage } from "@/lib/results/lastPage";
 import Link from "next/link";
+import { startEnPayment } from "@/lib/billing/enPayClient";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { track } from "@/lib/analytics/track";
@@ -331,6 +332,17 @@ export default function FreeResultView({
   const P = chart.planets;
   const withTime = !!P.asc;
   const popup = splitPayPopup(result.payPopup ?? "");
+  const [enPayBusy, setEnPayBusy] = useState(false);
+  const [enPayErr, setEnPayErr] = useState<string | null>(null);
+  async function payEn(method: "card" | "paypal") {
+    if (!resultId || enPayBusy) return;
+    setEnPayBusy(true);
+    setEnPayErr(null);
+    track("pay_click", { page, from: "en" }, `pay_click:${resultId}`);
+    const e = await startEnPayment(resultId, page, method);
+    if (e) setEnPayErr(e);
+    setEnPayBusy(false);
+  }
   const share = { chart, sunSign: result.sunSign, sunSignIndex: result.sunSignIndex, typeLine: character.name ?? character.typeLine, competency: character.competency, style: character.style, nickname, sunSignIntro: result.sunSignIntro ?? null };
 
   const sheet: WheelSheet | null = !sheetKey
@@ -824,10 +836,27 @@ export default function FreeResultView({
           <div className="pf-in">
             <div className="pf-txt">
               <p className="pp-t">{popup.message}</p>
-              {popup.sub && <p className="pp-s">{popup.sub}</p>}
+              {/* 영문 번역 묶음의 PAY_POPUP에 아직 '3-day Sowella AI pass'가 남아 있다(한국어 DB는 v1.2.4에서 삭제) — 이용권은 따로 주지 않으므로 그 부분만 숨긴다. 번역 묶음을 고치면 이 처리는 할 일이 없어진다 */}
+              {popup.sub && <p className="pp-s">{en ? popup.sub.replace(/\s*·?\s*Includes a 3-day Sowella AI pass\.?/i, "") : popup.sub}</p>}
             </div>
-            {resultId ? (
-              <Link href={`${en ? "/en" : ""}/checkout/${resultId}?page=${page}`} className="btn block">
+            {resultId && en ? (
+              // 영문판: 누르면 바로 토스 결제창(owner 2026-11-04). 버튼 위 청약철회 안내는 08 §4(체크박스 아님)
+              <>
+                <p className="pp-s" style={{ fontSize: ".72rem", textAlign: "left" }}>
+                  By paying, you ask us to deliver your report now and agree you can’t cancel once it’s shown (
+                  <Link href="/en/legal/terms" target="_blank" className="underline">Terms</Link> ·{" "}
+                  <Link href="/en/legal/refund" target="_blank" className="underline">Refund Policy</Link>).
+                </p>
+                <button type="button" className="btn block" disabled={enPayBusy} onClick={() => void payEn("card")}>
+                  {T.payButton}
+                </button>
+                <button type="button" className="linkish mt-2" disabled={enPayBusy} onClick={() => void payEn("paypal")}>
+                  Pay with PayPal
+                </button>
+                {enPayErr && <p className="pp-s mt-2" role="alert">{enPayErr}</p>}
+              </>
+            ) : resultId ? (
+              <Link href={`/checkout/${resultId}?page=${page}`} className="btn block">
                 {popup.button || T.payButton}
               </Link>
             ) : (

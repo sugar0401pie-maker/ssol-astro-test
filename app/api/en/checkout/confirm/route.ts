@@ -5,7 +5,7 @@ import { decideAfterConfirmFailure } from "@/lib/billing/confirmDecision";
 import { usdToCents } from "@/lib/billing/pricingEn";
 import { runReportGeneration } from "@/lib/results/report";
 import { getAccountEmail, getResultCard, getOrder, isResultPaid, markOrderPaid, markResultPaid, ownsOrder, settleOrder } from "@/lib/results/store";
-import { buildOrderEmailEn } from "@/lib/billing/orderEmailEn";
+import { buildOrderEmailEn, isEmail } from "@/lib/billing/orderEmailEn";
 import { SIGNS } from "@/lib/astro/constants";
 import { SIGN_EN } from "@/lib/report/lang";
 import { kakaoArtUrl, pickSignArt, signArtChoices } from "@/lib/share/signShare";
@@ -51,13 +51,17 @@ export async function POST(req: NextRequest) {
     const tossAmount = cents / 100;
 
     let method: string | null = null;
+    let tossEmail: string | null = null;
     if (order.status === "pending") {
       if (order.result_id && (await isResultPaid(order.result_id))) {
         await settleOrder(orderId, "canceled");
         return NextResponse.json({ error: "You’ve already unlocked this report.", resultId: order.result_id }, { status: 409 });
       }
       const r = await confirmTossPayment({ paymentKey, orderId, amount: tossAmount }, secret);
-      if (r.ok) method = r.method;
+      if (r.ok) {
+        method = r.method;
+        tossEmail = r.customerEmail ?? null;
+      }
       else {
         const lookup = await getTossPayment(paymentKey, secret);
         const decision = decideAfterConfirmFailure(lookup, { orderId, amount: tossAmount });
@@ -88,7 +92,8 @@ export async function POST(req: NextRequest) {
     }
     const paidAt = new Date();
     after(async () => {
-      const to = order.receipt_email ?? (order.user_id ? await getAccountEmail(order.user_id) : null);
+      // 받는 사람: 주문에 남긴 주소 → 로그인 계정 이메일 → 토스 결제창에서 받은 이메일(owner: 이메일은 토스에서)
+      const to = order.receipt_email ?? (order.user_id ? await getAccountEmail(order.user_id) : null) ?? (isEmail(tossEmail) ? tossEmail : null);
       if (!to) return console.warn("영문 주문 확인 이메일: 받을 주소 없음");
       // 카드 그림 = 그 결과의 태양 별자리 그림(리포트 완성 메일과 같은 jpg). 못 찾으면 그림 없이
       const card = order.result_id ? await getResultCard(order.result_id) : null;

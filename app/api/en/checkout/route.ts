@@ -27,9 +27,8 @@ export async function POST(req: NextRequest) {
   }
   const resultId = typeof body.resultId === "string" ? body.resultId : "";
   if (!isUuid(resultId)) return NextResponse.json({ error: "We couldn’t find this result." }, { status: 404 });
-  // 주문 확인 이메일(08 §4): 로그인한 사람은 계정 이메일, 로그인 없이 결제하는 사람은 결제 화면에서 받은 주소(필수)
-  const receiptEmail = owner.kind === "guest" ? (isEmail(body.email) ? body.email.trim() : null) : null;
-  if (owner.kind === "guest" && !receiptEmail) return NextResponse.json({ error: "Please enter a valid email for your receipt.", needEmail: true }, { status: 400 });
+  // 주문 확인 이메일(08 §4): 로그인한 사람은 계정 이메일. 로그인 없이 결제한 사람은 토스 결제창에서 받은 이메일(승인 응답) — owner 2026-11-04
+  const receiptEmail = isEmail(body.email) ? body.email.trim() : null;
   try {
     const result = await getResult(owner, resultId);
     if (!result) return NextResponse.json({ error: "We couldn’t find this result." }, { status: 404 });
