@@ -74,6 +74,8 @@ export async function generatePaidReport(args: {
   now?: Date;
   /** 파트 하나가 끝날 때마다 그때까지의 리포트(partial)로 부른다 — 화면이 다 쓴 섹션부터 보여 준다 */
   onPart?: (partial: PaidReport) => Promise<void>;
+  /** 영문판: 영문 AI 지시문·검증기가 생기기 전까지 AI를 부르지 않고 DB 문장 뼈대 그대로(fail safe) */
+  lang?: "ko" | "en";
 }): Promise<PaidReport> {
   const { db, resolved, answers, nickname } = args;
   const now = args.now ?? new Date();
@@ -96,6 +98,10 @@ export async function generatePaidReport(args: {
   const logs: Partial<Record<PartId, PartLog>> = {};
   const runPart = async (part: PartId) => {
     const log: PartLog = (logs[part] = { attempts: 0, result: "db", inputTokens: 0, outputTokens: 0, failures: [] });
+    if (args.lang === "en") {
+      log.failures.push("en-db-only");
+      return null;
+    }
     const dbSentences = PARTS[part].sections.flatMap((n) => skeleton.dbSentences[n]);
     built.input.db_sentences = dbSentences;
     const system = fillSystemPrompt(built, dbSentences);

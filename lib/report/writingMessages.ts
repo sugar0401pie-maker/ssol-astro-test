@@ -14,6 +14,23 @@ const TEMPLATES = [
   "{이름}님께 건넬 별의 질문을 고르고 있어요..",
 ] as const;
 
+// 영문판(Claude 초안 — 원어민 검수 대상). 예측 표현('foretell' 등)은 쓰지 않는다.
+const TEMPLATES_EN = [
+  "Gathering starlight to write your report, page by page…",
+  "Drawing {name}’s birth chart…",
+  "Unfolding the sky on the day {name} was born…",
+  "Tracing the paths of the stars through year-end…",
+  "Reading {name}’s 2027 sky…",
+  "Marking where the stars travel over the next five years…",
+  "Connecting {name}’s wish with the flow of the stars…",
+  "Choosing a question from the stars for {name}…",
+] as const;
+
+export function writingMessagesEn(nickname: string): string[] {
+  const name = nickname.trim();
+  return TEMPLATES_EN.map((t) => (name ? t.replaceAll("{name}", name) : t.replaceAll("{name}’s", "your").replaceAll("{name}", "you")));
+}
+
 export function writingMessages(nickname: string): string[] {
   const name = nickname.trim();
   // 닉네임이 없으면 '당신님'이 되지 않게 '당신'으로

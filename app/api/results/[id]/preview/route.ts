@@ -2,6 +2,7 @@ import { resolveOwner } from "@/lib/results/owner";
 import { NextRequest, NextResponse } from "next/server";
 import { wishContextOf } from "@/lib/astro/wish";
 import { ASTRO_DB } from "@/lib/report/dbData";
+import { ASTRO_DB_EN } from "@/lib/report/dbDataEn";
 import { blurParagraphs, prepareSkeleton, previewLines } from "@/lib/report/prepare";
 import { birthKeyOf } from "@/lib/report/variants";
 import { computeFree } from "@/lib/results/compute";
@@ -19,10 +20,14 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/results/[id]
   try {
     const row = await getResult(owner, id);
     if (!row) return NextResponse.json({ error: "결과를 찾을 수 없어요." }, { status: 404 });
-    const c = computeFree(row.birth_input, row.answers, row.nickname, { lang: "ko" });
+    // 영문판 결과는 영문 DB로(2026-11-04) — 미리보기도 결과와 같은 언어
+    const lang = row.birth_input.lang === "en" ? "en" : "ko";
+    const db = lang === "en" ? ASTRO_DB_EN : ASTRO_DB;
+    const c = computeFree(row.birth_input, row.answers, row.nickname, { lang });
     if (c.kind !== "result") return NextResponse.json({ error: "결과를 다시 계산하지 못했어요." }, { status: 500 });
     const { skeleton } = prepareSkeleton({
-      db: ASTRO_DB,
+      db,
+      lang,
       resolved: c.birth.resolved,
       wishContext: wishContextOf(c.birth.stored, c.birth.accuracy),
       answers: row.answers,
@@ -31,7 +36,7 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/results/[id]
       now: new Date(),
     });
     // 블러 자리는 B13 가짜 문장(실제 본문 아님)
-    const sections = previewLines(skeleton).map((x) => ({ ...x, dummy: blurParagraphs(ASTRO_DB, x.no, row.nickname) }));
+    const sections = previewLines(skeleton).map((x) => ({ ...x, dummy: blurParagraphs(db, x.no, row.nickname) }));
     return NextResponse.json({ sections });
   } catch (e) {
     console.error(e instanceof Error ? e.message : "미리보기 실패");

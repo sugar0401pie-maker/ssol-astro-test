@@ -2,13 +2,15 @@
 // 결제 후 리포트를 쓰는 동안 잠긴 섹션 가운데에 뜨는 안내: 여러 궤도를 도는 별들 + 3초마다 바뀌는(은은하게 깜빡이는) 문구.
 // 화면이 멈춘 게 아니라 쓰는 중이라는 걸 보여 주려고(owner 2026-10-14). 동작 줄이기면 별은 멈추고 문구만 바뀐다.
 import { useEffect, useState } from "react";
-import { WRITING_INTERVAL_MS, writingMessages } from "@/lib/report/writingMessages";
+import { WRITING_INTERVAL_MS, writingMessages, writingMessagesEn } from "@/lib/report/writingMessages";
 
 /** 작은 안내(owner 문구 2026-10-14) — 결과 화면은 리포트가 다 되면 자동으로 채워진다 */
 export const WRITING_NOTE = "약 30초 정도 걸리고, 다 만들어지면 자동으로 연결돼요.\n만약 바로 연결되지 않을 경우, 새로고침을 눌러주세요.";
 
-export function ReportWriting({ nickname, slowText }: { nickname: string; slowText?: string | null }) {
-  const messages = writingMessages(nickname);
+const WRITING_NOTE_EN = "This takes about 30 seconds, and your report appears automatically when it’s ready.\nIf it doesn’t, please refresh the page.";
+
+export function ReportWriting({ nickname, slowText, lang = "ko" }: { nickname: string; slowText?: string | null; lang?: "ko" | "en" }) {
+  const messages = lang === "en" ? writingMessagesEn(nickname) : writingMessages(nickname);
   const [i, setI] = useState(0);
   useEffect(() => {
     if (slowText) return;
@@ -56,7 +58,7 @@ export function ReportWriting({ nickname, slowText }: { nickname: string; slowTe
       <p key={slowText ? "slow" : i} className={`writing-msg${slowText ? " slow" : ""}`}>
         {slowText ?? messages[i]}
       </p>
-      {!slowText && <p className="writing-note">{WRITING_NOTE}</p>}
+      {!slowText && <p className="writing-note">{lang === "en" ? WRITING_NOTE_EN : WRITING_NOTE}</p>}
     </div>
   );
 }

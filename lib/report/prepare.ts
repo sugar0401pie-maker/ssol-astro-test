@@ -9,14 +9,14 @@ import { buildPaidSkeleton, blockText, type PaidSection } from "./paidSkeleton.t
 
 export type Resolved = NonNullable<BirthResult["resolved"]>;
 
-export function prepareSkeleton(args: { db: AstroDb; resolved: Resolved; wishContext: WishContext; answers: Answers; nickname: string; now: Date; birthKey?: string }) {
+export function prepareSkeleton(args: { db: AstroDb; resolved: Resolved; wishContext: WishContext; answers: Answers; nickname: string; now: Date; birthKey?: string; lang?: "ko" | "en" }) {
   const { db, resolved, answers, nickname, now } = args;
   const { chart, longitudes: L, character } = resolved;
   const windows = periodWindows(now);
   const events = buildTimeline(L, { start: "2026-01-01", end: "2031-12-31" }, windows.eoy, { birthDate: args.wishContext.birthDate });
   const periods = selectPeriods(events, answers.q1, now);
   const wish = computeWish(L, answers.q3, args.wishContext);
-  const skeleton = buildPaidSkeleton({ db, chart, longitudes: L, character, answers, events, periods, wish, nickname, birthKey: args.birthKey });
+  const skeleton = buildPaidSkeleton({ db, chart, longitudes: L, character, answers, events, periods, wish, nickname, birthKey: args.birthKey, lang: args.lang });
   return { events, periods, wish, skeleton };
 }
 

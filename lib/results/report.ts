@@ -3,6 +3,7 @@ import "server-only";
 // 생성 자리를 먼저 잡아(claimReportGeneration) 같은 리포트를 동시에 두 번 만들지 않는다.
 import { generatePaidReport } from "@/lib/report/aiReport";
 import { ASTRO_DB } from "@/lib/report/dbData";
+import { ASTRO_DB_EN } from "@/lib/report/dbDataEn";
 import { wishContextOf } from "@/lib/astro/wish";
 import { birthKeyOf } from "@/lib/report/variants";
 import { computeFree } from "./compute";
@@ -60,13 +61,17 @@ export async function runReportGeneration(resultId: string, opts: { retry?: bool
   try {
     const row = await getResultForReport(resultId);
     if (!row) throw new Error("결과 없음");
-    const c = computeFree(row.birth_input, row.answers, row.nickname, { lang: "ko" });
+    // 영문판 결과(2026-11-04): 영문 DB로, AI 없이 DB 문장만(영문 AI 지시문·검증기는 아직 없다 — generatePaidReport가 en이면 AI를 부르지 않음)
+    const en = row.birth_input.lang === "en";
+    const c = computeFree(row.birth_input, row.answers, row.nickname, { lang: en ? "en" : "ko" });
     if (c.kind !== "result") throw new Error("결과를 다시 계산하지 못함");
-    const report = await generatePaidReport({ db: ASTRO_DB, resolved: c.birth.resolved, wishContext: wishContextOf(c.birth.stored, c.birth.accuracy), answers: row.answers, nickname: row.nickname, birthKey: birthKeyOf(row.birth_input), onPart: (partial) => savePartialReport(resultId, partial, attempt) });
+    const report = await generatePaidReport({ db: en ? ASTRO_DB_EN : ASTRO_DB, lang: en ? "en" : "ko", resolved: c.birth.resolved, wishContext: wishContextOf(c.birth.stored, c.birth.accuracy), answers: row.answers, nickname: row.nickname, birthKey: birthKeyOf(row.birth_input), onPart: (partial) => savePartialReport(resultId, partial, attempt) });
     // 그사이 다른 시도가 자리를 넘겨받았으면 저장하지 않는다(그쪽 결과가 남는다)
     if (!(await saveReport(resultId, report, attempt))) return;
     // 주인을 다시 읽는다: 생성 중(20~60초)에 비회원이 로그인해 계정으로 옮겼으면, 시작할 때 읽은 user_id는 비어 있고
     // 옮기는 순간(claim)의 메일 확인은 리포트가 아직 없어 건너뛰었기 때문(메일은 claimReportEmail로 한 번만 나간다).
+    // 영문 리포트 완성 메일·쏘웰라 요약은 영문판 작업 전이라 보내지 않는다(한국어 메일·요약이 나가지 않게)
+    if (en) return;
     const owner = (await getResultForReport(resultId).catch(() => null))?.user_id ?? row.user_id;
     await emailReport(resultId, owner, row.nickname, cardOf(c));
     // 쏘웰라 채팅이 참고할 요약을 리포트 본문·제안까지 넣어 다시 만든다.
@@ -81,7 +86,7 @@ export async function runReportGeneration(resultId: string, opts: { retry?: bool
 export async function emailReportIfReady(resultId: string): Promise<void> {
   try {
     const row = await getResultForReport(resultId);
-    if (!row || row.report_status !== "ready" || !row.report) return;
+    if (!row || row.report_status !== "ready" || !row.report || row.birth_input.lang === "en") return;
     const c = computeFree(row.birth_input, row.answers, row.nickname, { lang: "ko" });
     if (c.kind !== "result") return;
     await emailReport(resultId, row.user_id, row.nickname, cardOf(c));

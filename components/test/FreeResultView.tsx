@@ -269,8 +269,7 @@ export default function FreeResultView({
   useEffect(() => {
     void getRealSession().then((s) => setLoggedIn(!!s));
   }, []);
-  // 영문판 유료 미리보기는 아직 없다(유료 리포트 영문화 전) — 잠긴 자리만 보인다
-  const wantPreview = !paidSection && !!resultId && !en;
+  const wantPreview = !paidSection && !!resultId;
   // 유형을 바꾸면 4~7장 미리보기 문장도 새 유형 기준으로 다시 받는다
   const typeKey = `${result.character.competency}|${result.character.style}`;
   useEffect(() => {
@@ -769,7 +768,7 @@ export default function FreeResultView({
                           <p key={i}>{t}</p>
                         ))}
                       </div>
-                      {paidPending && <ReportWriting nickname={nickname} slowText={paidPending.slowText} />}
+                      {paidPending && <ReportWriting nickname={nickname} slowText={paidPending.slowText} lang={lang} />}
                     </div>
                   </div>
                 </section>

@@ -5,19 +5,24 @@
 // 마스터스펙 6-1-1을 그대로 따른다. 프로토타입이 코드에서 만드는 연결 구절(예: "목성이 ○○와 삼분을 이룹니다")도 같은 모양으로 옮겼다.
 import type { Answers } from "../astro/answers.ts";
 import type { CharacterResult } from "../astro/character.ts";
-import { SIGNS, elementOf, signIndex, type PlanetKey, type PointKey } from "../astro/constants.ts";
+import { SIGNS, elementOf, signIndex, type PlanetKey } from "../astro/constants.ts";
 import type { Longitudes, NatalChart } from "../astro/natal.ts";
 import { clipIntervals, scoreInWindow, type PeriodKey, type PeriodResult, type TimelineEvent, type Window } from "../astro/timeline.ts";
 import { dailyPositions, dailyRange } from "../astro/transits.ts";
 import { EDGE_LABEL, WISH_LEVEL_DISPLAY, type MovementLabel, type WishFactor, type WishLevel, type WishResult, type WishYear } from "../astro/wish.ts";
 import { ELEMENT_ID, POINT_ID, aspectGroup, findRow, pad2, row, tryFill, type AstroDb } from "./db.ts";
 import { a6Line, a8Id } from "./freeResult.ts";
-import { formatDate, formatRange, josa, QUARTER_LABELS } from "./format.ts";
+import { formatDate, josa } from "./format.ts";
 import { POINT_KO } from "./labels.ts";
 import { b9Id, edgeLines, movementLine } from "./movement.ts";
 import { ingressLine, selfAspectPhrase } from "./ingress.ts";
 import { lunations, postShadowEnd, preShadowStart } from "../astro/yearEnd.ts";
 import { a13Variant, b11, fillSummary } from "./variants.ts";
+import { PEN, PKO, quarterLabels, type PL } from "./paidLang.ts";
+
+// 조립 중인 리포트의 언어(영문판 2026-11-04). buildPaidSkeleton이 시작할 때 정하고 끝나면 한국어로 되돌린다 —
+// 이 파일의 조립 함수는 모두 동기라 다른 요청과 섞이지 않는다. 밖에서 따로 부르는 함수(evidencePhrase 등)는 한국어.
+let P: PL = PKO;
 
 /** 본문 조각. AI가 쓰면 p/head만 나오고, DB 뼈대는 아래 모양을 다 쓴다. */
 export type Block =
@@ -121,19 +126,17 @@ const SLOW = new Set(["jupiter", "saturn", "uranus", "neptune", "pluto"]);
 const PERSONAL = new Set(["sun", "moon", "mercury", "venus", "mars", "asc", "mc"]);
 
 const month = (d: string) => Number(d.slice(5, 7));
-const monthPart = (d: string) => {
-  const day = Number(d.slice(8, 10));
-  return day <= 10 ? "초" : day <= 20 ? "중순" : "말";
-};
+const monthPart = (d: string) => P.monthPart(d);
 const quarterOf = (m: number) => Math.floor((m - 1) / 3) + 1;
 /** 같은 해면 "11월 3일~24일", 해가 바뀌면 연도까지(프로토타입 range) */
-const rangeText = (from: string, to: string | null) =>
-  !to || from === to ? formatDate(from) : from.slice(0, 4) !== to.slice(0, 4) ? `${formatDate(from, true)}~${formatDate(to, true)}` : formatRange(from, to);
+const rangeText = (from: string, to: string | null) => P.range(from, to);
 const firstSentences = (text: string, n: number) => (text.match(/[^.!?]+[.!?]+/g) ?? [text]).slice(0, n).map((x) => x.trim()).join(" ");
 
 /** 행성·지점의 별명(A16, 예: 책임의 별) */
-const nickOf = (db: AstroDb, k: string) => t(db, "A16", `TERM_${POINT_ID[k]}`, "nickname") || POINT_KO[k as PointKey] || k;
-const houseNick = (db: AstroDb, h: number) => t(db, "A16", `TERM_H${pad2(h)}`, "nickname") || `${h}하우스`;
+const nickOf = (db: AstroDb, k: string) => t(db, "A16", `TERM_${POINT_ID[k]}`, "nickname") || P.point(k);
+const houseNick = (db: AstroDb, h: number) => t(db, "A16", `TERM_H${pad2(h)}`, "nickname") || P.house(h);
+const pk = (k: string) => P.point(k);
+const fd = (iso: string, withYear = false) => P.date(iso, withYear);
 
 /**
  * 하우스 기준 별자리: 상승궁이 있으면 상승궁, 시간 모름(C등급)이면 태양 별자리를 1하우스로 둔다(프로토타입 R.hb).
@@ -163,16 +166,16 @@ function jupiterHouseIn(base: number, from: string, to: string): number {
 function evName(e: TimelineEvent): string {
   switch (e.kind) {
     case "transit":
-      if (e.milestone === "saturn_return") return "토성 리턴";
-      return `${POINT_KO[e.transit]}-${POINT_KO[e.target]} ${e.aspect}`;
+      if (e.milestone === "saturn_return") return P.saturnReturn;
+      return P.pair(pk(e.transit), pk(e.target), P.aspect(e.aspect));
     case "chiron_return":
-      return "키론 리턴";
+      return P.chironReturn;
     case "retrograde":
-      return `${POINT_KO[e.planet]} 역행`;
+      return P.retro(pk(e.planet));
     case "ingress":
-      return `${POINT_KO[e.planet]} ${e.sign} 진입`;
+      return P.ingress(pk(e.planet), P.sign(e.sign));
     case "eclipse":
-      return e.eclipse === "solar" ? "일식" : "월식";
+      return P.eclipse(e.eclipse === "solar");
   }
 }
 
@@ -184,26 +187,26 @@ function exactIn(e: TimelineEvent, w?: Window): string | null {
 
 // ---- 바람 판정 근거 ----
 
-const factorName = (f: WishFactor) => (f.kind === "house" ? `${POINT_KO[f.transit]} ${f.house}하우스 통과` : `${POINT_KO[f.transit]}-${POINT_KO[f.target]} ${f.aspect}`);
-const factorDate = (f: WishFactor) => (f.kind === "house" ? rangeText(f.intervals[0].from, f.intervals[f.intervals.length - 1].to) : formatDate(f.exact));
+const factorName = (f: WishFactor) => (f.kind === "house" ? P.houseTransit(pk(f.transit), f.house) : P.pair(pk(f.transit), pk(f.target), P.aspect(f.aspect)));
+const factorDate = (f: WishFactor) => (f.kind === "house" ? rangeText(f.intervals[0].from, f.intervals[f.intervals.length - 1].to) : fd(f.exact));
 const topPlus = (y: WishYear) => [...y.factors].filter((f) => f.value > 0).sort((a, b) => b.value - a.value)[0];
 const topMinus = (y: WishYear) => [...y.factors].filter((f) => f.value < 0).sort((a, b) => a.value - b.value)[0];
 
 /** A13 {{근거}} 구절("-는"으로 끝남) — 프로토타입 basis */
 export function evidencePhrase(db: AstroDb, f: WishFactor | undefined): string | null {
   if (!f) return null;
-  const p = POINT_KO[f.transit];
-  if (f.kind === "house") return `${josa(p, "이/가")} ${josa(houseNick(db, f.house), "을/를")} 지나는`;
-  const target = POINT_KO[f.target];
+  const p = pk(f.transit);
+  if (f.kind === "house") return P.evHouse(p, houseNick(db, f.house));
+  const target = pk(f.target);
   const g = aspectGroup(f.aspect);
-  // 같은 행성끼리(리턴 등): "목성이 목성과 겹치는" 대신 A16b 문구
+  // 같은 행성끼리(리턴 등): "목성이 목성과 겹치는" 대신 A16b 문구(영문 A16b는 아직 번역이 없어 영문 구절)
   if (f.target === f.transit) {
-    const self = selfAspectPhrase(db, f.transit, g === "CONJ");
+    const self = selfAspectPhrase(db, f.transit, g === "CONJ") || P.evSelf(p, g === "CONJ");
     if (self) return self;
   }
-  if (g === "CONJ") return `${josa(p, "이/가")} ${josa(target, "와/과")} 겹치는`;
-  if (g === "HARM") return `${josa(p, "이/가")} ${josa(target, "을/를")} 돕는`;
-  return `${josa(p, "이/가")} ${josa(target, "와/과")} 긴장하는`;
+  if (g === "CONJ") return P.evConj(p, target);
+  if (g === "HARM") return P.evHarm(p, target);
+  return P.evTense(p, target);
 }
 
 /** A8 뜻 한 줄(근거 목록) — 프로토타입 evMeaning */
@@ -243,14 +246,17 @@ function movementDetail(db: AstroDb, y: WishYear, base: number, mvLine: string |
     const mo = month(m.exact);
     if (m.kind === "outer" && m.target && m.aspect) {
       const a8 = row(db, "A8", `TR_${POINT_ID[m.transit]}_${POINT_ID[m.target]}_${aspectGroup(m.aspect)}`);
+      if (P.en) return `In ${P.month(mo)}, ${nickOf(db, m.transit).replace(/^./, (c) => c.toLowerCase())} touches ${nickOf(db, m.target).replace(/^./, (c) => c.toLowerCase())} (${P.pair(pk(m.transit), pk(m.target), P.aspect(m.aspect))}).${a8 ? ` ${a8.table_future}` : ""}`;
       return `${mo}월에는 ${josa(nickOf(db, m.transit), "이/가")} ${josa(nickOf(db, m.target), "을/를")} 건드려요(${POINT_KO[m.transit as PlanetKey]}-${POINT_KO[m.target]} ${m.aspect}).${a8 ? ` ${a8.table_future}` : ""}`;
     }
     if (m.kind === "saturn_return" || m.kind === "chiron_return") {
       const tr = t(db, "A16", "TERM_RETURN", "meaning_line");
+      if (P.en) return `${P.month(mo)} brings your ${m.kind === "chiron_return" ? "Chiron" : "Saturn"} return.${tr ? ` ${tr}` : ""}`;
       return `${mo}월에는 ${m.kind === "chiron_return" ? "키론" : "토성"} 리턴이 있어요.${tr ? ` ${tr}` : ""}`;
     }
     const h = m.house ?? (m.sign ? houseOfSign(base, m.sign) : 0);
     const s9 = h ? t(db, "A9", `SAT_H${pad2(h)}`, "table_line") : "";
+    if (P.en) return `In ${P.month(mo)}, Saturn moves into ${P.sign(m.sign ?? "")} (${P.house(h)} · ${houseNick(db, h)}).${s9 ? ` ${s9}` : ""}`;
     return `${mo}월에는 토성이 ${m.sign}(${h}하우스 · ${houseNick(db, h)})로 옮겨 가요.${s9 ? ` ${s9}` : ""}`;
   });
   return [...out, mvLine ?? ""].filter(Boolean).join(" ");
@@ -329,10 +335,10 @@ export function flowStages(db: AstroDb, events: TimelineEvent[], base: number): 
     const end = mars.intervals[0].to;
     const h = mars.house ?? houseOfSign(base, mars.sign);
     const mr = row(db, "A10", `RX_MARS_H${pad2(h)}`);
-    const when = `${month(start)}${end ? `~${month(end)}` : ""}월`;
+    const when = P.en ? `${P.month(month(start))}${end ? `–${P.month(month(end))}` : ""}` : `${month(start)}${end ? `~${month(end)}` : ""}월`;
     steps.push({
-      kind: "mars", m: month(start), quarters: [quarterOf(month(start))], label: `${when} — ${phaseWhat(db, "PHASE_PREP", "정하지 말고 준비")}`, phase: "정하지 말고 준비하기",
-      text: `${mr ? firstSentences(mr.text, 2) : ""} (${rangeText(start, end)} 화성 역행 · ${h}하우스)`.trim(), start, end, sign: mars.sign, house: h,
+      kind: "mars", m: month(start), quarters: [quarterOf(month(start))], label: `${when} — ${phaseWhat(db, "PHASE_PREP", "정하지 말고 준비")}`, phase: P.en ? "Prepare, but don't decide yet" : "정하지 말고 준비하기",
+      text: P.en ? `${mr ? firstSentences(mr.text, 2) : ""} (${rangeText(start, end)} Mars retrograde · ${P.house(h)})`.trim() : `${mr ? firstSentences(mr.text, 2) : ""} (${rangeText(start, end)} 화성 역행 · ${h}하우스)`.trim(), start, end, sign: mars.sign, house: h,
     });
   }
   const contacts = (planet: string) => {
@@ -357,14 +363,15 @@ export function flowStages(db: AstroDb, events: TimelineEvent[], base: number): 
       const r = id ? row(db, "A8", id) : null;
       if (r && !seen.has(r.id) && out.length < n) {
         seen.add(r.id);
-        out.push(`${month(x.exact)}월 ${evName(x.e)} — ${r.table_future}`);
+        out.push(P.en ? `${P.month(month(x.exact))}: ${evName(x.e)} — ${r.table_future}` : `${month(x.exact)}월 ${evName(x.e)} — ${r.table_future}`);
       }
     }
     return out.join(" ");
   };
   const uc = contacts("uranus");
   const um = monthsOf(uc);
-  if (um.length) steps.push({ kind: "uranus", m: um[0], quarters: um.map(quarterOf), label: `${um.join("·")}월 — ${phaseWhat(db, "PHASE_TRIGGER", "제안과 계기")}`, phase: "제안과 계기가 오는 때", text: evText(uc, 2) });
+  const monthsLabel = (ms: number[]) => (P.en ? ms.map((x) => P.month(x)).join(" · ") : `${ms.join("·")}월`);
+  if (um.length) steps.push({ kind: "uranus", m: um[0], quarters: um.map(quarterOf), label: `${monthsLabel(um)} — ${phaseWhat(db, "PHASE_TRIGGER", "제안과 계기")}`, phase: P.en ? "When offers and openings arrive" : "제안과 계기가 오는 때", text: evText(uc, 2) });
   const ji = events
     .filter((e): e is Extract<TimelineEvent, { kind: "ingress" }> => e.kind === "ingress" && e.planet === "jupiter" && y27(e.intervals[0].from))
     .sort((a, b) => (a.intervals[0].from < b.intervals[0].from ? -1 : 1))[0];
@@ -372,15 +379,17 @@ export function flowStages(db: AstroDb, events: TimelineEvent[], base: number): 
     const date = ji.intervals[0].from;
     const h = houseOfSign(base, ji.sign);
     const j9 = row(db, "A9", `JUP_H${pad2(h)}`);
-    const when = `${month(date)}월 ${monthPart(date)}부터`;
+    const when = P.en ? `From ${monthPart(date)} ${P.month(month(date))}` : `${month(date)}월 ${monthPart(date)}부터`;
     steps.push({
-      kind: "jupiter", m: month(date), quarters: [quarterOf(month(date))], label: `${when} — ${phaseWhat(db, "PHASE_SETTLE", "정하고 자리 잡기")}`, phase: `${when} 정하고 자리 잡기`,
-      text: `${formatDate(date)} 목성이 ${ji.sign}(${h}하우스 · ${houseNick(db, h)})로 들어와요. ${j9?.table_line ?? ""}`.trim(), date, sign: ji.sign, house: ji.house ?? undefined,
+      kind: "jupiter", m: month(date), quarters: [quarterOf(month(date))], label: `${when} — ${phaseWhat(db, "PHASE_SETTLE", "정하고 자리 잡기")}`, phase: P.en ? `${when}: decide and settle in` : `${when} 정하고 자리 잡기`,
+      text: (P.en
+        ? `On ${fd(date)}, Jupiter moves into ${P.sign(ji.sign)} (${P.house(h)} · ${houseNick(db, h)}). ${j9?.table_line ?? ""}`
+        : `${formatDate(date)} 목성이 ${ji.sign}(${h}하우스 · ${houseNick(db, h)})로 들어와요. ${j9?.table_line ?? ""}`).trim(), date, sign: ji.sign, house: ji.house ?? undefined,
     });
   }
   const nc = contacts("neptune");
   const nm = monthsOf(nc);
-  if (nm.length) steps.push({ kind: "neptune", m: nm[0], quarters: nm.map(quarterOf), label: `${nm.join("·")}월 — ${phaseWhat(db, "PHASE_TIDY", "정리")}`, phase: "새로 벌이기보다 정리하기", text: evText(nc, 1) });
+  if (nm.length) steps.push({ kind: "neptune", m: nm[0], quarters: nm.map(quarterOf), label: `${monthsLabel(nm)} — ${phaseWhat(db, "PHASE_TIDY", "정리")}`, phase: P.en ? "Clear things up rather than start new ones" : "새로 벌이기보다 정리하기", text: evText(nc, 1) });
   return steps.sort((a, b) => a.m - b.m);
 }
 
@@ -392,15 +401,18 @@ export function flowBasis27(db: AstroDb, stages: FlowStage[], withTime: boolean,
   const j = stages.find((s) => s.kind === "jupiter");
   if (j && j.date && j.sign) {
     const where = withTime ? houseNick(db, houseOfSign(base, j.sign)) : j.sign;
+    if (P.en) return `${monthPart(j.date)} ${P.month(month(j.date))}, when Jupiter moves into ${withTime ? `your ${where.toLowerCase()} area` : P.sign(j.sign)}`;
     return `${month(j.date)}월 ${monthPart(j.date)} 목성이 ${josa(where, "으로/로")} 들어오는`;
   }
   const u = stages.find((s) => s.kind === "uranus");
-  if (u) return `${u.label.split(" — ")[0]} 천왕성이 새로운 계기를 건네는`;
-  return "하반기 하늘의 흐름이 한결 부드러워지는";
+  if (u) return P.en ? `${u.label.split(" — ")[0]}, when Uranus brings a fresh opening` : `${u.label.split(" — ")[0]} 천왕성이 새로운 계기를 건네는`;
+  return P.en ? "the second half of the year, as the sky's currents soften" : "하반기 하늘의 흐름이 한결 부드러워지는";
 }
 
 /** 5년 역풍 문단: 변형 문장의 '다가오는 해/이 해' + 조사를 연도로 바꾼다(프로토타입 yearize — DB 문장의 '다가오는 해'를 그 해로). */
 export function yearize(text: string, year: number): string {
+  // 영문 DB 문장은 "the coming year"를 쓴다(대문자로 시작하면 그대로 연도로)
+  if (P.en) return text.replace(/\b[Tt]he coming year\b/g, String(year));
   const JS: Record<string, "은/는" | "이/가" | "을/를" | "와/과" | "으로/로"> = { 는: "은/는", 가: "이/가", 를: "을/를", 와: "와/과", 로: "으로/로" };
   return text.replace(/(다가오는 해|이 해)(는|가|를|와|로)?/g, (_m, _a, j?: string) => (j ? josa(`${year}년`, JS[j]) : `${year}년`));
 }
@@ -420,6 +432,14 @@ export function yearThemes(db: AstroDb, years: number[], base: number): Record<n
   return out;
 }
 
+/** 움직임 사건 이름(접힌 근거) */
+function moveName(m: WishYear["moves"][number]): string {
+  if (m.kind === "outer") return P.pair(pk(m.transit), pk(m.target!), P.aspect(m.aspect!));
+  if (m.kind === "chiron_return") return P.chironReturn;
+  if (m.kind === "saturn_return") return P.saturnReturn;
+  return P.en ? `Saturn enters ${P.sign(m.sign ?? "")}` : `토성 ${m.sign} 진입`;
+}
+
 export function buildPaidSkeleton(args: {
   db: AstroDb;
   chart: NatalChart;
@@ -432,7 +452,18 @@ export function buildPaidSkeleton(args: {
   nickname: string;
   /** 표현 변형 해시 열쇠(variants.ts birthKeyOf). 없으면 원래 문장(A13 1번) */
   birthKey?: string;
+  /** 영문판(2026-11-04): en이면 db는 영문 DB, 연결 말은 영어 */
+  lang?: "ko" | "en";
 }): PaidSkeleton {
+  P = args.lang === "en" ? PEN : PKO;
+  try {
+    return buildPaidSkeletonIn(args);
+  } finally {
+    P = PKO;
+  }
+}
+
+function buildPaidSkeletonIn(args: Parameters<typeof buildPaidSkeleton>[0]): PaidSkeleton {
   const { db, longitudes: L, character, answers, events, periods, wish, nickname } = args;
   const key = args.birthKey ?? "";
   const nick = nickname;
@@ -444,8 +475,9 @@ export function buildPaidSkeleton(args: {
   const quiet = t(db, "A15", "FIX_QUIET_DOMAIN", "text");
   // 시간 모름(C등급) 안내 — 프로토타입 renderEOY·render2027의 문장 그대로(5년 파트에는 없음)
   const isC = args.chart.accuracy === "C";
-  const gradeC4 = isC ? "태어난 시간을 몰라, 이 파트의 ‘자리’는 태양 별자리를 1하우스로 두고 살폈어요." : "";
-  const gradeC = isC ? "태어난 시간을 몰라 하우스·상승궁 없이, 바람의 주제 행성과 달의 흐름으로만 판정했어요." : "";
+  // 영문은 번역 묶음 UI|0644·UI|0643 그대로
+  const gradeC4 = isC ? (P.en ? "Without your birth time, this part reads the ‘areas’ with your Sun sign as the 1st house." : "태어난 시간을 몰라, 이 파트의 ‘자리’는 태양 별자리를 1하우스로 두고 살폈어요.") : "";
+  const gradeC = isC ? (P.en ? "Without your birth time, we skipped the houses and Ascendant and based this reading on the planet tied to your wish and the flow of the Moon." : "태어난 시간을 몰라 하우스·상승궁 없이, 바람의 주제 행성과 달의 흐름으로만 판정했어요.") : "";
   const variant = (r: Record<string, string> | null, slot: "text" | "fallback_text" = "text", salt = "") => (r ? a13Variant(db, r, key, slot, salt) : "");
   // 같은 B9 행이 리포트 안에서 다시 나오면 변형 문장으로(5장 → 6장 순서로 부른다)
   const b9Seen = new Map<string, number>();
@@ -473,36 +505,40 @@ export function buildPaidSkeleton(args: {
   // 2026-11-02 연말 보강(해석 DB A10p·A10s, 기획 검수본 v0.3): 역행이 끝났으면 '역행 뒤 정리'(제자리로 돌아오기까지),
   // 화성 역행이 아직 시작 전이고 준비 시기(순행으로 돌아설 자리에 처음 닿은 뒤)면 '역행 앞 준비', 정리 시기도 끝났으면 뺀다.
   const careful: CarefulItem[] = three.flatMap((x): CarefulItem[] => {
-    const P = x.planet.toUpperCase();
+    // 영문 DB에 번역이 없는 표(A10p·A10s)는 빈 칸이다 — 그 항목은 빼고 보여 준다
+    const ok = (r: Record<string, string> | null) => (r?.careful_cell ? r : null);
+    const PP = x.planet.toUpperCase();
     if (x.end && x.end < today) {
       const until = postShadowEnd(x.planet, x.start, x.end);
       const from = addDay(x.end, 1);
-      const r = until && today <= until ? row(db, "A10p", `RXPOST_${P}_H${pad2(x.house)}`) : null;
+      const r = ok(until && today <= until ? row(db, "A10p", `RXPOST_${PP}_H${pad2(x.house)}`) : null);
       return r ? [{ ...x, phase: "post", from, to: until!, prow: r }] : [];
     }
     if (x.start > today && x.end) {
       const pre = preShadowStart(x.planet, x.start, x.end);
-      const r = pre && today >= pre ? row(db, "A10s", `RXPRE_${P}_H${pad2(x.house)}`) : null;
+      const r = ok(pre && today >= pre ? row(db, "A10s", `RXPRE_${PP}_H${pad2(x.house)}`) : null);
       if (r) return [{ ...x, phase: "pre", from: pre!, to: addDay(x.start, -1), prow: r }];
     }
     return [{ ...x, phase: "rx", from: x.start, to: x.end, prow: x.row }];
   });
   const allRx = careful.length === 3 && careful.every((c) => c.phase === "rx");
-  const PHASE_KO = { rx: "역행", post: "역행 뒤 정리", pre: "역행 앞 준비" } as const;
+  const PHASE_KO = P.en ? ({ rx: "retrograde", post: "post-retrograde clear-up", pre: "pre-retrograde prep" } as const) : ({ rx: "역행", post: "역행 뒤 정리", pre: "역행 앞 준비" } as const);
   // 소제목은 늘 둔다(프로토타입 renderEOY). 셋이 모두 역행일 때만 '세 가지', 아니면 '연말에 살펴볼 것'(기획 v0.3 메모 — 숫자 없이)
-  body4.push({ t: "head", text: allRx ? "• 연말에 조심할 세 가지" : "• 연말에 살펴볼 것" });
+  body4.push({ t: "head", text: P.en ? (allRx ? "• Three things to watch before year-end" : "• What to look at before year-end") : allRx ? "• 연말에 조심할 세 가지" : "• 연말에 살펴볼 것" });
   if (careful.length) {
     body4.push({
       t: "items",
       items: careful.map((x) => ({
         title: x.prow.careful_cell,
         text: `${x.phase === "rx" ? stripRxLead(x.prow.text) : x.prow.text} ${x.prow.action}`,
-        note: `${POINT_KO[x.planet]} ${PHASE_KO[x.phase]} · ${rangeText(x.from, x.to)} · ${x.sign} · ${x.house}하우스(${houseNick(db, x.house)})`,
+        note: P.en
+          ? `${pk(x.planet)} ${PHASE_KO[x.phase]} · ${rangeText(x.from, x.to)} · ${P.sign(x.sign)} · ${P.house(x.house)} (${houseNick(db, x.house)})`
+          : `${POINT_KO[x.planet]} ${PHASE_KO[x.phase]} · ${rangeText(x.from, x.to)} · ${x.sign} · ${x.house}하우스(${houseNick(db, x.house)})`,
       })),
     });
   }
   // 연말에 기대해도 좋은 일: 오늘~1월 말 목성의 합·조화 트랜짓 중 점수가 가장 큰 것(없으면 조용한 영역 문장)
-  body4.push({ t: "head", text: "• 연말에 기대해도 좋은 일" });
+  body4.push({ t: "head", text: P.en ? "• Something to look forward to before year-end" : "• 연말에 기대해도 좋은 일" });
   const hopeWindow: Window = { start: today, end: "2027-01-31" };
   const hope = scoreInWindow(
     events.filter((e) => e.kind === "transit" && e.transit === "jupiter" && !e.milestone && aspectGroup(e.aspect) !== "TENSE"),
@@ -518,11 +554,18 @@ export function buildPaidSkeleton(args: {
     const a9 = row(db, "A9", `JUP_H${pad2(jh)}`);
     body4.push({
       t: "p",
-      text: [
-        `${rangeText(iv.from < today ? today : iv.from, iv.to)} 목성이 ${josa(POINT_KO[e.target], "와/과")} ${josa(e.aspect, "을/를")} 이룹니다${exact ? `(${formatDate(exact)} 정확)` : ""}.`,
-        a8?.text ?? "",
-        a9 ? `지금 목성은 ${jh}하우스(${houseNick(db, jh)})를 지나고 있어요. ${a9.table_line}` : "",
-      ].filter(Boolean).join(" "),
+      text: (P.en
+        ? [
+            `${rangeText(iv.from < today ? today : iv.from, iv.to)}: Jupiter forms a ${P.aspect(e.aspect)} with your ${pk(e.target)}${exact ? ` (exact on ${fd(exact)})` : ""}.`,
+            a8?.text ?? "",
+            a9 ? `Jupiter is now moving through your ${P.house(jh)} (${houseNick(db, jh)}). ${a9.table_line}` : "",
+          ]
+        : [
+            `${rangeText(iv.from < today ? today : iv.from, iv.to)} 목성이 ${josa(POINT_KO[e.target], "와/과")} ${josa(e.aspect, "을/를")} 이룹니다${exact ? `(${formatDate(exact)} 정확)` : ""}.`,
+            a8?.text ?? "",
+            a9 ? `지금 목성은 ${jh}하우스(${houseNick(db, jh)})를 지나고 있어요. ${a9.table_line}` : "",
+          ]
+      ).filter(Boolean).join(" "),
     });
   } else {
     body4.push({ t: "p", text: [quiet, b8?.quiet_line ?? ""].filter(Boolean).join(" ") });
@@ -548,12 +591,12 @@ export function buildPaidSkeleton(args: {
     if (!sl) continue;
     sl.rx.push(x);
     sl.why.push({
-      title: `${POINT_KO[x.planet]} ${PHASE_KO[x.phase]} (${x.house}하우스)`,
-      when: x.from > w4.end ? `${formatDate(x.from, true)} 시작 예고` : rangeText(x.from, x.to),
+      title: P.en ? `${pk(x.planet)} ${PHASE_KO[x.phase]} (${P.house(x.house)})` : `${POINT_KO[x.planet]} ${PHASE_KO[x.phase]} (${x.house}하우스)`,
+      when: x.from > w4.end ? (P.en ? `starts ${fd(x.from, true)}` : `${formatDate(x.from, true)} 시작 예고`) : rangeText(x.from, x.to),
       meaning: x.prow.why_line ?? "",
     });
   }
-  const tail4: Block[] = [{ t: "head", text: b11(db, "HEAD_EOY_MONTH") || "• 달마다 살펴볼 것" }];
+  const tail4: Block[] = [{ t: "head", text: b11(db, "HEAD_EOY_MONTH") || (P.en ? "• Month by month: what to watch" : "• 달마다 살펴볼 것") }];
   const usedEv = new Set<string>();
   for (const mo of months) {
     const mw: Window = { start: `${mo.y}-${pad2(mo.m)}-01`, end: `${mo.y}-${pad2(mo.m)}-${pad2(new Date(Date.UTC(mo.y, mo.m, 0)).getUTCDate())}` };
@@ -564,20 +607,23 @@ export function buildPaidSkeleton(args: {
     );
     for (const s of act.slice(0, 2)) {
       const ex = exactIn(s.event, mw) ?? exactIn(s.event);
-      mo.why.push({ title: evName(s.event), when: ex ? `${formatDate(ex)} 정확` : "", meaning: eventMeaning(db, s.event) });
+      mo.why.push({ title: evName(s.event), when: ex ? (P.en ? `exact ${fd(ex)}` : `${formatDate(ex)} 정확`) : "", meaning: eventMeaning(db, s.event) });
     }
     const parts: string[] = [];
     for (const x of mo.rx) {
-      const name = `${POINT_KO[x.planet]} ${PHASE_KO[x.phase]}`;
-      const when =
-        x.phase === "rx" && x.from > w4.end ? `${formatDate(x.from, true)}에 ${POINT_KO[x.planet]} 역행이 시작돼요.` : `${rangeText(x.from, x.to)} ${name} 기간이에요.`;
+      const name = `${pk(x.planet)} ${PHASE_KO[x.phase]}`;
+      const when = P.en
+        ? x.phase === "rx" && x.from > w4.end
+          ? `${pk(x.planet)} goes retrograde on ${fd(x.from, true)}.`
+          : `${name.charAt(0).toUpperCase()}${name.slice(1)} runs ${rangeText(x.from, x.to)}.`
+        : x.phase === "rx" && x.from > w4.end ? `${formatDate(x.from, true)}에 ${POINT_KO[x.planet]} 역행이 시작돼요.` : `${rangeText(x.from, x.to)} ${name} 기간이에요.`;
       parts.push(`${x.prow.careful_cell}. ${when} ${x.prow.why_line ?? ""}`.trim());
     }
     const top = act.find((s) => !usedEv.has(evName(s.event)) && a8Id(s.event) && row(db, "A8", a8Id(s.event)!));
     if (top) {
       usedEv.add(evName(top.event));
       const ex = exactIn(top.event, mw) ?? exactIn(top.event);
-      parts.push(`${evName(top.event)}${ex ? `(${formatDate(ex)} 정확)` : ""} — ${row(db, "A8", a8Id(top.event)!)!.table_future}`);
+      parts.push(`${evName(top.event)}${ex ? (P.en ? ` (exact ${fd(ex)})` : `(${formatDate(ex)} 정확)`) : ""} — ${row(db, "A8", a8Id(top.event)!)!.table_future}`);
     }
     // 초승달·보름달(해석 DB A19, 기획 v0.3 — 4장에만): 오늘 이후 그 달의 것만, 날짜·별자리는 코드가 앞에 붙인다
     for (const l of lunations(mw.start < today ? today : mw.start, mw.end < w4.end ? mw.end : w4.end)) {
@@ -590,9 +636,9 @@ export function buildPaidSkeleton(args: {
       mo.why.push({ title: `${sign} ${kind} (${h}하우스)`, when: formatDate(l.date), meaning: `${houseNick(db, h)}에 뜨는 ${kind}이에요.` });
     }
     if (!parts.length && quiet) parts.push(quiet);
-    tail4.push({ t: "sub", text: `• ${mo.m}월` }, { t: "p", text: parts.join(" ") });
+    tail4.push({ t: "sub", text: `• ${P.month(mo.m)}` }, { t: "p", text: parts.join(" ") });
   }
-  const why4: WhyGroup[] = months.map((mo) => ({ label: `${mo.m}월`, items: mo.why }));
+  const why4: WhyGroup[] = months.map((mo) => ({ label: P.month(mo.m), items: mo.why }));
 
   // ================= 5. 2027년 =================
   const y27 = wish.years.find((y) => y.year === 2027);
@@ -600,18 +646,25 @@ export function buildPaidSkeleton(args: {
   const th = themes[2027];
   const stages = flowStages(db, events, base);
   const body5: Block[] = [];
-  const sum5 = y27 ? fillSummary(b11(db, "SUM_2027"), { 닉네임: nick, 바람: wishWord, 판정: WISH_LEVEL_DISPLAY[y27.level], 테마: th?.kw ?? "" }) : null;
+  const sum5 = y27 ? fillSummary(b11(db, "SUM_2027"), { 닉네임: nick, 바람: P.wish(wishWord), 판정: P.level(y27.level), 테마: th?.kw ?? "" }) : null;
   if (th?.row) {
     body5.push({
       t: "p",
-      text: `${nick}님의 2027년 키워드는 ‘${th.kw}’입니다. 하반기 목성이 ${th.house}하우스(${houseNick(db, th.house)})를 지나요. ${th.row.table_line} ${th.row.opportunity} ${th.row.caution}`,
+      text: P.en
+        ? `${nick}’s keyword for 2027 is ‘${th.kw}’. In the second half of the year, Jupiter moves through your ${P.house(th.house)} (${houseNick(db, th.house)}). ${th.row.table_line} ${th.row.opportunity} ${th.row.caution}`
+        : `${nick}님의 2027년 키워드는 ‘${th.kw}’입니다. 하반기 목성이 ${th.house}하우스(${houseNick(db, th.house)})를 지나요. ${th.row.table_line} ${th.row.opportunity} ${th.row.caution}`,
     });
   }
   const bridgeBasis27 = flowBasis27(db, stages, withTime, base);
   let judge27 = "";
   if (y27) {
-    body5.push({ t: "head", text: `• ${josa(wishWord, "을/를")} 바라는 ${nick}님의 2027년 — ${WISH_LEVEL_DISPLAY[y27.level]}${y27.movementLabel === "움직이는 해" ? " · ✦ 움직이는 해" : ""}` });
-    const basis = evidencePhrase(db, y27.level === "역풍" ? topMinus(y27) : topPlus(y27)) ?? evidencePhrase(db, topPlus(y27)) ?? evidencePhrase(db, topMinus(y27)) ?? "하늘의 흐름이 고르게 이어지는";
+    body5.push({
+      t: "head",
+      text: P.en
+        ? `• ${nick}’s 2027, hoping for ${P.wish(wishWord)} — ${P.level(y27.level)}${y27.movementLabel === "움직이는 해" ? " · ✦ Moving Year" : ""}`
+        : `• ${josa(wishWord, "을/를")} 바라는 ${nick}님의 2027년 — ${WISH_LEVEL_DISPLAY[y27.level]}${y27.movementLabel === "움직이는 해" ? " · ✦ 움직이는 해" : ""}`,
+    });
+    const basis = evidencePhrase(db, y27.level === "역풍" ? topMinus(y27) : topPlus(y27)) ?? evidencePhrase(db, topPlus(y27)) ?? evidencePhrase(db, topMinus(y27)) ?? P.basisFallback;
     judge27 = tryFill(variant(wishRow(db, wishWord, y27.level)), { 근거: basis }) ?? "";
     if (judge27) body5.push({ t: "p", text: judge27 });
     // 바람과 흐름 잇기 — AI 4문장(06 v3.1). 뼈대는 B12 대체 문장.
@@ -621,11 +674,11 @@ export function buildPaidSkeleton(args: {
     const ev27 = (fs: WishFactor[], asc: boolean) => {
       const byName = new Map<string, string[]>();
       for (const f of [...fs].sort((a, b) => (asc ? a.value - b.value : b.value - a.value))) byName.set(factorName(f), [...(byName.get(factorName(f)) ?? []), factorDate(f)]);
-      return [...byName.entries()].slice(0, 2).map(([n, ds]) => `${n}(${ds.join("·")})`).join(", ");
+      return [...byName.entries()].slice(0, 2).map(([n, ds]) => (P.en ? `${n} (${ds.join(" · ")})` : `${n}(${ds.join("·")})`)).join(", ");
     };
     const pl = ev27(y27.factors.filter((f) => f.value > 0), false);
     const mi = ev27(y27.factors.filter((f) => f.value < 0), true);
-    if (pl || mi) body5.push({ t: "note", text: [pl ? `돕는 흐름: ${pl}` : "", mi ? `무게: ${mi}` : ""].filter(Boolean).join(" · ") });
+    if (pl || mi) body5.push({ t: "note", text: [pl ? `${P.en ? "Helping currents" : "돕는 흐름"}: ${pl}` : "", mi ? `${P.en ? "Weight" : "무게"}: ${mi}` : ""].filter(Boolean).join(" · ") });
     // C등급(시간 모름)은 하우스·상승궁 없이 판정했다는 사실을 판정 곁에(마스터스펙 5-2). 문장은 DB(A15) 그대로.
     if (gradeC) body5.push({ t: "note", text: gradeC });
     const edge = edgeLines(db, y27);
@@ -634,22 +687,23 @@ export function buildPaidSkeleton(args: {
     if (mv) body5.push({ t: "p", text: mv });
   }
   if (b7) {
-    body5.push({ t: "head", text: "• 놓아줄 것" }, { t: "p", text: b7.let_go }, { t: "head", text: `• 키울 것 — ${character.competency}` }, { t: "p", text: b7.grow });
+    body5.push({ t: "head", text: P.en ? "• What to let go of" : "• 놓아줄 것" }, { t: "p", text: b7.let_go }, { t: "head", text: P.en ? `• What to grow — ${P.competency(character.competency)}` : `• 키울 것 — ${character.competency}` }, { t: "p", text: b7.grow });
   }
-  body5.push({ t: "head", text: b11(db, "HEAD_2027_FLOW") || "• 2027년 흐름" });
+  body5.push({ t: "head", text: b11(db, "HEAD_2027_FLOW") || (P.en ? "• How 2027 unfolds" : "• 2027년 흐름") });
   if (stages.some((s) => s.kind === "mars" || s.kind === "neptune")) body5.push({ t: "p", text: b11(db, "FLOW_METHOD_KEEP") });
   const review = [rxFrom(db, events, "venus", "2026-09-01", base), rxFrom(db, events, "mercury", "2026-10-01", base)].filter((x): x is Rx & { row: Record<string, string> } => !!x?.row);
-  if (review.length) body5.push({ t: "step", label: b11(db, "PHASE_REVIEW") || "2026년 연말 — 다시 보기", text: review.map((x) => x.row.why_line).join(" ") });
+  if (review.length) body5.push({ t: "step", label: b11(db, "PHASE_REVIEW") || (P.en ? "Late 2026 — Look back and review" : "2026년 연말 — 다시 보기"), text: review.map((x) => x.row.why_line).join(" ") });
   for (const s of stages) body5.push({ t: "step", label: s.label, text: s.text });
   // 분기 표: 단계 이름(화성 역행은 시작 분기만), 빈 분기는 그 분기 가운데 날 목성 하우스의 A9 한 줄
   const qPhases: string[][] = [[], [], [], []];
   for (const s of stages) for (const q of new Set(s.kind === "mars" ? [s.quarters[0]] : s.quarters)) qPhases[q - 1].push(s.phase);
   const MID = ["2027-02-15", "2027-05-15", "2027-08-15", "2027-11-15"];
-  const quarterRows: TableRow[] = QUARTER_LABELS.map((label, i) => ({
+  const QL = quarterLabels(P);
+  const quarterRows: TableRow[] = QL.map((label, i) => ({
     label,
     cells: [qPhases[i].length ? qPhases[i].join(" · ") : t(db, "A9", `JUP_H${pad2(houseOfLon(base, dailyPositions("jupiter", [MID[i]])[0]))}`, "table_line")],
   }));
-  const why5: WhyGroup[] = QUARTER_LABELS.map((label) => ({ label, items: [] as Array<WhyItem & { iso: string }> }));
+  const why5: WhyGroup[] = QL.map((label) => ({ label, items: [] as Array<WhyItem & { iso: string }> }));
   const put = (iso: string, it: WhyItem) => (why5[quarterOf(month(iso)) - 1].items as Array<WhyItem & { iso: string }>).push({ ...it, iso });
   if (y27) {
     const seen = new Set<string>();
@@ -658,20 +712,19 @@ export function buildPaidSkeleton(args: {
       const k = factorName(f) + iso;
       if (seen.has(k) || iso.slice(0, 4) !== "2027") continue;
       seen.add(k);
-      put(iso, { title: `${f.value > 0 ? "돕는 흐름" : "무게"} · ${factorName(f)}`, when: factorDate(f), meaning: factorMeaning(db, f) });
+      put(iso, { title: `${f.value > 0 ? (P.en ? "Helping current" : "돕는 흐름") : P.en ? "Weight" : "무게"} · ${factorName(f)}`, when: factorDate(f), meaning: factorMeaning(db, f) });
     }
     for (const m of y27.moves) {
       if (m.exact.slice(0, 4) !== "2027") continue;
-      const name =
-        m.kind === "outer" ? `${POINT_KO[m.transit as PlanetKey]}-${POINT_KO[m.target!]} ${m.aspect}` : m.kind === "chiron_return" ? "키론 리턴" : m.kind === "saturn_return" ? "토성 리턴" : `토성 ${m.sign} 진입`;
+      const name = moveName(m);
       const meaning =
         m.kind === "outer" ? row(db, "A8", `TR_${POINT_ID[m.transit]}_${POINT_ID[m.target!]}_${aspectGroup(m.aspect!)}`)?.meaning_line ?? "" : m.kind === "saturn_ingress" ? ingressLine(db, "saturn", m.house) : t(db, "A16", "TERM_RETURN", "meaning_line");
-      put(m.exact, { title: `움직임 · ${name}`, when: formatDate(m.exact), meaning });
+      put(m.exact, { title: `${P.en ? "Movement" : "움직임"} · ${name}`, when: fd(m.exact), meaning });
     }
   }
   for (const s of stages) {
-    if (s.kind === "mars" && s.start) put(s.start, { title: "화성 역행", when: rangeText(s.start, s.end ?? null), meaning: t(db, "A10", `RX_MARS_H${pad2(s.house!)}`, "why_line") });
-    if (s.kind === "jupiter" && s.date) put(s.date, { title: `목성 ${s.sign}${s.house ? `(${s.house}하우스)` : ""} 이동`, when: formatDate(s.date), meaning: ingressLine(db, "jupiter", s.house) });
+    if (s.kind === "mars" && s.start) put(s.start, { title: P.en ? "Mars retrograde" : "화성 역행", when: rangeText(s.start, s.end ?? null), meaning: t(db, "A10", `RX_MARS_H${pad2(s.house!)}`, "why_line") });
+    if (s.kind === "jupiter" && s.date) put(s.date, { title: P.en ? `Jupiter moves into ${P.sign(s.sign ?? "")}${s.house ? ` (${P.house(s.house)})` : ""}` : `목성 ${s.sign}${s.house ? `(${s.house}하우스)` : ""} 이동`, when: fd(s.date), meaning: ingressLine(db, "jupiter", s.house) });
   }
   for (const g of why5) (g.items as Array<WhyItem & { iso: string }>).sort((a, b) => (a.iso < b.iso ? -1 : 1));
   const why5Clean: WhyGroup[] = why5.map((g) => ({ label: g.label, items: g.items.map(({ title, when, meaning }) => ({ title, when, meaning })) }));
@@ -685,56 +738,64 @@ export function buildPaidSkeleton(args: {
   let sum6: string | null;
   let open6: string | null;
   if (first) {
-    sum6 = fillSummary(b11(db, "SUM_5Y_OPEN"), { 닉네임: nick, 바람: wishWord, 열리는해: `${first.year}년` });
-    open6 = tryFill(variant(openRow), { 열리는해: `${first.year}년`, 근거: evidencePhrase(db, topPlus(first)) ?? "돕는 흐름이 모이는" });
+    sum6 = fillSummary(b11(db, "SUM_5Y_OPEN"), { 닉네임: nick, 바람: P.wish(wishWord), 열리는해: P.year(first.year) });
+    open6 = tryFill(variant(openRow), { 열리는해: P.year(first.year), 근거: evidencePhrase(db, topPlus(first)) ?? P.basisOpenFallback });
   } else {
-    sum6 = near ? fillSummary(b11(db, "SUM_5Y_NEAR"), { 닉네임: nick, 바람: wishWord, 가까운해: `${near.year}년` }) : null;
-    open6 = near ? tryFill(variant(openRow, "fallback_text"), { 가까운해: `${near.year}년` }) : null;
+    sum6 = near ? fillSummary(b11(db, "SUM_5Y_NEAR"), { 닉네임: nick, 바람: P.wish(wishWord), 가까운해: P.year(near.year) }) : null;
+    open6 = near ? tryFill(variant(openRow, "fallback_text"), { 가까운해: P.year(near.year) }) : null;
   }
   if (open6) body6.push({ t: "p", text: open6 });
   const desiredYear = first?.year ?? near?.year ?? null;
   const br5 = findRow(db, "B12", (r) => r.section === "5년" && r.wish === wishWord);
-  const br5Text = desiredYear ? tryFill(br5?.text, { 바라던해: `${desiredYear}년` }) : null;
+  const br5Text = desiredYear ? tryFill(br5?.text, { 바라던해: P.year(desiredYear) }) : null;
   if (br5Text) body6.push({ t: "bridge", text: br5Text });
   const edgeY = years.find((y) => y.year !== 2027 && y.edge);
   if (edgeY) {
     const e = edgeLines(db, edgeY);
-    if (e) body6.push({ t: "head", text: `• ${edgeY.year}년 — ${WISH_LEVEL_DISPLAY[edgeY.level]}, ${e.badge}` }, { t: "p", text: `${e.line} ${e.edgeLine}` });
+    if (e) body6.push({ t: "head", text: P.en ? `• ${edgeY.year} — ${P.level(edgeY.level)}, ${e.badge}` : `• ${edgeY.year}년 — ${WISH_LEVEL_DISPLAY[edgeY.level]}, ${e.badge}` }, { t: "p", text: `${e.line} ${e.edgeLine}` });
   }
   const headY = years.filter((y) => y.level === "역풍");
   if (headY.length) {
     const hr = wishRow(db, wishWord, "역풍");
-    const filled = tryFill(variant(hr, "text", "5y"), { 근거: evidencePhrase(db, topMinus(headY[0])) ?? "무게가 실리는" });
-    if (filled) body6.push({ t: "head", text: `• ${headY.map((y) => y.year).join("·")}년 — 기반을 다지는 해(역풍)도 솔직하게` }, { t: "p", text: yearize(filled, headY[0].year) });
+    const filled = tryFill(variant(hr, "text", "5y"), { 근거: evidencePhrase(db, topMinus(headY[0])) ?? P.basisHeadFallback });
+    if (filled)
+      body6.push(
+        { t: "head", text: P.en ? `• ${headY.map((y) => y.year).join(" · ")} — ${headY.length > 1 ? "Building Years" : "a Building Year"}, named honestly` : `• ${headY.map((y) => y.year).join("·")}년 — 기반을 다지는 해(역풍)도 솔직하게` },
+        { t: "p", text: yearize(filled, headY[0].year) },
+      );
   }
   for (const y of years.filter((x) => x.movementLabel === "움직이는 해")) {
     const d = movementDetail(db, y, base, mvLine(y));
-    if (d) body6.push({ t: "head", text: `• ${y.year}년 — ✦ 움직이는 해` }, { t: "p", text: d });
+    if (d) body6.push({ t: "head", text: P.en ? `• ${y.year} — ✦ Moving Year` : `• ${y.year}년 — ✦ 움직이는 해` }, { t: "p", text: d });
   }
   const stars: TimelineStar[] = [];
   // 5년 표(프로토타입 render5y): 연도 | {바람} — 이루어짐 · 움직임 | 한 해의 테마. 경계 표시는 EDGE_LABEL(프로토타입 l.edge).
   const fiveRows: TableRow[] = years.map((y) => {
-    const edge = y.edge ? EDGE_LABEL[y.edge] : "";
-    const cell =
-      WISH_LEVEL_DISPLAY[y.level] +
-      (y.movementLabel === "움직이는 해" ? " · ✦ 움직이는 해" : y.movementLabel === "잔잔한 해" ? " · 잔잔한 해" : "") +
-      (edge ? ` — ${edge}` : "") +
-      (first && y.year === first.year ? ` — ${josa(wishWord, "이/가")} 열리는 해` : "");
+    const edge = y.edge ? P.edge(y.edge, EDGE_LABEL[y.edge]) : "";
+    const cell = P.en
+      ? P.level(y.level) +
+        (y.movementLabel ? ` · ${y.movementLabel === "움직이는 해" ? "✦ " : ""}${P.movement(y.movementLabel)}` : "") +
+        (edge ? ` — ${edge}` : "") +
+        (first && y.year === first.year ? ` — your Open Year for ${P.wish(wishWord)}` : "")
+      : WISH_LEVEL_DISPLAY[y.level] +
+        (y.movementLabel === "움직이는 해" ? " · ✦ 움직이는 해" : y.movementLabel === "잔잔한 해" ? " · 잔잔한 해" : "") +
+        (edge ? ` — ${edge}` : "") +
+        (first && y.year === first.year ? ` — ${josa(wishWord, "이/가")} 열리는 해` : "");
     const theme = themes[y.year]?.kw ?? "";
-    stars.push({ year: y.year, level: y.level, display: WISH_LEVEL_DISPLAY[y.level], edgeBadge: edge || null, movement: y.movementLabel, firstOpen: !!first && y.year === first.year, theme });
+    stars.push({ year: y.year, level: y.level, display: P.level(y.level), edgeBadge: edge || null, movement: y.movementLabel, firstOpen: !!first && y.year === first.year, theme });
     return { label: String(y.year), cells: [cell, theme] };
   });
   const why6: WhyGroup[] = years.map((y) => {
     const items: WhyItem[] = [];
-    for (const f of [...y.factors].filter((x) => x.value > 0).sort((a, b) => b.value - a.value).slice(0, 4)) items.push({ title: `돕는 흐름 · ${factorName(f)}`, when: factorDate(f), meaning: factorMeaning(db, f) });
-    for (const f of [...y.factors].filter((x) => x.value < 0).sort((a, b) => a.value - b.value).slice(0, 3)) items.push({ title: `무게 · ${factorName(f)}`, when: factorDate(f), meaning: factorMeaning(db, f) });
+    for (const f of [...y.factors].filter((x) => x.value > 0).sort((a, b) => b.value - a.value).slice(0, 4)) items.push({ title: `${P.en ? "Helping current" : "돕는 흐름"} · ${factorName(f)}`, when: factorDate(f), meaning: factorMeaning(db, f) });
+    for (const f of [...y.factors].filter((x) => x.value < 0).sort((a, b) => a.value - b.value).slice(0, 3)) items.push({ title: `${P.en ? "Weight" : "무게"} · ${factorName(f)}`, when: factorDate(f), meaning: factorMeaning(db, f) });
     for (const m of y.moves) {
-      const name = m.kind === "outer" ? `${POINT_KO[m.transit as PlanetKey]}-${POINT_KO[m.target!]} ${m.aspect}` : m.kind === "chiron_return" ? "키론 리턴" : m.kind === "saturn_return" ? "토성 리턴" : `토성 ${m.sign} 진입`;
+      const name = moveName(m);
       const meaning =
         m.kind === "outer" ? row(db, "A8", `TR_${POINT_ID[m.transit]}_${POINT_ID[m.target!]}_${aspectGroup(m.aspect!)}`)?.meaning_line ?? "" : m.kind === "saturn_ingress" ? ingressLine(db, "saturn", m.house) : t(db, "A16", "TERM_RETURN", "meaning_line");
-      items.push({ title: `움직임 · ${name}`, when: formatDate(m.exact), meaning });
+      items.push({ title: `${P.en ? "Movement" : "움직임"} · ${name}`, when: fd(m.exact), meaning });
     }
-    return { label: `${y.year}년 · ${WISH_LEVEL_DISPLAY[y.level]}${y.movementLabel ? ` · ${y.movementLabel}` : ""}`, items };
+    return { label: P.en ? `${y.year} · ${P.level(y.level)}${y.movementLabel ? ` · ${P.movement(y.movementLabel)}` : ""}` : `${y.year}년 · ${WISH_LEVEL_DISPLAY[y.level]}${y.movementLabel ? ` · ${y.movementLabel}` : ""}`, items };
   });
 
   // ================= 7. 질문과 실천 =================
@@ -763,13 +824,13 @@ export function buildPaidSkeleton(args: {
   const body7: Block[] = questions.why ? [{ t: "p", text: questions.why }] : [];
 
   const sections: PaidSection[] = [
-    { no: 4, title: "연말까지 조심하면 좋을 것", summary: sum4, body: body4, tail: tail4, table: null, why: why4 },
-    { no: 5, title: "2027년을 맞는 마음가짐", summary: sum5, body: body5, tail: [], table: { columns: ["시기", "마음가짐"], rows: quarterRows }, why: why5Clean },
+    { no: 4, title: P.en ? "What to watch for until the end of the year" : "연말까지 조심하면 좋을 것", summary: sum4, body: body4, tail: tail4, table: null, why: why4 },
+    { no: 5, title: P.en ? "Your mindset for 2027" : "2027년을 맞는 마음가짐", summary: sum5, body: body5, tail: [], table: { columns: P.en ? ["Period", "Mindset"] : ["시기", "마음가짐"], rows: quarterRows }, why: why5Clean },
     {
-      no: 6, title: `앞으로 5년, ${nick}님의 삶은 이렇게 흘러갈 거예요`, summary: sum6, body: body6, tail: [],
-      table: { columns: ["연도", `${wishWord} — 이루어짐 · 움직임`, "한 해의 테마"], rows: fiveRows }, stars, commonSky: commonSky(db), why: why6,
+      no: 6, title: P.en ? `The next five years, ${nick}: how your life may flow` : `앞으로 5년, ${nick}님의 삶은 이렇게 흘러갈 거예요`, summary: sum6, body: body6, tail: [],
+      table: { columns: P.en ? ["Year", `${P.wish(wishWord)} — fulfillment · movement`, "Theme of the year"] : ["연도", `${wishWord} — 이루어짐 · 움직임`, "한 해의 테마"], rows: fiveRows }, stars, commonSky: commonSky(db), why: why6,
     },
-    { no: 7, title: "별이 주는 질문과 웰니스 제안", summary: sum7, body: body7, tail: [], table: null, why: [] },
+    { no: 7, title: P.en ? "Questions from the stars and wellness suggestions" : "별이 주는 질문과 웰니스 제안", summary: sum7, body: body7, tail: [], table: null, why: [] },
   ];
   const texts = (bs: Block[]) => bs.filter((b) => b.t !== "head" && b.t !== "sub" && b.t !== "note" && b.t !== "bridge").map(blockText);
   return {
@@ -788,7 +849,7 @@ export function buildPaidSkeleton(args: {
     bridgeBasis27,
     desiredYear,
     careful4: (() => {
-      const i = body4.findIndex((b) => b.t === "head" && (b.text.includes("조심할 세 가지") || b.text.includes("연말에 살펴볼 것")));
+      const i = body4.findIndex((b) => b.t === "head" && (b.text.includes("조심할 세 가지") || b.text.includes("연말에 살펴볼 것") || b.text.includes("before year-end") && !b.text.includes("look forward")));
       const items = body4[i + 1];
       return i >= 0 && items?.t === "items" ? [body4[i], items] : [];
     })(),

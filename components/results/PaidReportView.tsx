@@ -77,7 +77,10 @@ export function WhyList({ groups, head = "▸ 왜 그럴까 — 하늘에서 일
 }
 
 /** 패키지 v3 웹툰식 결과: only = 지금 페이지의 섹션 번호(4~7)만 그린다 */
-export default function PaidReportView({ report, signIndex, resultId, only }: { report: PaidReport; signIndex?: number; resultId?: string; only?: number }) {
+export default function PaidReportView({ report, signIndex, resultId, only, lang = "ko" }: { report: PaidReport; signIndex?: number; resultId?: string; only?: number; lang?: "ko" | "en" }) {
+  // 영문판(2026-11-04): 화면 고정 문구만 영어. 영문 쏘웰라 AI 채팅이 아직 없어 7장 끝 쏘웰라 안내·버튼은 영문판에서 숨긴다
+  // (맺음말이 '3일 이용권으로 대화를 시작해 보세요'라 채팅이 열리기 전에 보이면 사실과 다르다).
+  const en = lang === "en";
   return (
     <div className="locked-zone">
       {report.sections.filter((s) => only === undefined || s.no === only).map((s) => (
@@ -97,7 +100,7 @@ export default function PaidReportView({ report, signIndex, resultId, only }: { 
                 <>
                   {report.questions.items.length > 0 && (
                     <>
-                      <p className="bul">• 별이 주는 질문 3가지</p>
+                      <p className="bul">{en ? "• Three questions from the stars" : "• 별이 주는 질문 3가지"}</p>
                       <ol className="items">
                         {report.questions.items.map((q) => (
                           <li key={q}>{q}</li>
@@ -107,7 +110,7 @@ export default function PaidReportView({ report, signIndex, resultId, only }: { 
                   )}
                   {report.practices.length > 0 && (
                     <>
-                      <p className="bul">• 작은 실천 3가지</p>
+                      <p className="bul">{en ? "• Three small practices" : "• 작은 실천 3가지"}</p>
                       <ol className="items">
                         {report.practices.map((p) => (
                           <li key={p.title}>
@@ -124,6 +127,7 @@ export default function PaidReportView({ report, signIndex, resultId, only }: { 
                       </ol>
                     </>
                   )}
+                  {!en && (
                   <div style={{ borderTop: "1px solid var(--box-line)", paddingTop: 14, marginTop: 6 }}>
                     <p>{report.closing}</p>
                     {/* 7번 섹션 끝 '쏘웰라 대화 시작'(마스터스펙 6-2). 같은 계정이라 로그인이 이어진다. */}
@@ -136,6 +140,7 @@ export default function PaidReportView({ report, signIndex, resultId, only }: { 
                       </a>
                     </p>
                   </div>
+                  )}
                 </>
               )}
               {s.table && (
@@ -161,11 +166,11 @@ export default function PaidReportView({ report, signIndex, resultId, only }: { 
                   </tbody>
                 </table>
               )}
-              {s.stars && s.stars.length > 0 && <FiveYearStars stars={s.stars} />}
+              {s.stars && s.stars.length > 0 && <FiveYearStars stars={s.stars} lang={lang} />}
               {s.commonSky && s.commonSky.length > 0 && (
                 // owner 2026-10-10: 프로토타입에 없지만 유지(A11 하늘의 공통 흐름)
                 <details className="why">
-                  <summary>모두에게 부는 하늘의 흐름</summary>
+                  <summary>{en ? "The sky’s currents for everyone" : "모두에게 부는 하늘의 흐름"}</summary>
                   <ul>
                     {s.commonSky.map((c) => (
                       <li key={c.period + c.event}>
@@ -179,7 +184,7 @@ export default function PaidReportView({ report, signIndex, resultId, only }: { 
                   </ul>
                 </details>
               )}
-              <WhyList groups={s.why} />
+              <WhyList groups={s.why} head={en ? "▸ Why? — What’s happening in the sky" : undefined} />
             </div>
           </div>
         </section>

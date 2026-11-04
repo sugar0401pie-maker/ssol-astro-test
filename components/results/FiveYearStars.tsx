@@ -15,20 +15,21 @@ function star(cx: number, cy: number, r: number, fill: string, stroke: string) {
   return <polygon points={pts.join(" ")} fill={fill} stroke={stroke} strokeWidth="1.2" strokeLinejoin="round" />;
 }
 
-export default function FiveYearStars({ stars }: { stars: TimelineStar[] }) {
+export default function FiveYearStars({ stars, lang = "ko" }: { stars: TimelineStar[]; lang?: "ko" | "en" }) {
+  const en = lang === "en";
   const H = 88, top = 26;
   const pts = stars.map((_, i) => [i % 2 ? 46 : 30, top + i * H] as const);
   return (
     <>
       <div className="timeline" id="timeline" style={{ marginTop: 16 }}>
-        <svg viewBox={`0 0 320 ${top * 2 + H * (stars.length - 1)}`} role="img" aria-label="앞으로 5년 별 타임라인">
+        <svg viewBox={`0 0 320 ${top * 2 + H * (stars.length - 1)}`} role="img" aria-label={en ? "Five-year star timeline" : "앞으로 5년 별 타임라인"}>
           <polyline points={pts.map((p) => p.join(",")).join(" ")} fill="none" stroke="#013566" strokeOpacity=".35" strokeWidth="1.2" strokeDasharray="2 3" />
           {stars.map((s, i) => {
             const [x, y] = pts[i];
             const r = s.level === "순풍" ? 13 : s.level === "보통" ? 9.5 : 6.5;
             const op = s.level === "순풍" ? 1 : s.level === "보통" ? 0.7 : 0.45;
             const tx = 78, ty = y - 14;
-            const extra = s.firstOpen ? "바라는 것이 처음 열리는 해" : s.edgeBadge ?? "";
+            const extra = s.firstOpen ? (en ? "The first year your wish opens up" : "바라는 것이 처음 열리는 해") : s.edgeBadge ?? "";
             return (
               <g key={s.year}>
                 {s.movement === "움직이는 해" && <circle className="ring-move" cx={x} cy={y} r={r + 6} fill="none" stroke="#CBB27A" strokeWidth="1.4" />}
@@ -53,7 +54,7 @@ export default function FiveYearStars({ stars }: { stars: TimelineStar[] }) {
           })}
         </svg>
       </div>
-      <p className="legend">✦ 고리 = 삶이 크게 움직이는 해. 좋고 나쁨이 아니라 바뀌는 정도를 뜻해요.</p>
+      <p className="legend">{en ? "✦ Ring = a year of big movement in your life. It shows how much changes, not whether it’s good or bad." : "✦ 고리 = 삶이 크게 움직이는 해. 좋고 나쁨이 아니라 바뀌는 정도를 뜻해요."}</p>
     </>
   );
 }

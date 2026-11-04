@@ -10,11 +10,15 @@ import { useRealSession } from "@/components/results/useSession";
 import { apiHeaders } from "@/lib/guest/client";
 import { lastPage } from "@/lib/results/lastPage";
 import type { FreeResult } from "@/lib/report/freeResult";
+import type { PaidReport } from "@/lib/report/aiReport";
+import PaidReportView from "@/components/results/PaidReportView";
 
 export default function ResultViewEn({ id, page }: { id: string; page?: number }) {
   const session = useRealSession();
   const router = useRouter();
-  const [data, setData] = useState<{ nickname: string; firstTime: boolean; result: FreeResult } | null>(null);
+  const [data, setData] = useState<{ nickname: string; firstTime: boolean; paid: boolean; result: FreeResult } | null>(null);
+  const [report, setReport] = useState<PaidReport | null>(null);
+  const [slow, setSlow] = useState(false);
   const [state, setState] = useState<"loading" | "none" | "error">("loading");
 
   useEffect(() => {
@@ -30,6 +34,32 @@ export default function ResultViewEn({ id, page }: { id: string; page?: number }
       })
       .catch(() => setState("error"));
   }, [session, id, page, router]);
+
+  // 결제한 결과(지금은 관리자 무료 열람만 — 영문 결제는 아직 닫힘): 리포트가 다 될 때까지 4초마다 확인(한국어 ResultView와 같은 방식, 3분까지)
+  const paid = data?.paid === true;
+  useEffect(() => {
+    if (session === undefined || !paid) return;
+    let stop = false;
+    const started = Date.now();
+    const tick = async () => {
+      try {
+        const res = await fetch(`/api/results/${id}/report`, { headers: apiHeaders(session), cache: "no-store" });
+        const d = await res.json();
+        if (stop) return;
+        if (d.status === "ready") return setReport(d.report);
+      } catch {
+        /* 다음 차례에 다시 */
+      }
+      if (stop) return;
+      if (Date.now() - started >= 60_000) setSlow(true);
+      if (Date.now() - started > 180_000) return;
+      setTimeout(tick, 4000);
+    };
+    void tick();
+    return () => {
+      stop = true;
+    };
+  }, [session, paid, id]);
 
   if (!data) {
     if (state === "none")
@@ -59,6 +89,12 @@ export default function ResultViewEn({ id, page }: { id: string; page?: number }
         resultId={id}
         onAddTime={() => router.push("/en/start")}
         initialPage={page ?? lastPage(id)}
+        paidSection={
+          paid && report && !report.partial
+            ? (no) => (report.sections.some((s) => s.no === no) ? <PaidReportView report={report} signIndex={data.result.sunSignIndex} resultId={id} only={no} lang="en" /> : null)
+            : undefined
+        }
+        paidPending={paid && (!report || report.partial) ? { slowText: slow ? "Your report is taking longer than usual. Please refresh in a moment. If it still doesn’t appear, email contact@ssolwellness.com and we’ll help right away." : null } : undefined}
       />
       <div className="footer-ctrl">
         <span />
