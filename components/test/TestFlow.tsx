@@ -15,6 +15,7 @@ import { b14, useCopy } from "@/lib/copy/useCopy";
 import { track } from "@/lib/analytics/track";
 import { apiHeaders } from "@/lib/guest/client";
 import GuideArt from "./GuideArt";
+import LoadingOrbit from "./LoadingOrbit";
 import CitySearch, { type PickedCity } from "./CitySearch";
 import { allConsented, CONSENT_ERROR, CONSENT_VERSION, consentItemsFor, type ConsentItemId } from "@/lib/results/consent";
 import FreeResultView from "./FreeResultView";
@@ -746,17 +747,7 @@ export default function TestFlow() {
       {step === "loading" && (
         <section className="screen on" id="scr-loading" aria-live="polite" aria-labelledby="loading-title">
           <div className="loading">
-            <div className="orbit" aria-hidden="true" hidden={calcFailed}>
-              <svg viewBox="0 0 120 120">
-                <circle cx="60" cy="60" r="44" fill="none" stroke="rgba(203,178,122,.35)" strokeWidth="1" />
-                <circle cx="60" cy="60" r="26" fill="none" stroke="rgba(253,246,233,.2)" strokeWidth="1" />
-                <circle cx="60" cy="60" r="9" fill="#013566" stroke="#CBB27A" />
-                <g className="spin">
-                  <circle cx="104" cy="60" r="5" fill="#CBB27A" />
-                  <circle cx="60" cy="34" r="3" fill="#FDF6E9" />
-                </g>
-              </svg>
-            </div>
+            {!calcFailed && <LoadingOrbit />}
             {calcFailed ? (
               <>
                 <h1 className="big" id="loading-title" tabIndex={-1}>
@@ -769,7 +760,7 @@ export default function TestFlow() {
               </>
             ) : (
               <>
-                <h1 className="big" id="loading-title" tabIndex={-1}>
+                <h1 className="big lo-title" id="loading-title" tabIndex={-1}>
                   별의 위치를 계산하는 중…
                 </h1>
                 <p className="small">{copy.FIX_LOADING ?? ""}</p>

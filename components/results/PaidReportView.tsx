@@ -9,9 +9,11 @@ import FiveYearStars from "./FiveYearStars";
 import SowellaButton from "./SowellaButton";
 import PageArt from "./PageArt";
 import { SOWELLA_USE_URL } from "@/lib/results/consent";
+import { KeyText } from "@/components/en/KeyParagraph";
+import { isKeyParagraph } from "@/lib/en/emphasis";
 
 
-export function BlockView({ b }: { b: Block }) {
+export function BlockView({ b, emph = false }: { b: Block; emph?: boolean }) {
   switch (b.t) {
     case "head":
       return <p className="bul">{b.text}</p>;
@@ -47,7 +49,11 @@ export function BlockView({ b }: { b: Block }) {
         </p>
       );
     default:
-      return <p className="whitespace-pre-line">{b.text}</p>;
+      return (
+        <p className="whitespace-pre-line">
+          <KeyText text={b.text} emph={emph} />
+        </p>
+      );
   }
 }
 
@@ -93,9 +99,16 @@ export default function PaidReportView({ report, signIndex, resultId, only, lang
             {s.summary && <p className="lead summary">{s.summary}</p>}
             {/* AI 대신 DB 문장으로 채운 섹션 안내(B14 ERR_AI_FALLBACK)는 owner 2026-10-11 결정으로 보여 주지 않는다 */}
             <div className="locked-body">
-              {[...s.body, ...s.tail].map((b, i) => (
-                <BlockView key={i} b={b} />
-              ))}
+              {(() => {
+                // 영문판: 본문 문단 두 개마다 첫 문장 하나를 굵게(owner 2026-11-04)
+                let n = 0;
+                return [...s.body, ...s.tail].map((b, i) => {
+                  const plain = !["head", "sub", "items", "step", "note"].includes(b.t);
+                  const emph = en && plain && isKeyParagraph(n);
+                  if (plain) n++;
+                  return <BlockView key={i} b={b} emph={emph} />;
+                });
+              })()}
               {s.no === 7 && (
                 <>
                   {report.questions.items.length > 0 && (

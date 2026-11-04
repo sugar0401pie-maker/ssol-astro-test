@@ -9,6 +9,9 @@ import SowellaButton from "@/components/results/SowellaButton";
 import PageArt from "@/components/results/PageArt";
 import { RESULT_PAGES, rememberPage } from "@/lib/results/lastPage";
 import Link from "next/link";
+import { KeyText } from "@/components/en/KeyParagraph";
+import { isKeyParagraph } from "@/lib/en/emphasis";
+import { swipeDirection } from "@/lib/ui/swipe";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { track } from "@/lib/analytics/track";
@@ -327,10 +330,39 @@ export default function FreeResultView({
     });
   }
 
+  // 장 넘기기 스와이프(owner 2026-11-04). 표·휠·가로로 밀리는 칸·입력칸·아래 시트 위에서 시작한 손가락은 무시
+  const touch = useRef<{ x: number; y: number; t: number } | null>(null);
+  function onTouchStart(e: React.TouchEvent) {
+    const el = e.target as HTMLElement;
+    if (e.touches.length !== 1 || el.closest("input, textarea, select, .wheel-wrap, .tbl, table, .sheet, [role=dialog], .pg-bar")) {
+      touch.current = null;
+      return;
+    }
+    for (let n: HTMLElement | null = el; n && n !== rootRef.current; n = n.parentElement) {
+      const ox = getComputedStyle(n).overflowX;
+      if ((ox === "auto" || ox === "scroll") && n.scrollWidth > n.clientWidth) {
+        touch.current = null;
+        return;
+      }
+    }
+    touch.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now() };
+  }
+  function onTouchEnd(e: React.TouchEvent) {
+    const s = touch.current;
+    touch.current = null;
+    if (!s || e.changedTouches.length !== 1) return;
+    const dir = swipeDirection(e.changedTouches[0].clientX - s.x, e.changedTouches[0].clientY - s.y, Date.now() - s.t);
+    if (dir === "next" && page < RESULT_PAGES) go(page + 1);
+    else if (dir === "prev" && page > 1) go(page - 1);
+  }
+
   const { chart, character, year2026 } = result;
   const P = chart.planets;
   const withTime = !!P.asc;
   const popup = splitPayPopup(result.payPopup ?? "");
+  // 영문판 주요 문장 굵게(owner 2026-11-04): 장마다 문단 순서대로 세어 두 문단마다 첫 문장 하나
+  let keyN = 0;
+  const kp = (t: string) => <KeyText text={t} emph={en && isKeyParagraph(keyN++)} />;
   const share = { chart, sunSign: result.sunSign, sunSignIndex: result.sunSignIndex, typeLine: character.name ?? character.typeLine, competency: character.competency, style: character.style, nickname, sunSignIntro: result.sunSignIntro ?? null };
 
   const sheet: WheelSheet | null = !sheetKey
@@ -391,7 +423,7 @@ export default function FreeResultView({
   const next = page < RESULT_PAGES ? page + 1 : null;
 
   return (
-    <div ref={rootRef}>
+    <div ref={rootRef} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
       {/* 위쪽 고정 진행 막대: 주제 수만큼 칸, 칸을 누르면 그 주제로 */}
       <div className="pg-bar">
         <div className="pg-dots" role="tablist" aria-label={T.topics}>
@@ -542,7 +574,7 @@ export default function FreeResultView({
                 {T.elemPoints}
               </p>
               {result.elements.texts.map((t) => (
-                <p key={t}>{t}</p>
+                <p key={t}>{kp(t)}</p>
               ))}
             </div>
 
@@ -618,14 +650,14 @@ export default function FreeResultView({
                   </div>
                 </>
               )}
-              <p style={{ marginTop: 14 }}>{character.why}</p>
-              {character.sunMoonLine && <p>{character.sunMoonLine}</p>}
+              <p style={{ marginTop: 14 }}>{kp(character.why)}</p>
+              {character.sunMoonLine && <p>{kp(character.sunMoonLine)}</p>}
               {/* A6 역량·방식 쉬운 정의(owner 2026-10-10: 프로토타입에 없지만 유지) */}
               {/* owner 2026-10-10: 역량·방식 두 줄 대신 '웰니스 유형으로 분류하면…' 한 문단 */}
               {character.wellnessLine && <p>{character.wellnessLine}</p>}
               {/* 영문판: 한 문단으로 이어 붙이지 않고 역량·방식 정의 두 줄(A6 영문 그대로) */}
-              {en && character.competencyLine && <p>{character.competencyLine}</p>}
-              {en && character.styleLine && <p>{character.styleLine}</p>}
+              {en && character.competencyLine && <p>{kp(character.competencyLine)}</p>}
+              {en && character.styleLine && <p>{kp(character.styleLine)}</p>}
               <table className="tbl">
                 <caption className="sr-only">{T.big3Caption}</caption>
                 <thead>
@@ -666,15 +698,15 @@ export default function FreeResultView({
           <Section no={3} title={T.sec3(nickname)} art={<PageArt page={3} signIndex={result.sunSignIndex} />}>
             <div className="box">
               <Summary text={year2026.summary} />
-              {year2026.intro && <p>{year2026.intro}</p>}
+              {year2026.intro && <p>{kp(year2026.intro)}</p>}
               <p className="bul">{T.turning}</p>
               {year2026.turningPoints.map((t) => (
-                <p key={t}>{t}</p>
+                <p key={t}>{kp(t)}</p>
               ))}
               {/* 해석 DB v1.3 RULE_ORDER: 전환점 뒤에 단어 × 고민 영역(A12d) */}
-              {year2026.areaLine && <p>{year2026.areaLine}</p>}
+              {year2026.areaLine && <p>{kp(year2026.areaLine)}</p>}
               <p className="bul">{year2026.quarterHead || T.quarterHead}</p>
-              {year2026.closing && <p>{year2026.closing}</p>}
+              {year2026.closing && <p>{kp(year2026.closing)}</p>}
               <table className="tbl" id="tbl-2026">
                 <caption className="sr-only">{T.q2026Caption}</caption>
                 <thead>

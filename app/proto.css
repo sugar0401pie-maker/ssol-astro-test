@@ -394,3 +394,19 @@ details.why ul{list-style:disc}
 @media (prefers-reduced-motion:reduce){.star-orbit .orb,.star-orbit .ring-rev,.star-orbit .core-glow,.star-orbit .tw,.report-writing .writing-msg{animation:none}}
 /* 영문 공유 버튼(owner 2026-11-04 '눈에 띄게'): 크림 바탕·남색 글자·아이콘 */
 .btn.share-en{background:var(--cream);border-color:var(--cream);color:var(--navy);gap:8px;font-weight:700}
+
+/* 계산 중 화면의 화려한 도는 별(LoadingOrbit, owner 2026-11-04) */
+.lo-orbit{width:200px;height:200px}
+.lo-orbit svg{width:100%;height:100%;overflow:visible}
+.lo-orbit .lo-orb,.lo-orbit .lo-zodiac,.lo-orbit .lo-ring-rev{transform-box:view-box;transform-origin:100px 100px}
+.lo-orbit .lo-zodiac{animation:spin 30s linear infinite}
+.lo-orbit .lo-ring-rev{animation:spin 14s linear infinite reverse}
+.lo-orbit .lo-a{animation:spin 1.8s cubic-bezier(.45,.05,.55,.95) infinite}
+.lo-orbit .lo-b{animation:spin 3.2s linear infinite reverse}
+.lo-orbit .lo-c{animation:spin 1.2s linear infinite}
+.lo-orbit .lo-d{animation:spin 6s linear infinite}
+.lo-orbit .lo-e{animation:spin 4.4s linear infinite reverse}
+.lo-orbit .lo-core{transform-box:fill-box;transform-origin:center;animation:corePulse 1.6s ease-in-out infinite}
+.lo-orbit .tw{animation:twinkleRw 1.2s ease-in-out infinite alternate}
+.loading .lo-title{animation:breathe 2s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){.lo-orbit .lo-orb,.lo-orbit .lo-zodiac,.lo-orbit .lo-ring-rev,.lo-orbit .lo-core,.lo-orbit .tw,.loading .lo-title{animation:none}}

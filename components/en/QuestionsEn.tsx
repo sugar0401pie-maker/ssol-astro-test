@@ -6,6 +6,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import GuideArt from "@/components/test/GuideArt";
+import LoadingOrbit from "@/components/test/LoadingOrbit";
 import SiteFooterEn from "@/components/SiteFooterEn";
 import AuthFooterLink from "@/components/auth/AuthFooterLink";
 import { track } from "@/lib/analytics/track";
@@ -156,19 +157,9 @@ export default function QuestionsEn() {
       {step === "loading" && (
         <section className="screen on" aria-live="polite" aria-labelledby="loading-title">
           <div className="loading">
-            <div className="orbit" aria-hidden="true">
-              <svg viewBox="0 0 120 120">
-                <circle cx="60" cy="60" r="44" fill="none" stroke="rgba(203,178,122,.35)" strokeWidth="1" />
-                <circle cx="60" cy="60" r="26" fill="none" stroke="rgba(253,246,233,.2)" strokeWidth="1" />
-                <circle cx="60" cy="60" r="9" fill="#013566" stroke="#CBB27A" />
-                <g className="spin">
-                  <circle cx="104" cy="60" r="5" fill="#CBB27A" />
-                  <circle cx="60" cy="34" r="3" fill="#FDF6E9" />
-                </g>
-              </svg>
-            </div>
+            <LoadingOrbit />
             {/* 번역 묶음 A15 FIX_LOADING 영문 대신 짧은 안내(Claude 초안) */}
-            <p className="big" id="loading-title">Reading your stars…</p>
+            <p className="big lo-title" id="loading-title">Reading your stars…</p>
           </div>
         </section>
       )}

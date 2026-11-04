@@ -1,5 +1,6 @@
 "use client";
 
+import { EN_PAGES_HIDDEN } from "@/lib/i18n/lang";
 import Link from "next/link";
 // 저장한 결과 다시 보기. 서버가 저장된 입력으로 다시 계산해 보내 준다(해석 DB가 고쳐지면 새 문장으로 보인다).
 import { useEffect, useState } from "react";
@@ -55,7 +56,8 @@ export default function ResultView({ id, page }: { id: string; page?: number }) 
         if (res.status === 404 || res.status === 401) setNotFound(true);
         else if (!res.ok) setError(d.error ?? "결과를 불러오지 못했어요.");
         // 영문판에서 만든 결과는 영문 주소로(2026-11-04)
-        else if (d.lang === "en") router.replace(`/en/results/${id}/${page ?? 1}`);
+        // (영문 페이지 숨김 중에는 옮기지 않고 여기서 보여 준다 — /en은 한국어 첫 화면으로 돌아가므로)
+        else if (d.lang === "en" && !EN_PAGES_HIDDEN) router.replace(`/en/results/${id}/${page ?? 1}`);
         else setData(d);
       })
       .catch(() => setError("결과를 불러오지 못했어요."));

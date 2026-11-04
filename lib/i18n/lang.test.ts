@@ -1,15 +1,17 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { enSiteEnabled, isBot, rootRedirect, switchTarget } from "./lang.ts";
+import { enSiteEnabled, hiddenEnRedirect, isBot, rootRedirect, switchTarget } from "./lang.ts";
 
 const UA = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1";
 const base = { pathname: "/", country: "US", cookieLang: null, userAgent: UA, enabled: true };
 
 test("스위치가 꺼져 있으면 아무도 보내지 않는다", () => {
   assert.equal(rootRedirect({ ...base, enabled: false }), null);
-  assert.equal(enSiteEnabled(undefined), false);
-  assert.equal(enSiteEnabled("1"), true);
-  assert.equal(enSiteEnabled("true"), false);
+  assert.equal(enSiteEnabled(undefined, false), false);
+  assert.equal(enSiteEnabled("1", false), true);
+  assert.equal(enSiteEnabled("true", false), false);
+  // 숨김이면 스위치가 켜져 있어도 꺼진 것으로
+  assert.equal(enSiteEnabled("1", true), false);
 });
 
 test("한국 밖에서 처음 오면 영문 첫 화면, 한국이면 그대로", () => {
@@ -41,4 +43,12 @@ test("언어 링크는 같은 화면이 있으면 그 화면, 없으면 그 언�
   assert.equal(switchTarget("/en", "ko"), "/");
   assert.equal(switchTarget("/results/abc/3", "en"), "/en");
   assert.equal(switchTarget("/en/start", "ko"), "/");
+});
+
+test("영문 숨김: /en 화면은 모두 한국어 첫 화면으로, 다른 주소는 그대로", () => {
+  assert.equal(hiddenEnRedirect("/en", true), "/");
+  assert.equal(hiddenEnRedirect("/en/results/abc/4", true), "/");
+  assert.equal(hiddenEnRedirect("/english", true), null);
+  assert.equal(hiddenEnRedirect("/results", true), null);
+  assert.equal(hiddenEnRedirect("/en", false), null);
 });
