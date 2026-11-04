@@ -4,8 +4,11 @@ import { cancelTossPayment, confirmTossPayment, getTossPayment } from "@/lib/bil
 import { decideAfterConfirmFailure } from "@/lib/billing/confirmDecision";
 import { usdToCents } from "@/lib/billing/pricingEn";
 import { runReportGeneration } from "@/lib/results/report";
-import { getAccountEmail, getOrder, isResultPaid, markOrderPaid, markResultPaid, ownsOrder, settleOrder } from "@/lib/results/store";
+import { getAccountEmail, getResultCard, getOrder, isResultPaid, markOrderPaid, markResultPaid, ownsOrder, settleOrder } from "@/lib/results/store";
 import { buildOrderEmailEn } from "@/lib/billing/orderEmailEn";
+import { SIGNS } from "@/lib/astro/constants";
+import { SIGN_EN } from "@/lib/report/lang";
+import { kakaoArtUrl, pickSignArt, signArtChoices } from "@/lib/share/signShare";
 import { sendEmail } from "@/lib/email/resend";
 import { sendXConversion } from "@/lib/x/sendConversion";
 import { clientIp } from "@/lib/x/conversion";
@@ -87,7 +90,19 @@ export async function POST(req: NextRequest) {
     after(async () => {
       const to = order.receipt_email ?? (order.user_id ? await getAccountEmail(order.user_id) : null);
       if (!to) return console.warn("영문 주문 확인 이메일: 받을 주소 없음");
-      const mail = buildOrderEmailEn({ orderId, paidAt, method, resultId: order.result_id });
+      // 카드 그림 = 그 결과의 태양 별자리 그림(리포트 완성 메일과 같은 jpg). 못 찾으면 그림 없이
+      const card = order.result_id ? await getResultCard(order.result_id) : null;
+      const signIndex = card ? SIGNS.indexOf(card.sunSign as (typeof SIGNS)[number]) : -1;
+      const art = signIndex >= 0 ? (pickSignArt(signIndex) ?? signArtChoices(signIndex)[0]) : null;
+      const mail = buildOrderEmailEn({
+        orderId,
+        paidAt,
+        method,
+        resultId: order.result_id,
+        imageUrl: art ? kakaoArtUrl(art) : null,
+        sunSign: card ? (SIGN_EN[card.sunSign] ?? null) : null,
+        nickname: card?.nickname ?? null,
+      });
       const r = await sendEmail({ to, ...mail, from: "SSOL Astro House <noreply@ssolwellnesshouse.com>" });
       if (!r.ok) console.error("영문 주문 확인 이메일 실패:", r.reason);
     });

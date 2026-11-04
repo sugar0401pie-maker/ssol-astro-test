@@ -18,3 +18,10 @@ test("결제수단·시각·이메일 검사", () => {
   assert.equal(formatPaidAt(new Date("2026-01-02T23:59:00Z")), "January 2, 2026, 23:59 UTC");
   assert.ok(isEmail("a@b.co") && !isEmail("nope") && !isEmail(""));
 });
+
+test("리포트 모양: 그림·별자리·주문 표, 그림 없으면 자리 안 잡음", () => {
+  const withArt = buildOrderEmailEn({ orderId: "o", paidAt: new Date("2026-11-06T09:05:00Z"), method: "카드", resultId: "r", imageUrl: "https://x/a.jpg", sunSign: "Aries", nickname: "Jiwoo" });
+  assert.ok(withArt.html.includes('src="https://x/a.jpg"') && withArt.html.includes("ARIES · STAR REPORT") && withArt.html.includes("Jiwoo, thanks for your order."));
+  const bare = buildOrderEmailEn({ orderId: "o", paidAt: new Date(), method: null, resultId: null });
+  assert.ok(!bare.html.includes("<img") && !bare.html.includes("Open your report"));
+});

@@ -338,6 +338,13 @@ export async function saveChatSummary(resultId: string, summary: string | null):
   if (error) console.warn(`채팅 요약 저장 실패: ${error.code}`);
 }
 
+/** 결과의 태양 별자리(한국어 이름)와 닉네임 — 영문 주문 확인 메일의 그림·인사용. 없거나 실패하면 null */
+export async function getResultCard(resultId: string): Promise<{ sunSign: string; nickname: string } | null> {
+  const { data, error } = await createAdminClient().from(TABLE).select("sun_sign, nickname").eq("id", resultId).maybeSingle();
+  if (error || !data) return null;
+  return { sunSign: data.sun_sign as string, nickname: data.nickname as string };
+}
+
 export async function getResultForReport(resultId: string) {
   const { data, error } = await createAdminClient()
     .from(TABLE)
