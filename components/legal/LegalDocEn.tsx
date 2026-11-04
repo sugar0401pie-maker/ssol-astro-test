@@ -38,8 +38,23 @@ export default function LegalDocEn({ blocks, current }: { blocks: LegalBlock[]; 
             ))}
           </nav>
         )}
-        <div className="mt-5 space-y-3 rounded-2xl bg-cream px-5 py-6 text-[14px] leading-6 text-navy/85">
-          {groupLists(rest).map((b, i) => {
+        <div className="mt-5 rounded-2xl bg-cream px-5 py-6">
+          <LegalBody blocks={rest} />
+        </div>
+      </main>
+      <div className="intro-foot">
+        <AuthFooterLink lang="en" />
+        <SiteFooterEn />
+      </div>
+    </div>
+  );
+}
+
+/** 정책 본문만(제목 제외). 출생 정보 동의 [Details] 시트에서도 같은 모양으로 쓴다. */
+export function LegalBody({ blocks }: { blocks: LegalBlock[] }) {
+  return (
+    <div className="space-y-3 text-[14px] leading-6 text-navy/85">
+      {groupLists(blocks).map((b, i) => {
             if (b.type === "ul" || b.type === "ol") {
               const L = b.type;
               return (
@@ -95,12 +110,6 @@ export default function LegalDocEn({ blocks, current }: { blocks: LegalBlock[]; 
               </p>
             );
           })}
-        </div>
-      </main>
-      <div className="intro-foot">
-        <AuthFooterLink lang="en" />
-        <SiteFooterEn />
-      </div>
     </div>
   );
 }

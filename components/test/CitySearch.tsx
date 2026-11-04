@@ -20,7 +20,14 @@ interface Row extends PickedCity {
   utc: string;
 }
 
-export default function CitySearch({ value, onChange, autoFocus }: { value: PickedCity | null; onChange: (c: PickedCity | null) => void; autoFocus?: boolean }) {
+// 영문판(/en/start)은 lang="en": 영문 도시 목록(한국 도시 포함)과 영어 글자. 동작은 같다(owner 2026-11-04).
+const T = {
+  ko: { label: "도시 검색", placeholder: "예: 뉴욕, 도쿄, London", list: "도시 목록", picked: "선택: ", hint: "목록에 없으면 가장 가까운 큰 도시를 골라 주세요.", attr: CITY_ATTRIBUTION },
+  en: { label: "Where were you born?", placeholder: "e.g. New York, Busan, London", list: "Cities", picked: "Selected: ", hint: "Not on the list? Choose the nearest large city.", attr: "City data: GeoNames (CC BY 4.0)" },
+} as const;
+
+export default function CitySearch({ value, onChange, autoFocus, lang = "ko" }: { value: PickedCity | null; onChange: (c: PickedCity | null) => void; autoFocus?: boolean; lang?: "ko" | "en" }) {
+  const t = T[lang];
   const [query, setQuery] = useState(value?.label ?? "");
   const [results, setResults] = useState<Row[]>([]);
   const [searched, setSearched] = useState(false);
@@ -40,7 +47,7 @@ export default function CitySearch({ value, onChange, autoFocus }: { value: Pick
     // 타이핑이 멈춘 뒤 한 번만 부른다.
     const t = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/cities?q=${encodeURIComponent(q)}`, { signal: ctrl.signal });
+        const res = await fetch(`/api/cities?q=${encodeURIComponent(q)}${lang === "en" ? "&lang=en" : ""}`, { signal: ctrl.signal });
         const data = await res.json();
         setResults(data.results ?? []);
         setActive((data.results ?? []).length ? 0 : -1);
@@ -53,7 +60,7 @@ export default function CitySearch({ value, onChange, autoFocus }: { value: Pick
       clearTimeout(t);
       ctrl.abort();
     };
-  }, [query, value]);
+  }, [query, value, lang]);
 
   function pick(c: Row) {
     onChange({ id: c.id, label: c.label, name: c.name, en: c.en, utc: c.utc });
@@ -66,7 +73,7 @@ export default function CitySearch({ value, onChange, autoFocus }: { value: Pick
   return (
     <div className="city-wrap">
       <label className="lbl" htmlFor="city-search">
-        도시 검색
+        {t.label}
       </label>
       <input
         ref={input}
@@ -77,7 +84,7 @@ export default function CitySearch({ value, onChange, autoFocus }: { value: Pick
         aria-expanded={open && results.length > 0}
         aria-controls="city-list"
         aria-activedescendant={open && active >= 0 && results[active] ? `city-opt-${results[active].id}` : undefined}
-        placeholder="예: 뉴욕, 도쿄, London"
+        placeholder={t.placeholder}
         autoComplete="off"
         value={query}
         onChange={(e) => {
@@ -98,22 +105,29 @@ export default function CitySearch({ value, onChange, autoFocus }: { value: Pick
         }}
       />
       {open && (results.length > 0 || searched) && (
-        <ul className="city-list" id="city-list" role="listbox" aria-label="도시 목록">
+        <ul className="city-list" id="city-list" role="listbox" aria-label={t.list}>
           {results.length > 0 ? (
             results.map((c, i) => (
               <li key={c.id} id={`city-opt-${c.id}`} role="option" aria-selected={i === active} onClick={() => pick(c)}>
-                {c.name}, {c.country} <small>({c.en})</small>
+                {c.name}, {c.country}
+                {lang === "ko" && <small> ({c.en})</small>}
               </li>
             ))
           ) : (
-            <li>{b14(copy, "ERR_CITY_NONE", "alt", "목록에 없어요. 가장 가까운 큰 도시를 골라 주세요.")}</li>
+            <li>{lang === "en" ? t.hint : b14(copy, "ERR_CITY_NONE", "alt", "목록에 없어요. 가장 가까운 큰 도시를 골라 주세요.")}</li>
           )}
         </ul>
       )}
       <p className="city-picked" aria-live="polite">
-        {value ? `선택: ${value.name ?? value.label}${value.en ? ` (${value.en})` : ""}${value.utc ? ` · ${value.utc}` : ""}` : ""}
+        {value
+          ? lang === "en"
+            ? `${t.picked}${value.label}${value.utc ? ` · ${value.utc}` : ""}`
+            : `${t.picked}${value.name ?? value.label}${value.en ? ` (${value.en})` : ""}${value.utc ? ` · ${value.utc}` : ""}`
+          : ""}
       </p>
-      <p className="hint">목록에 없으면 가장 가까운 큰 도시를 골라 주세요. {CITY_ATTRIBUTION}</p>
+      <p className="hint">
+        {t.hint} {t.attr}
+      </p>
     </div>
   );
 }
