@@ -4,11 +4,19 @@ import { cancelTossPayment, confirmTossPayment, getTossPayment } from "@/lib/bil
 import { decideAfterConfirmFailure } from "@/lib/billing/confirmDecision";
 import { usdToCents } from "@/lib/billing/pricingEn";
 import { runReportGeneration } from "@/lib/results/report";
-import { getOrder, isResultPaid, markOrderPaid, markResultPaid, ownsOrder, settleOrder } from "@/lib/results/store";
+import { getAccountEmail, getOrder, isResultPaid, markOrderPaid, markResultPaid, ownsOrder, settleOrder } from "@/lib/results/store";
+import { buildOrderEmailEn } from "@/lib/billing/orderEmailEn";
+import { sendEmail } from "@/lib/email/resend";
+import { sendXConversion } from "@/lib/x/sendConversion";
+import { clientIp } from "@/lib/x/conversion";
+import { X_EVENT_IDS } from "@/lib/x/events";
+import { sanitizeTouch } from "@/lib/attribution/attribution";
+import { allowedOn, CC_COOKIE, parseChoice } from "@/lib/i18n/cookieConsent";
 
 // 영문판 결제 승인(2026-11-04). 한국어 confirm과 같은 순서(내 주문·처리 전·금액 일치 → 시크릿 키로 승인 → 승인됐을 때만 결제 완료)를
 // 해외결제 키(TOSS_EN_SECRET_KEY)와 USD로 한다. 금액은 센트로 바꿔 비교한다(2.99 같은 소수 비교 오차 방지).
-// X 광고 전환은 보내지 않는다 — 영문 화면은 광고 쿠키 동의(swh_cc)를 따라야 하는데 서버 전환은 아직 그 확인이 없어서.
+// 처음 결제 완료로 바뀔 때 한 번: 주문 확인 이메일(08 §4, 계정 이메일 또는 결제 화면에서 받은 주소) + X 서버 전환(광고 쿠키에
+// 동의했고(swh_cc) Global Privacy Control(Sec-GPC)이 꺼진 경우만 — 영문 화면 쿠키 규칙과 같다).
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
@@ -74,6 +82,23 @@ export async function POST(req: NextRequest) {
       const resultId = order.result_id;
       await markResultPaid(resultId);
       after(() => runReportGeneration(resultId));
+    }
+    const paidAt = new Date();
+    after(async () => {
+      const to = order.receipt_email ?? (order.user_id ? await getAccountEmail(order.user_id) : null);
+      if (!to) return console.warn("영문 주문 확인 이메일: 받을 주소 없음");
+      const mail = buildOrderEmailEn({ orderId, paidAt, method, resultId: order.result_id });
+      const r = await sendEmail({ to, ...mail, from: "SSOL Astro House <noreply@ssolwellnesshouse.com>" });
+      if (!r.ok) console.error("영문 주문 확인 이메일 실패:", r.reason);
+    });
+    const adsOk = allowedOn("ads", "/en/checkout/success", parseChoice(req.cookies.get(CC_COOKIE)?.value), req.headers.get("sec-gpc") === "1");
+    if (adsOk) {
+      const twclid = sanitizeTouch({ first_seen_at: new Date().toISOString(), ...(order.attribution_last ?? {}) })?.twclid ?? null;
+      const ip = clientIp(req.headers);
+      const ua = req.headers.get("user-agent");
+      after(async () => {
+        await sendXConversion({ eventId: X_EVENT_IDS.purchase, conversionId: orderId, eventSourceUrl: "https://astro.ssolwellnesshouse.com/en/checkout/success", ids: { twclid, ipAddress: ip, userAgent: ua }, value: cents / 100, currency: "USD" });
+      });
     }
     return NextResponse.json({ ok: true, resultId: order.result_id, guest: owner.kind === "guest" });
   } catch (e) {

@@ -12,6 +12,8 @@ import { lastPage } from "@/lib/results/lastPage";
 import type { FreeResult } from "@/lib/report/freeResult";
 import type { PaidReport } from "@/lib/report/aiReport";
 import PaidReportView from "@/components/results/PaidReportView";
+import Toast, { useToast } from "@/components/ui/Toast";
+import { takeFlash } from "@/lib/ui/flash";
 
 export default function ResultViewEn({ id, page }: { id: string; page?: number }) {
   const session = useRealSession();
@@ -20,6 +22,13 @@ export default function ResultViewEn({ id, page }: { id: string; page?: number }
   const [report, setReport] = useState<PaidReport | null>(null);
   const [slow, setSlow] = useState(false);
   const [state, setState] = useState<"loading" | "none" | "error">("loading");
+  const [toast, setToast] = useToast();
+  // 결제 완료 화면에서 넘긴 안내(08 §4 'Payment complete…')
+  useEffect(() => {
+    if (!data) return;
+    const m = takeFlash();
+    if (m) setToast(m);
+  }, [data, setToast]);
 
   useEffect(() => {
     if (session === undefined) return;
@@ -102,6 +111,7 @@ export default function ResultViewEn({ id, page }: { id: string; page?: number }
           Start over
         </Link>
       </div>
+      <Toast msg={toast} />
     </div>
   );
 }

@@ -13,6 +13,7 @@ import { apiHeaders } from "@/lib/guest/client";
 import { getRealSession } from "@/lib/supabase/browser";
 import { getAttribution } from "@/lib/attribution/client";
 import type { EnPayMethod } from "@/lib/billing/pricingEn";
+import { isEmail } from "@/lib/billing/orderEmailEn";
 
 export const EN_PAY_COPY = {
   product: "Star report — US$2.99, one-time payment. No subscription, no automatic renewal.",
@@ -28,6 +29,12 @@ export default function CheckoutEn({ resultId, page }: { resultId: string; page:
   const [method, setMethod] = useState<EnPayMethod>("card");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  // 로그인 없이 결제하면 주문 확인 이메일 받을 주소를 받는다(08 §4 — 로그인한 사람은 계정 이메일로)
+  const [loggedIn, setLoggedIn] = useState<boolean | null>(null);
+  const [email, setEmail] = useState("");
+  useEffect(() => {
+    void getRealSession().then((s) => setLoggedIn(!!s));
+  }, []);
   const clientKey = process.env.NEXT_PUBLIC_TOSS_EN_CLIENT_KEY;
   useEffect(() => {
     track("pay_click", { page, from: "en" }, `pay_click:${resultId}`);
@@ -37,6 +44,10 @@ export default function CheckoutEn({ resultId, page }: { resultId: string; page:
 
   async function pay() {
     if (busy || !clientKey) return;
+    if (loggedIn === false && !isEmail(email.trim())) {
+      setErr("Please enter a valid email for your receipt.");
+      return;
+    }
     setBusy(true);
     setErr("");
     try {
@@ -44,7 +55,7 @@ export default function CheckoutEn({ resultId, page }: { resultId: string; page:
       const res = await fetch("/api/en/checkout", {
         method: "POST",
         headers: apiHeaders(session, { "content-type": "application/json" }),
-        body: JSON.stringify({ resultId, attributionLast: getAttribution()?.last ?? null }),
+        body: JSON.stringify({ resultId, attributionLast: getAttribution()?.last ?? null, ...(loggedIn === false ? { email: email.trim() } : {}) }),
       });
       const d = await res.json().catch(() => ({}));
       if (res.status === 409 && d.paid) {
@@ -105,6 +116,13 @@ export default function CheckoutEn({ resultId, page }: { resultId: string; page:
           ))}
         </div>
       </fieldset>
+      {loggedIn === false && (
+        <div className="field">
+          <label className="lbl" htmlFor="en-receipt-email">Email for your receipt</label>
+          <input id="en-receipt-email" className="auth-input" type="email" autoComplete="email" inputMode="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
+          <p className="hint">We’ll send your order confirmation here. You can also log in to keep your report.</p>
+        </div>
+      )}
       <p className="text-sm text-cream/90">
         {before}
         <Link href={enLegalUrl("terms")} target="_blank" rel="noopener" className="underline">Terms of Use</Link>

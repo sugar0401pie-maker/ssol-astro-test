@@ -10,6 +10,9 @@ import { getRealSession } from "@/lib/supabase/browser";
 import { clampPage } from "@/lib/results/lastPage";
 import { track } from "@/lib/analytics/track";
 import { gaPurchase } from "@/lib/analytics/gaClient";
+import { xPixelEvent } from "@/lib/x/pixelClient";
+import { X_EVENT_IDS } from "@/lib/x/events";
+import { setFlash } from "@/lib/ui/flash";
 
 export function CheckoutSuccessEn() {
   const params = useSearchParams();
@@ -40,7 +43,13 @@ export function CheckoutSuccessEn() {
       const d = await res.json().catch(() => ({}));
       track(res.ok ? "pay_success" : "pay_fail", { page, from: "en" });
       // GA는 영문 화면에서 분석 쿠키 동의가 있을 때만 보낸다(gaClient가 확인)
-      if (res.ok) gaPurchase(orderId, Number(amount), "USD");
+      if (res.ok) {
+        gaPurchase(orderId, Number(amount), "USD");
+        // X 픽셀은 광고 쿠키에 동의한 경우만(pixelClient가 확인) — 서버 전환과 같은 conversion_id
+        xPixelEvent(X_EVENT_IDS.purchase, { conversion_id: orderId, value: Number(amount), currency: "USD", contents: [{ content_type: "digital_report", content_id: "astro_report", content_name: "SSOL Astro House star report", content_price: Number(amount), num_items: 1 }] });
+        // 08 §4 결제 완료 문구
+        if (d.resultId) setFlash("Payment complete. Your star report is ready. We've emailed you a receipt and order confirmation.");
+      }
       if (res.ok && d.resultId) router.replace(`/en/results/${d.resultId}/${page}`);
       else {
         setError(d.error ?? "We couldn’t confirm your payment.");
