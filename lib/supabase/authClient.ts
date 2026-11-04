@@ -126,7 +126,8 @@ const NAVER_PROVIDER_ID = "custom:naver";
 const KAKAO_SCOPES = "profile_nickname account_email";
 
 /** 성공하면 카카오/네이버 로그인 화면으로 이동했다가 지금 주소로 돌아온다(Supabase Redirect URLs에 이 도메인 등록 필요). */
-export async function signInWithOAuth(provider: "kakao" | "naver", redirectTo?: string): Promise<AuthResult> {
+/** google은 영문판 로그인(owner 2026-11-04) — Supabase Auth → Providers에서 Google을 켜야 동작한다 */
+export async function signInWithOAuth(provider: "kakao" | "naver" | "google", redirectTo?: string): Promise<AuthResult> {
   const supabase = getBrowserClient();
   if (!supabase) return { ok: false, error: "설정 오류로 로그인을 사용할 수 없어요." };
   const { error } = await supabase.auth.signInWithOAuth({
