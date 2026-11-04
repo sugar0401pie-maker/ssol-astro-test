@@ -14,51 +14,17 @@ import { INTRO_IMAGES, nextImage } from "./images";
 
 // 원본 jpg 그대로(화질 유지 — owner 결정: 그림은 줄이거나 다시 압축하지 않는다)
 /** 누적 이용자 수(owner 제공 실제 숫자, 2026-11-02) */
-const PARTICIPANTS = 7210;
+export const PARTICIPANTS = 7210;
 
 const src = (i: number) => `/intro/${INTRO_IMAGES[i]}.jpg`;
 
 export default function Intro() {
   const [loggedIn, setLoggedIn] = useState(false);
-  // 두 장을 겹쳐 두고 번갈아 보이게 한다(.intro-bg img.show, 0.7초). 첫 그림은 관측소(서버·브라우저가 같게), 2초 뒤부터 무작위.
-  const [layers, setLayers] = useState<{ a: number; b: number | null; showA: boolean }>({ a: 4, b: null, showA: true });
-  const current = useRef(layers.a);
+  const layers = useIntroSlideshow();
 
   useEffect(() => {
     void getRealSession().then((s) => setLoggedIn(!!s));
     track("intro_view", {}, "intro_view");
-  }, []);
-
-  useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    // 첫 화면 속도(2026-10-18): 여섯 장을 한꺼번에 받지 않는다. 다음에 보일 한 장만 미리 받아 두고,
-    // 다 받아진 그림으로만 넘긴다(느린 망에서는 받아질 때까지 지금 그림이 그대로 있다).
-    let upcoming = nextImage(current.current);
-    let ready = false;
-    const preload = (i: number) => {
-      ready = false;
-      const im = new window.Image();
-      im.onload = () => {
-        if (i === upcoming) ready = true;
-      };
-      // 받기에 실패하면 다른 그림으로 다시 시도한다(실패한 그림에 멈춰 배경이 안 바뀌지 않게)
-      im.onerror = () => {
-        if (i !== upcoming) return;
-        upcoming = nextImage(current.current);
-        window.setTimeout(() => preload(upcoming), 3000);
-      };
-      im.src = src(i);
-    };
-    preload(upcoming);
-    const timer = setInterval(() => {
-      if (!ready) return;
-      const n = upcoming;
-      current.current = n;
-      setLayers((l) => (l.showA ? { ...l, b: n, showA: false } : { ...l, a: n, showA: true }));
-      upcoming = nextImage(n);
-      preload(upcoming);
-    }, 2000);
-    return () => clearInterval(timer);
   }, []);
 
   return (
@@ -102,3 +68,46 @@ export default function Intro() {
     </>
   );
 }
+
+/** 첫 화면 배경 그림 바꾸기(한국어·영문 첫 화면 공통 — 그림은 같고 글만 다르다) */
+export function useIntroSlideshow() {
+  // 두 장을 겹쳐 두고 번갈아 보이게 한다(.intro-bg img.show, 0.7초). 첫 그림은 관측소(서버·브라우저가 같게), 2초 뒤부터 무작위.
+  const [layers, setLayers] = useState<{ a: number; b: number | null; showA: boolean }>({ a: 4, b: null, showA: true });
+  const current = useRef(layers.a);
+
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    // 첫 화면 속도(2026-10-18): 여섯 장을 한꺼번에 받지 않는다. 다음에 보일 한 장만 미리 받아 두고,
+    // 다 받아진 그림으로만 넘긴다(느린 망에서는 받아질 때까지 지금 그림이 그대로 있다).
+    let upcoming = nextImage(current.current);
+    let ready = false;
+    const preload = (i: number) => {
+      ready = false;
+      const im = new window.Image();
+      im.onload = () => {
+        if (i === upcoming) ready = true;
+      };
+      // 받기에 실패하면 다른 그림으로 다시 시도한다(실패한 그림에 멈춰 배경이 안 바뀌지 않게)
+      im.onerror = () => {
+        if (i !== upcoming) return;
+        upcoming = nextImage(current.current);
+        window.setTimeout(() => preload(upcoming), 3000);
+      };
+      im.src = src(i);
+    };
+    preload(upcoming);
+    const timer = setInterval(() => {
+      if (!ready) return;
+      const n = upcoming;
+      current.current = n;
+      setLayers((l) => (l.showA ? { ...l, b: n, showA: false } : { ...l, a: n, showA: true }));
+      upcoming = nextImage(n);
+      preload(upcoming);
+    }, 2000);
+    return () => clearInterval(timer);
+  }, []);
+
+  return layers;
+}
+
+export const introSrc = src;
