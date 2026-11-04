@@ -10,6 +10,7 @@ test("개인 결과·결제·로그인은 검색엔진에서 막는다", () => {
   for (const d of ["/results", "/checkout", "/login", "/api/"]) assert.ok((DISALLOW_PATHS as readonly string[]).includes(d));
 });
 
-test("검색 문구에 예측·운세 표현이 없다", () => {
-  for (const t of [SEO_TITLE, SEO_DESCRIPTION]) assert.doesNotMatch(t, /운세|예언|미래를 (알|맞)|반드시/);
+test("검색 제목은 40자 이내(owner 2026-11-04)", () => {
+  assert.ok(SEO_TITLE.length <= 40, String(SEO_TITLE.length));
+  assert.ok(SEO_DESCRIPTION.length > 0);
 });

@@ -4,7 +4,6 @@ import SiteFooter from "@/components/SiteFooter";
 import { participantsDate, PARTICIPANTS } from "@/lib/about/participants";
 import {
   ABOUT_DESCRIPTION,
-  ABOUT_DISCLAIMER,
   ABOUT_H1,
   ABOUT_INTRO,
   ABOUT_TITLE,
@@ -106,7 +105,6 @@ export default function AboutPage() {
         <div className="mt-8">
           <TestButton />
         </div>
-        <p className="mt-5 text-[12px] leading-5 text-cream/65">{ABOUT_DISCLAIMER}</p>
       </main>
       <div className="intro-foot">
         <SiteFooter />

@@ -5,7 +5,7 @@
 
 export const ABOUT_TITLE = "쏠 아스트로 하우스 — 출생차트로 보는 나의 별 리포트 | 쏠 웰니스 하우스";
 export const ABOUT_DESCRIPTION =
-  "생년월일과 출생지로 출생차트를 그리고, 별자리·4원소·나의 유형과 2026년 회고를 무료로 봐요. 7장짜리 별 리포트 중 4장은 1,900원. 예측 도구가 아니며 진단·상담을 대신하지 않아요.";
+  "생년월일과 출생지로 출생차트를 그리고, 별자리·4원소·나의 유형과 2026년 회고를 무료로 봐요. 7장짜리 별 리포트 중 4장은 1,900원.";
 export const ABOUT_URL = "https://astro.ssolwellnesshouse.com/about";
 
 export const ABOUT_H1 = "쏠 아스트로 하우스 — 태어난 날의 하늘로 보는 나";
@@ -77,8 +77,6 @@ export const FAQS: Faq[] = [
   { group: "신뢰와 안전", q: "누가 만들었나요?", a: "쏠 웰니스 하우스의 상담심리 전문가들이 웰니스 제안을 설계하고 검토했어요." },
 ];
 
-export const ABOUT_DISCLAIMER =
-  "쏠 아스트로 하우스는 예측 도구가 아니며, 쏠 웰니스 하우스의 서비스는 의학적 진단·치료·처방을 제공하지 않으며, 전문 의료·상담을 대신하지 않습니다.";
 
 /** 검색엔진용 구조화 데이터(문서 2장). FAQ는 화면과 같은 FAQS에서 만든다. 가격(offers)·후기·별점은 넣지 않는다. */
 export function aboutJsonLd() {
