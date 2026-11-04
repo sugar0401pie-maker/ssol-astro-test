@@ -6,6 +6,8 @@ import type { BuiltReportInput } from "./reportInput.ts";
 import type { Block } from "./paidSkeleton.ts";
 import { SYSTEM_PROMPT_TEMPLATE } from "./systemPrompt.ts";
 import { substituteTokens, validateReport, type C1Rule, type ValidationIssue } from "./validate.ts";
+import { SYSTEM_PROMPT_TEMPLATE_EN } from "./systemPromptEn.ts";
+import { validateReportEn, type C1EnRule } from "./validateEn.ts";
 
 export type PartId = "A" | "B" | "C";
 export type SectionNo = 4 | 5 | 6 | 7;
@@ -17,7 +19,16 @@ export const PARTS: Record<PartId, { sections: SectionNo[]; headers: string[] }>
   C: { sections: [6, 7], headers: ["### 6. 앞으로 5년의 흐름", "### 7. 별이 주는 질문과 웰니스 제안"] },
 };
 
-export function fillSystemPrompt(built: BuiltReportInput, dbSentences: string[]): string {
+/** 영문판 섹션 제목 — 영문 프롬프트(번역 묶음 PROMPT 시트) '### Output structure'의 제목 그대로 */
+export const PARTS_EN: Record<PartId, { sections: SectionNo[]; headers: string[] }> = {
+  A: { sections: [4], headers: ["### 4. What to watch for between now and the end of the year"] },
+  B: { sections: [5], headers: ["### 5. How to step into 2027"] },
+  C: { sections: [6, 7], headers: ["### 6. The flow of the next 5 years", "### 7. Questions from the stars & wellness suggestions"] },
+};
+const partsOf = (en: boolean) => (en ? PARTS_EN : PARTS);
+
+export function fillSystemPrompt(built: BuiltReportInput, dbSentences: string[], lang: "ko" | "en" = "ko"): string {
+  const en = lang === "en";
   const i = built.input;
   const tokens = Object.entries(built.tokens)
     .map(([name, info]) => `{{${name}}} = ${info.meaning}`)
@@ -34,19 +45,20 @@ export function fillSystemPrompt(built: BuiltReportInput, dbSentences: string[])
     wish_edge: JSON.stringify(i.wish_edge),
     movement: JSON.stringify(i.movement),
     temperament: i.temperament,
-    first_open_year: i.first_open_year ?? (i.closest_year ? `없음(가장 가까워지는 해: ${i.closest_year})` : "없음"),
+    first_open_year: i.first_open_year ?? (i.closest_year ? (en ? `none (closest year: ${i.closest_year})` : `없음(가장 가까워지는 해: ${i.closest_year})`) : en ? "none" : "없음"),
     wish_reason: JSON.stringify(i.wish_reason),
-    db_sentences: dbSentences.map((s) => `- ${s}`).join("\n") || "(없음)",
+    db_sentences: dbSentences.map((s) => `- ${s}`).join("\n") || (en ? "(none)" : "(없음)"),
     tokens,
   };
   // 아는 자리표시자만 바꾼다 — {{E1_기간}} 같은 토큰 예시는 그대로 둔다.
-  return SYSTEM_PROMPT_TEMPLATE.replace(/(?<!\{)\{([a-z_0-9]+)\}(?!\})/g, (m, k: string) => values[k] ?? m);
+  return (en ? SYSTEM_PROMPT_TEMPLATE_EN : SYSTEM_PROMPT_TEMPLATE).replace(/(?<!\{)\{([a-z_0-9]+)\}(?!\})/g, (m, k: string) => values[k] ?? m);
 }
 
 /** 섹션별 굵은 요약(서버 B11) — AI에는 토큰으로 바꾼 모양을 준다(요약에 연도 숫자가 들어가므로) */
 export type Summaries = Partial<Record<SectionNo, string | null>>;
 
-export function partUserMessage(built: BuiltReportInput, part: PartId, summaries: Summaries = {}): string {
+export function partUserMessage(built: BuiltReportInput, part: PartId, summaries: Summaries = {}, lang: "ko" | "en" = "ko"): string {
+  if (lang === "en") return partUserMessageEn(built, part, summaries);
   const p = PARTS[part];
   const lines = [`이번에는 다음 섹션만 쓰세요(제목 줄 그대로): ${p.headers.join(" / ")}`, "표와 타임라인, 접힌 근거는 서버가 그리므로 쓰지 않습니다."];
   for (const no of p.sections) {
@@ -60,6 +72,32 @@ export function partUserMessage(built: BuiltReportInput, part: PartId, summaries
   if (part === "C")
     lines.push("7번 섹션의 '• 별이 주는 질문 3가지'와 '• 작은 실천 3가지' 목록은 서버가 DB 문장 그대로 화면에 붙입니다. 목록은 쓰지 말고 두괄식 문장, 왜 이 질문인지 문단, 마지막 쏘웰라 안내 문단만 쓰세요.");
   return [...lines, "", "입력(JSON):", JSON.stringify(built.input)].join("\n");
+}
+
+/** 영문 지시(Claude 초안 — 한국어 지시와 같은 내용) */
+function partUserMessageEn(built: BuiltReportInput, part: PartId, summaries: Summaries): string {
+  const p = PARTS_EN[part];
+  const lines = [`Write only these sections this time (keep the header lines exactly): ${p.headers.join(" / ")}`, "Don't write tables, the timeline or the collapsed evidence — the server draws them."];
+  for (const no of p.sections) {
+    const s = summaries[no];
+    if (s) lines.push(`The server shows this bold lead sentence for section ${no}: "${tokenizeYearsEn(s, built)}" — use it as the first paragraph as it is, then continue from the next paragraph.`);
+  }
+  if (part === "A") {
+    lines.push("In section 4, the server adds '• Month by month: what to watch' from DB sentences. Write only up to the '• Something to look forward to before year-end' paragraph.");
+    lines.push("The server also adds the '• Three things to watch before year-end' heading and list in section 4, exactly from the DB. Don't write that heading or list; after the first paragraph and one paragraph linking the concern to the sky, go straight to '• Something to look forward to before year-end'.");
+  }
+  if (part === "C")
+    lines.push("In section 7, the server shows the '• Three questions from the stars' and '• Three small practices' lists exactly from the DB. Don't write those lists or a closing about Sowella AI: write only the lead sentence and the paragraph on why this is the question to ask.");
+  return [...lines, "", "Input (JSON):", JSON.stringify(built.input)].join("\n");
+}
+
+function tokenizeYearsEn(text: string, built: BuiltReportInput): string {
+  return text.replace(/\b(19|20)\d{2}\b/g, (y) => {
+    const name = Object.entries(built.tokens)
+      .filter(([, v]) => v.value === y)
+      .sort((a, b) => Number(a[0].startsWith("Y")) - Number(b[0].startsWith("Y")))[0]?.[0];
+    return name ? `{{${name}}}` : y;
+  });
 }
 
 /** 요약 문장의 연도(예: 2028년)를 같은 값의 토큰으로 바꿔 AI가 숫자를 쓰지 않게 한다. */
@@ -121,7 +159,7 @@ export function overlapRatio(a: string, b: string): number {
  * 바람과 흐름 잇기 검증(06 v3.1 '검증(서버)'): 정확히 4문장 · 150~320자 · 바람 단어 포함 · 날짜 토큰 1개 이상 ·
  * DB 판정 문장과 60% 미만 겹침. 토큰 밖 숫자·C1 금지어·입력 밖 토큰은 파트 전체 검증이 이미 본다.
  */
-export function checkBridge(raw: string, opts: { wish: string; judgement: string; values: Record<string, string> }): string[] {
+export function checkBridge(raw: string, opts: { wish: string; judgement: string; values: Record<string, string>; lang?: "ko" | "en" }): string[] {
   const problems: string[] = [];
   if (!/\{\{[^{}]+\}\}/.test(raw)) problems.push("no_token");
   let text: string;
@@ -132,8 +170,15 @@ export function checkBridge(raw: string, opts: { wish: string; judgement: string
   }
   const sentences = text.match(/[^.!?]+[.!?]+/g) ?? [];
   if (sentences.length !== 4) problems.push(`sentences_${sentences.length}`);
-  if (text.length < 150 || text.length > 320) problems.push(`length_${text.length}`);
-  if (!text.includes(opts.wish)) problems.push("no_wish");
+  if (opts.lang === "en") {
+    // 영문: 글자 수 대신 단어 수(영문 프롬프트 예시 80~120단어) · 바람 단어는 대소문자 무시
+    const words = text.split(/\s+/).filter(Boolean).length;
+    if (words < 50 || words > 130) problems.push(`words_${words}`);
+    if (!text.toLowerCase().includes(opts.wish.toLowerCase())) problems.push("no_wish");
+  } else {
+    if (text.length < 150 || text.length > 320) problems.push(`length_${text.length}`);
+    if (!text.includes(opts.wish)) problems.push("no_wish");
+  }
   if (text.trimEnd().endsWith("?")) problems.push("question_end"); // 06 v3.1: 질문으로 끝내지 않는다
   if (opts.judgement && overlapRatio(text, opts.judgement) >= 0.6) problems.push("overlap");
   return problems;
@@ -165,6 +210,9 @@ export interface PartContext {
   fallbackBridges?: Partial<Record<5 | 6, string | null>>;
   /** 4번 '조심할 세 가지' 소제목+목록(서버 DB 문장) — AI가 쓴 같은 목록은 빼고 이것을 끼운다 */
   careful4?: Block[];
+  /** 영문판: 영문 검증기·영문 제목·영문 C1 */
+  lang?: "ko" | "en";
+  c1En?: C1EnRule[];
 }
 
 /** 4번: AI가 지시를 어기고 '조심할 세 가지'를 썼으면 그 소제목~다음 소제목 전까지 빼고,
@@ -174,10 +222,10 @@ export function insertCareful4(blocks: Block[], careful: Block[]): Block[] {
   const out: Block[] = [];
   let skipping = false;
   for (const b of blocks) {
-    if (b.t === "head") skipping = b.text.includes("조심할 세 가지");
+    if (b.t === "head") skipping = b.text.includes("조심할 세 가지") || /three things to watch|what to look at/i.test(b.text);
     if (!skipping) out.push(b);
   }
-  const at = out.findIndex((b) => b.t === "head" && b.text.includes("기대해도 좋은"));
+  const at = out.findIndex((b) => b.t === "head" && (b.text.includes("기대해도 좋은") || /look forward/i.test(b.text)));
   out.splice(at >= 0 ? at : out.length, 0, ...careful);
   return out;
 }
@@ -191,9 +239,22 @@ export function processPartOutput(
   bannedWords: readonly string[] = [],
   ctx: PartContext = {},
 ): PartOutcome {
+  const en = ctx.lang === "en";
+  const P = partsOf(en);
   const requiredTokens = part === "C" && built.input.first_open_year ? ["열리는해"] : [];
   const plain = text.replace(/<\/?잇기>/g, "");
-  const issues = validateReport(plain, {
+  const issues = en
+    ? validateReportEn(plain, {
+        allowedTokens: Object.keys(built.tokens),
+        requiredTokens,
+        allowedNames: built.allowedNames,
+        allowedHouses: built.allowedHouses,
+        requiredSections: P[part].headers,
+        headwind2027: part === "B" && built.headwind2027,
+        c1Rules: ctx.c1En,
+        wish: built.input.answers.q3_wish_2027,
+      })
+    : validateReport(plain, {
     allowedTokens: Object.keys(built.tokens),
     requiredTokens,
     allowedNames: built.allowedNames,
@@ -212,7 +273,7 @@ export function processPartOutput(
   const rawSplit = splitSections(text);
   const sections: PartOutcome["sections"] = {};
   const bridgeFailed: Array<5 | 6> = [];
-  for (const no of PARTS[part].sections) {
+  for (const no of P[part].sections) {
     const raws = rawSplit[no];
     if (!raws?.length) return { ok: false, sections: {}, issues: [...issues, { code: "missing_section", detail: String(no) }], bridgeFailed: [] };
     const blocks: Block[] = [];
@@ -225,7 +286,7 @@ export function processPartOutput(
         const before = raw.slice(0, m.index).trim();
         const after = raw.slice((m.index ?? 0) + m[0].length).trim();
         if (before) blocks.push(...paragraphsToBlocks([sub(before)]));
-        const problems = checkBridge(m[1], { wish: ctx.wish ?? built.input.answers.q3_wish_2027, judgement: ctx.judgements?.[no] ?? "", values });
+        const problems = checkBridge(m[1], { wish: ctx.wish ?? built.input.answers.q3_wish_2027, judgement: ctx.judgements?.[no] ?? "", values, lang: ctx.lang });
         if (problems.length) {
           bridgeFailed.push(no);
           const fb = ctx.fallbackBridges?.[no];
@@ -245,7 +306,7 @@ export function processPartOutput(
       bridgeFailed.push(no);
       const fb = ctx.fallbackBridges[no];
       if (fb) {
-        const at = blocks.findIndex((b) => b.t === "p" && /\((순풍|보통|역풍)\)/.test(b.text));
+        const at = blocks.findIndex((b) => b.t === "p" && (en ? /\b(Open|Steady|Building) Year\b/ : /\((순풍|보통|역풍)\)/).test(b.text));
         blocks.splice(at >= 0 ? at + 1 : Math.min(1, blocks.length), 0, { t: "bridge", text: fb });
       }
     }

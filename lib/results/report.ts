@@ -61,7 +61,7 @@ export async function runReportGeneration(resultId: string, opts: { retry?: bool
   try {
     const row = await getResultForReport(resultId);
     if (!row) throw new Error("결과 없음");
-    // 영문판 결과(2026-11-04): 영문 DB로, AI 없이 DB 문장만(영문 AI 지시문·검증기는 아직 없다 — generatePaidReport가 en이면 AI를 부르지 않음)
+    // 영문판 결과(2026-11-04): 영문 DB + 영문 AI 지시문·영문 검증기(실패하면 그 파트는 영문 DB 문장 뼈대)
     const en = row.birth_input.lang === "en";
     const c = computeFree(row.birth_input, row.answers, row.nickname, { lang: en ? "en" : "ko" });
     if (c.kind !== "result") throw new Error("결과를 다시 계산하지 못함");

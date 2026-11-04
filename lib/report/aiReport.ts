@@ -15,6 +15,10 @@ import { prepareSkeleton, type Resolved } from "./prepare";
 import { buildReportInput } from "./reportInput";
 import { compileC1, type C1Row } from "./validate";
 import { SYSTEM_PROMPT_TEMPLATE } from "./systemPrompt";
+import { SYSTEM_PROMPT_TEMPLATE_EN } from "./systemPromptEn";
+import { compileC1En, type C1EnRow } from "./validateEn";
+import c1En from "@/data/astro/db/c1_en.json";
+import { EN_Q3 } from "@/lib/en/questions";
 
 /** 당분간 화면 비노출(show_character=false) — AI 출력에 나오면 그 파트를 다시 만든다. */
 const CHARACTER_NAMES = Object.values(CHARACTER_GRID).flat();
@@ -22,6 +26,9 @@ const CHARACTER_NAMES = Object.values(CHARACTER_GRID).flat();
 export const REPORT_MODEL = process.env.REPORT_MODEL || "gpt-6.1-sol";
 /** 프롬프트 판(시스템 프롬프트 원문의 짧은 지문) — 어느 프롬프트로 쓴 리포트인지 나중에 구분하려고 */
 const PROMPT_VERSION = createHash("sha256").update(SYSTEM_PROMPT_TEMPLATE).digest("hex").slice(0, 10);
+const PROMPT_VERSION_EN = `en-${createHash("sha256").update(SYSTEM_PROMPT_TEMPLATE_EN).digest("hex").slice(0, 10)}`;
+/** 영문 금지어 사전(C1_EN, 11_해석DB/C1_EN.json 사본) */
+const C1_EN_RULES = compileC1En((c1En as { rows: C1EnRow[] }).rows);
 
 /** 파트별 생성 기록(마스터스펙 7-4의 AI 호출 기록, 가벼운 판): 문장·개인정보 없이 숫자와 코드만 */
 export interface PartLog {
@@ -83,13 +90,19 @@ export async function generatePaidReport(args: {
   const { periods, wish, skeleton } = prepareSkeleton({ ...args, now });
   const typeLine = findRow(db, "A5", (r) => r.character === character.name)?.type_line ?? "";
   const flow = skeleton.sections.find((s) => s.no === 5)?.body.filter((b): b is Extract<Block, { t: "step" }> => b.t === "step").map((b) => b.label) ?? [];
-  const built = buildReportInput({ nickname, chart, character, answers, periods, wish, typeLine, flow, bridgeBasis27: skeleton.bridgeBasis27, desiredYear: skeleton.desiredYear });
+  // 영문판(2026-11-04): 영문 프롬프트·영문 입력(날짜·이름 영어)·영문 검증기(C1_EN). 실패하면 한국어와 같이 그 파트만 1회 재생성 → DB 뼈대.
+  const en = args.lang === "en";
+  const built = buildReportInput({ nickname, chart, character, answers, periods, wish, typeLine, flow, bridgeBasis27: skeleton.bridgeBasis27, desiredYear: skeleton.desiredYear, lang: args.lang });
   const c1 = compileC1(db.dbs.C1.rows as unknown as C1Row[]);
+  // 동물 이름(화면 비노출): 한국어 이름 + 영문 DB의 영어 이름(A5 character_en)
+  const banned = en ? [...CHARACTER_NAMES, ...db.dbs.A5.rows.map((r) => r.character_en).filter((x): x is string => !!x)] : CHARACTER_NAMES;
   const summaries = Object.fromEntries(skeleton.sections.map((s) => [s.no, s.summary]));
   const bridgeOf = (no: 5 | 6) => skeleton.sections.find((s) => s.no === no)?.body.find((b) => b.t === "bridge")?.text ?? null;
   const ctx = {
     summaries,
-    wish: answers.q3,
+    wish: en ? (EN_Q3.find(([k]) => k === answers.q3)?.[1] ?? answers.q3) : answers.q3,
+    lang: args.lang,
+    c1En: en ? C1_EN_RULES : undefined,
     judgements: { 5: judgementSentence(skeleton, 5), 6: judgementSentence(skeleton, 6) },
     fallbackBridges: { 5: bridgeOf(5), 6: bridgeOf(6) },
     careful4: skeleton.careful4,
@@ -98,18 +111,14 @@ export async function generatePaidReport(args: {
   const logs: Partial<Record<PartId, PartLog>> = {};
   const runPart = async (part: PartId) => {
     const log: PartLog = (logs[part] = { attempts: 0, result: "db", inputTokens: 0, outputTokens: 0, failures: [] });
-    if (args.lang === "en") {
-      log.failures.push("en-db-only");
-      return null;
-    }
     const dbSentences = PARTS[part].sections.flatMap((n) => skeleton.dbSentences[n]);
     built.input.db_sentences = dbSentences;
-    const system = fillSystemPrompt(built, dbSentences);
-    const user = partUserMessage(built, part, summaries);
+    const system = fillSystemPrompt(built, dbSentences, args.lang);
+    const user = partUserMessage(built, part, summaries, args.lang);
     for (let attempt = 0; attempt < 2; attempt++) {
       log.attempts++;
       try {
-        const out = processPartOutput(await callModel(system, user, log), part, built, c1, CHARACTER_NAMES, ctx);
+        const out = processPartOutput(await callModel(system, user, log), part, built, c1, banned, ctx);
         // 잇기만 규칙에 안 맞으면: 첫 번째는 다시 만들고, 두 번째는 B12 대체 문장을 끼운 채 쓴다(06 v3.1).
         if (out.ok && (out.bridgeFailed.length === 0 || attempt === 1)) {
           log.result = "ai";
@@ -140,7 +149,7 @@ export async function generatePaidReport(args: {
     closing: skeleton.closing,
     model: anyAi ? REPORT_MODEL : "db-only",
     generatedAt: now.toISOString(),
-    log: { promptVersion: PROMPT_VERSION, parts: { ...logs } },
+    log: { promptVersion: en ? PROMPT_VERSION_EN : PROMPT_VERSION, parts: { ...logs } },
     ...(partial ? { partial: true } : {}),
   });
   // 파트 저장은 한 번에 하나씩(늦게 끝난 저장이 앞선 내용을 덮지 않게)

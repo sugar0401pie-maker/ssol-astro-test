@@ -1,0 +1,656 @@
+{
+ "db": "C1_EN",
+ "name": "영문 금지어·대체어 사전 (자동 검증용)",
+ "used_in": "영문판 validate: DB 문장 검수 + 영문 AI 출력 검증. 한국어 C1과 같은 분류·심각도 체계. 데이터(문장 아님)",
+ "version": "2026-11-04 v0.1",
+ "columns": {
+  "id": "ID",
+  "category": "분류",
+  "pattern": "패턴(re:=정규식, (?i)=대소문자 무시)",
+  "replacement": "대체 제안",
+  "scope": "적용 범위",
+  "severity": "심각도",
+  "note": "메모"
+ },
+ "rows": [
+  {
+   "id": "BAN_EN_001",
+   "category": "단정",
+   "pattern": "re:(?i)\\b(definitely|certainly|for sure|without a doubt|undoubtedly|guaranteed?|inevitabl[ey])\\b",
+   "replacement": "a confident line about the reader's own power or the sky's theme",
+   "scope": "DB+AI",
+   "severity": "실패",
+   "note": "예측 단정 — 확신 어조는 결과가 아니라 '나의 힘·하늘의 주제'에만"
+  },
+  {
+   "id": "BAN_EN_002",
+   "category": "단정",
+   "pattern": "re:(?i)\\b100\\s?(%|percent)\\b",
+   "replacement": "",
+   "scope": "DB+AI",
+   "severity": "실패",
+   "note": "예측 단정"
+  },
+  {
+   "id": "BAN_EN_003",
+   "category": "단정",
+   "pattern": "re:(?i)\\b(destin(y|ed)|fated?|meant to be|written in the stars)\\b",
+   "replacement": "the current / this season / your chart points to",
+   "scope": "DB+AI",
+   "severity": "실패",
+   "note": "운명 단정 (BAN_004)"
+  },
+  {
+   "id": "BAN_EN_004",
+   "category": "단정",
+   "pattern": "re:(?i)\\byou will (definitely |surely )?(get|win|lose|meet|marry|find|receive|become rich)\\b",
+   "replacement": "a good time to… / you can…",
+   "scope": "DB+AI",
+   "severity": "실패",
+   "note": "미래 결과 단정 (BAN_005)"
+  },
+  {
+   "id": "BAN_EN_005",
+   "category": "단정",
+   "pattern": "re:(?i)\\b(everything|it all) (will|is going to) (be fine|work out|turn out (fine|great|well))\\b",
+   "replacement": "a hopeful line with a reason (when and why things ease)",
+   "scope": "DB+AI",
+   "severity": "실패",
+   "note": "근거 없는 위로 (BAN_009·010)"
+  },
+  {
+   "id": "BAN_EN_006",
+   "category": "단정",
+   "pattern": "re:(?i)\\bonly good things\\b",
+   "replacement": "",
+   "scope": "DB+AI",
+   "severity": "실패",
+   "note": "근거 없는 위로 (BAN_011)"
+  },
+  {
+   "id": "BAN_EN_007",
+   "category": "단정",
+   "pattern": "re:(?i)\\bdon'?t worry\\b",
+   "replacement": "suggest one thing the reader can do now",
+   "scope": "DB+AI",
+   "severity": "경고",
+   "note": "근거 없는 위로가 되기 쉬움 (BAN_012)"
+  },
+  {
+   "id": "BAN_EN_008",
+   "category": "단정",
+   "pattern": "re:(?i)\\b(your soulmate|the one) (will|is going to) (appear|arrive|find you|show up)\\b",
+   "replacement": "",
+   "scope": "DB+AI",
+   "severity": "실패",
+   "note": "만남 예측 (BAN_013)"
+  },
+  {
+   "id": "BAN_EN_009",
+   "category": "단정",
+   "pattern": "re:(?i)\\byou will (meet|find) (your soulmate|the one|someone special)\\b",
+   "replacement": "",
+   "scope": "DB+AI",
+   "severity": "실패",
+   "note": "만남 예측 (BAN_013)"
+  },
+  {
+   "id": "BAN_EN_010",
+   "category": "공포·불운",
+   "pattern": "re:(?i)\\b(bad luck|misfortune|ill fortune|unlucky|jinx(ed)?)\\b",
+   "replacement": "a challenging stretch / a Building Year",
+   "scope": "DB+AI",
+   "severity": "실패",
+   "note": "BAN_015·023"
+  },
+  {
+   "id": "BAN_EN_011",
+   "category": "공포·불운",
+   "pattern": "re:(?i)\\b(curse[ds]?|hex|doom(ed)?|disaster|catastroph(e|ic)|calamit(y|ies))\\b",
+   "replacement": "",
+   "scope": "DB+AI",
+   "severity": "실패",
+   "note": "BAN_020"
+  },
+  {
+   "id": "BAN_EN_012",
+   "category": "공포·불운",
+   "pattern": "re:(?i)\\b(the )?worst (year|month|time|period|days?)\\b",
+   "replacement": "",
+   "scope": "DB+AI",
+   "severity": "실패",
+   "note": "BAN_019"
+  },
+  {
+   "id": "BAN_EN_013",
+   "category": "공포·불운",
+   "pattern": "re:(?i)\\bdangerous (year|time|period|month|stretch|transit)\\b",
+   "replacement": "a tense stretch / a time when things carry more weight",
+   "scope": "DB+AI",
+   "severity": "실패",
+   "note": "BAN_017"
+  },
+  {
+   "id": "BAN_EN_014",
+   "category": "공포·불운",
+   "pattern": "re:(?i)\\b(you'?ll|you will) lose (everything|a lot|big)\\b",
+   "replacement": "a good time to review…",
+   "scope": "DB+AI",
+   "severity": "실패",
+   "note": "BAN_014"
+  },
+  {
+   "id": "BAN_EN_015",
+   "category": "공포·불운",
+   "pattern": "re:(?i)\\bif you('re| are)? not careful\\b",
+   "replacement": "it helps to… / set aside…",
+   "scope": "DB+AI",
+   "severity": "실패",
+   "note": "공포 조건문 (BAN_025)"
+  },
+  {
+   "id": "BAN_EN_016",
+   "category": "공포·불운",
+   "pattern": "re:(?i)\\bbe careful[.!]?\\s*$",
+   "replacement": "end with a concrete action",
+   "scope": "DB+AI",
+   "severity": "경고",
+   "note": "조심은 행동 제안으로 끝맺기 (BAN_026)"
+  },
+  {
+   "id": "BAN_EN_017",
+   "category": "공포·불운",
+   "pattern": "re:(?i)\\b(karma|karmic (debt|punishment))\\b",
+   "replacement": "",
+   "scope": "DB+AI",
+   "severity": "실패",
+   "note": "BAN_027"
+  },
+  {
+   "id": "BAN_EN_018",
+   "category": "공포·불운",
+   "pattern": "re:(?i)\\b(talisman|amulet|lucky charm to (ward|protect)|ward off)\\b",
+   "replacement": "",
+   "scope": "DB+AI",
+   "severity": "실패",
+   "note": "부적·액막이 상품 암시 금지 (BAN_016) — 결제 문구 'A little lucky charm'은 EN07 한 곳만 예외 확인"
+  },
+  {
+   "id": "BAN_EN_019",
+   "category": "공포·불운",
+   "pattern": "re:(?i)\\b(limited[- ]time( offer)?|offer ends|last chance to (buy|unlock|get|pay)|only today|don'?t miss (out on|this offer))\\b",
+   "replacement": "",
+   "scope": "DB+AI",
+   "severity": "실패",
+   "note": "결제 압박 (BAN_028·029)"
+  },
+  {
+   "id": "BAN_EN_020",
+   "category": "공포·불운",
+   "pattern": "re:(?i)\\b(buy|pay|purchase) (it )?(now|right now|today)\\b",
+   "replacement": "",
+   "scope": "DB+AI",
+   "severity": "실패",
+   "note": "결제 압박 (BAN_030) — 결제 버튼 'Pay US$2.99 and get my report now'는 확인 후 예외"
+  },
+  {
+   "id": "BAN_EN_021",
+   "category": "공포·불운",
+   "pattern": "re:(?i)\\b(our|my) last day together\\b",
+   "replacement": "Your 3-day Sowella AI pass ends today",
+   "scope": "DB+AI",
+   "severity": "실패",
+   "note": "감정적 작별로 결제 압박"
+  },
+  {
+   "id": "BAN_EN_022",
+   "category": "건강·의료",
+   "pattern": "re:(?i)\\b(disease|illness|sickness|fall(ing)? ill|get(ting)? sick)\\b",
+   "replacement": "rhythm / fatigue / rest",
+   "scope": "DB+AI",
+   "severity": "실패",
+   "note": "BAN_031·032"
+  },
+  {
+   "id": "BAN_EN_023",
+   "category": "건강·의료",
+   "pattern": "re:(?i)\\b(hospital|doctor)\\b",
+   "replacement": "professional support",
+   "scope": "DB+AI",
+   "severity": "경고",
+   "note": "의료 연결 — 문맥 확인 (BAN_033)"
+  },
+  {
+   "id": "BAN_EN_024",
+   "category": "건강·의료",
+   "pattern": "re:(?i)\\b(surgery|operation on)\\b",
+   "replacement": "",
+   "scope": "DB+AI",
+   "severity": "실패",
+   "note": "BAN_034"
+  },
+  {
+   "id": "BAN_EN_025",
+   "category": "건강·의료",
+   "pattern": "re:(?i)\\b(accidents?|car crash|injur(y|ies|ed))\\b",
+   "replacement": "fatigue / pace",
+   "scope": "DB+AI",
+   "severity": "경고",
+   "note": "BAN_035·038 — 사고·부상 예측이면 실패, 캐릭터 묘사 등은 허용"
+  },
+  {
+   "id": "BAN_EN_026",
+   "category": "건강·의료",
+   "pattern": "re:(?i)\\b(death|dying|die[sd]?|deadly|fatal)\\b",
+   "replacement": "",
+   "scope": "DB+AI",
+   "severity": "실패",
+   "note": "BAN_036·037 — 이별·그리움 문장은 'loss·goodbye'로"
+  },
+  {
+   "id": "BAN_EN_027",
+   "category": "건강·의료",
+   "pattern": "re:(?i)\\b(pregnan(t|cy)|childbirth|conceive|fertility)\\b",
+   "replacement": "",
+   "scope": "DB+AI",
+   "severity": "실패",
+   "note": "BAN_039"
+  },
+  {
+   "id": "BAN_EN_028",
+   "category": "건강·의료",
+   "pattern": "re:(?i)\\b(cure[ds]?|heal(s|ed)? (your|the) (illness|disease)|treatment)\\b",
+   "replacement": "care / recovery",
+   "scope": "DB+AI",
+   "severity": "경고",
+   "note": "의료 뉘앙스 — 문맥 확인 (BAN_040)"
+  },
+  {
+   "id": "BAN_EN_029",
+   "category": "건강·의료",
+   "pattern": "re:(?i)\\b(stop|start|change|increase|reduce) (taking )?(your )?(medication|meds|pills)\\b",
+   "replacement": "",
+   "scope": "DB+AI",
+   "severity": "실패",
+   "note": "복약 지시 금지 (BAN_041)"
+  },
+  {
+   "id": "BAN_EN_030",
+   "category": "건강·의료",
+   "pattern": "re:(?i)\\b(AI|Sowella( AI)?) (therap(y|ist)|counsel(l)?(ing|or))\\b|\\bAI[- ](therapist|counsel(l)?or)\\b",
+   "replacement": "wellness coaching / guided self-reflection",
+   "scope": "DB+AI",
+   "severity": "실패",
+   "note": "AI를 치료·상담으로 부르지 않음(일리노이 WOPR 등) — 사람 도움은 'a therapist or counselor' 허용"
+  },
+  {
+   "id": "BAN_EN_031",
+   "category": "진단명·꼬리표",
+   "pattern": "re:(?i)\\b(clinical )?depression\\b",
+   "replacement": "when your mood feels heavy",
+   "scope": "DB+AI",
+   "severity": "실패",
+   "note": "BAN_042"
+  },
+  {
+   "id": "BAN_EN_032",
+   "category": "진단명·꼬리표",
+   "pattern": "re:(?i)\\b(panic|anxiety|personality|eating|sleep|bipolar|obsessive[- ]compulsive) disorders?\\b",
+   "replacement": "",
+   "scope": "DB+AI",
+   "severity": "실패",
+   "note": "BAN_043"
+  },
+  {
+   "id": "BAN_EN_033",
+   "category": "진단명·꼬리표",
+   "pattern": "re:\\b(ADHD|OCD|PTSD|BPD|NPD)\\b",
+   "replacement": "",
+   "scope": "DB+AI",
+   "severity": "실패",
+   "note": "BAN_044·045"
+  },
+  {
+   "id": "BAN_EN_034",
+   "category": "진단명·꼬리표",
+   "pattern": "re:(?i)\\b(bipolar|manic|schizo\\w*)\\b",
+   "replacement": "",
+   "scope": "DB+AI",
+   "severity": "실패",
+   "note": "BAN_045"
+  },
+  {
+   "id": "BAN_EN_035",
+   "category": "진단명·꼬리표",
+   "pattern": "re:(?i)\\b(avoidant|anxious|secure|disorganized|fearful) attachment\\b",
+   "replacement": "the style names (Reaching out · Accommodating · Stepping back · Balancing)",
+   "scope": "DB+AI",
+   "severity": "실패",
+   "note": "애착 유형 꼬리표 (BAN_046)"
+  },
+  {
+   "id": "BAN_EN_036",
+   "category": "진단명·꼬리표",
+   "pattern": "re:(?i)\\b(narcissist\\w*|sociopath\\w*|psychopath\\w*)\\b",
+   "replacement": "",
+   "scope": "DB+AI",
+   "severity": "실패",
+   "note": "BAN_047"
+  },
+  {
+   "id": "BAN_EN_037",
+   "category": "진단명·꼬리표",
+   "pattern": "re:(?i)\\b(trauma(tized)?|burn(ed|t)?[- ]?out|gaslight\\w*|codependen\\w*|toxic)\\b",
+   "replacement": "describe the state in plain words",
+   "scope": "DB+AI",
+   "severity": "경고",
+   "note": "꼬리표화 위험 — 문맥 확인 (BAN_048)"
+  },
+  {
+   "id": "BAN_EN_038",
+   "category": "이론·학자명",
+   "pattern": "re:(?<![A-Za-z])(ACT|REBT|CBT|EFT|DBT|IPT|MBCT)(?![A-Za-z])",
+   "replacement": "explain the mechanism in plain words",
+   "scope": "DB+AI",
+   "severity": "실패",
+   "note": "이론명 (BAN_049)"
+  },
+  {
+   "id": "BAN_EN_039",
+   "category": "이론·학자명",
+   "pattern": "re:(?i)\\b(schema therapy|interpersonal therapy|positive psychology|attachment theory|cognitive[- ]behavio(u)?ral|acceptance and commitment|gestalt|emotion[- ]focused|dialectical)\\b",
+   "replacement": "",
+   "scope": "DB+AI",
+   "severity": "실패",
+   "note": "BAN_050~056"
+  },
+  {
+   "id": "BAN_EN_040",
+   "category": "이론·학자명",
+   "pattern": "re:\\b(Jung(ian)?|Freud(ian)?|Adler(ian)?|Maslow|Bowlby|Gottman|Satir|Erikson|Rogers)\\b",
+   "replacement": "",
+   "scope": "DB+AI",
+   "severity": "실패",
+   "note": "학자명 (BAN_053·054·057)"
+  },
+  {
+   "id": "BAN_EN_041",
+   "category": "투자·돈",
+   "pattern": "re:(?i)\\binvest(ing|ment|ments|or)?\\b",
+   "replacement": "put time or care into",
+   "scope": "DB+AI",
+   "severity": "경고",
+   "note": "비유적 'invest time'도 검토 — 매매 뉘앙스면 실패 (BAN_058)"
+  },
+  {
+   "id": "BAN_EN_042",
+   "category": "투자·돈",
+   "pattern": "re:(?i)\\b(stock market|stocks|crypto(currency|currencies)?|bitcoin|NFTs?|forex|day trading)\\b",
+   "replacement": "",
+   "scope": "DB+AI",
+   "severity": "실패",
+   "note": "BAN_059"
+  },
+  {
+   "id": "BAN_EN_043",
+   "category": "투자·돈",
+   "pattern": "re:(?i)\\b(buy|sell) (stocks?|shares|crypto|bitcoin|property)\\b",
+   "replacement": "",
+   "scope": "DB+AI",
+   "severity": "실패",
+   "note": "BAN_060"
+  },
+  {
+   "id": "BAN_EN_044",
+   "category": "투자·돈",
+   "pattern": "re:(?i)\\b(jackpot|windfall|lottery|get rich|strike it rich|big money|make a fortune)\\b",
+   "replacement": "",
+   "scope": "DB+AI",
+   "severity": "실패",
+   "note": "BAN_061·062"
+  },
+  {
+   "id": "BAN_EN_045",
+   "category": "투자·돈",
+   "pattern": "re:(?i)\\b(real estate|returns on|ROI|profit margin)\\b",
+   "replacement": "the rhythm of spending and saving",
+   "scope": "DB+AI",
+   "severity": "경고",
+   "note": "매매 시점 연결이면 실패 (BAN_063)"
+  },
+  {
+   "id": "BAN_EN_046",
+   "category": "투자·돈",
+   "pattern": "re:(?i)\\b(your )?(income|salary|savings) will (grow|rise|increase|double)\\b",
+   "replacement": "",
+   "scope": "DB+AI",
+   "severity": "실패",
+   "note": "금전 결과 예측"
+  },
+  {
+   "id": "BAN_EN_047",
+   "category": "관계 권유",
+   "pattern": "re:(?i)\\b(break up with|leave (him|her|them|your partner)|end (the|your) relationship)\\b",
+   "replacement": "",
+   "scope": "DB+AI",
+   "severity": "실패",
+   "note": "이별 권유 (BAN_064)"
+  },
+  {
+   "id": "BAN_EN_048",
+   "category": "관계 권유",
+   "pattern": "re:(?i)\\bdivorce\\b",
+   "replacement": "",
+   "scope": "DB+AI",
+   "severity": "실패",
+   "note": "BAN_065"
+  },
+  {
+   "id": "BAN_EN_049",
+   "category": "관계 권유",
+   "pattern": "re:(?i)\\b(get married|you should marry|a good (time|year) to (marry|get married))\\b",
+   "replacement": "",
+   "scope": "DB+AI",
+   "severity": "실패",
+   "note": "결혼 권유 (BAN_066)"
+  },
+  {
+   "id": "BAN_EN_050",
+   "category": "관계 권유",
+   "pattern": "re:(?i)\\b(ask (him|her|them) out|confess your feelings|start dating|a good (time|year) to (date|start a relationship))\\b",
+   "replacement": "match the pace of the relationship to your own heart",
+   "scope": "DB+AI",
+   "severity": "실패",
+   "note": "만남 권유 (BAN_067)"
+  },
+  {
+   "id": "BAN_EN_051",
+   "category": "관계 권유",
+   "pattern": "re:(?i)\\b(cut (him|her|them|people) off|cut ties|go no[- ]contact)\\b",
+   "replacement": "",
+   "scope": "DB+AI",
+   "severity": "실패",
+   "note": "관계 단절 권유 (BAN_068)"
+  },
+  {
+   "id": "BAN_EN_052",
+   "category": "관계 권유",
+   "pattern": "re:(?i)\\b(compatibility|compatible signs?)\\b",
+   "replacement": "",
+   "scope": "DB+AI",
+   "severity": "경고",
+   "note": "BAN_069"
+  },
+  {
+   "id": "BAN_EN_053",
+   "category": "비교",
+   "pattern": "re:(?i)\\b(than (other people|most people|others|everyone else))\\b",
+   "replacement": "",
+   "scope": "DB+AI",
+   "severity": "경고",
+   "note": "강점일 때만 가볍게 (BAN_070)"
+  },
+  {
+   "id": "BAN_EN_054",
+   "category": "비교",
+   "pattern": "re:(?i)\\b(rarely seen|unusually rare|one in a million)\\b",
+   "replacement": "",
+   "scope": "DB+AI",
+   "severity": "경고",
+   "note": "BAN_071"
+  },
+  {
+   "id": "BAN_EN_055",
+   "category": "비교",
+   "pattern": "re:(?i)\\b(worse|weaker|less capable|behind) than (others|other people|average|most)\\b",
+   "replacement": "",
+   "scope": "DB+AI",
+   "severity": "실패",
+   "note": "부정적 비교 (BAN_072)"
+  },
+  {
+   "id": "BAN_EN_056",
+   "category": "형식",
+   "pattern": "**",
+   "replacement": "• bullet or plain text",
+   "scope": "DB+AI",
+   "severity": "실패",
+   "note": "강조 표기 금지 (BAN_073)"
+  },
+  {
+   "id": "BAN_EN_057",
+   "category": "형식",
+   "pattern": "re:^\\s*\\|.*\\|\\s*$",
+   "replacement": "",
+   "scope": "DB+AI",
+   "severity": "실패",
+   "note": "마크다운 표 금지 (BAN_074)"
+  },
+  {
+   "id": "BAN_EN_058",
+   "category": "형식",
+   "pattern": "re:\\d",
+   "replacement": "{{기간}} {{날짜}} {{연도}} tokens",
+   "scope": "AI만",
+   "severity": "실패",
+   "note": "토큰 밖 아라비아 숫자 (BAN_075). 검사기는 토큰을 지운 뒤 검사"
+  },
+  {
+   "id": "BAN_EN_059",
+   "category": "형식",
+   "pattern": "re:[가-힣]",
+   "replacement": "",
+   "scope": "AI만",
+   "severity": "실패",
+   "note": "영문 출력에 한글이 남음 — 토큰({닉네임} 등)은 지운 뒤 검사"
+  },
+  {
+   "id": "BAN_EN_060",
+   "category": "형식",
+   "pattern": "re:(?i)\\b(fortune[- ]?tell(ing|er)|psychic reading|tarot reading)\\b",
+   "replacement": "your chart / the stars",
+   "scope": "DB+AI",
+   "severity": "경고",
+   "note": "성찰 언어로 (BAN_077·078). 'horoscope'는 허용"
+  },
+  {
+   "id": "BAN_EN_061",
+   "category": "형식",
+   "pattern": "re:[\\U0001F300-\\U0001FAFF\\u2700-\\u27BF\\u2B50\\u2B55]",
+   "replacement": "",
+   "scope": "DB+AI",
+   "severity": "경고",
+   "note": "이모지 (별자리 기호 ♈~♓ 허용, ✨🌙는 쏘웰라 AI 인사에서만) (BAN_079)"
+  },
+  {
+   "id": "BAN_EN_062",
+   "category": "영문 말투",
+   "pattern": "re:(?i)\\b(may|might|perhaps|maybe|possibly)\\b[^\\n]*\\b(may|might|perhaps|maybe|possibly)\\b",
+   "replacement": "keep at most one soft hedge per paragraph",
+   "scope": "DB+AI",
+   "severity": "경고",
+   "note": "번역 지침 1: hedge는 단락당 1개 이하"
+  },
+  {
+   "id": "BAN_EN_063",
+   "category": "영문 말투",
+   "pattern": "re:(^|[.!?]\\s+)(It is|It's a (time|year|good time)|There (is|are|may be)|This is a (year|time) when)\\b",
+   "replacement": "make 'you' or a planet the subject",
+   "scope": "DB+AI",
+   "severity": "경고",
+   "note": "가짜 주어 시작 문장 — 능동형·독자 주어로"
+  },
+  {
+   "id": "BAN_EN_064",
+   "category": "영문 말투",
+   "pattern": "re:(?i)\\b(feeling flush|vibes?|gonna|wanna|low[- ]key|pumped|slay|no cap)\\b",
+   "replacement": "plain standard English",
+   "scope": "DB+AI",
+   "severity": "경고",
+   "note": "속어 금지"
+  },
+  {
+   "id": "BAN_EN_065",
+   "category": "영문 말투",
+   "pattern": "re:(?i)\\bin retrograde\\b",
+   "replacement": "is retrograde / goes retrograde",
+   "scope": "DB+AI",
+   "severity": "경고",
+   "note": "점성 표현 — 'in retrograde' 대신"
+  },
+  {
+   "id": "BAN_EN_066",
+   "category": "영문 말투",
+   "pattern": "re:(?i)\\b(you did well this year|thank you for coming all this way)\\b",
+   "replacement": "Give yourself some credit / Welcome",
+   "scope": "DB+AI",
+   "severity": "경고",
+   "note": "한국어 위로 표현 직역"
+  },
+  {
+   "id": "BAN_EN_067",
+   "category": "영문 용어",
+   "pattern": "re:Wide-Open Year|In-Your-Hands Year|Groundwork Year|\\((Tailwind|Headwind)\\)",
+   "replacement": "Open Year / Steady Year / Building Year",
+   "scope": "DB+AI",
+   "severity": "실패",
+   "note": "옛 판정 라벨 (11/04 한 단어로 확정)"
+  },
+  {
+   "id": "BAN_EN_068",
+   "category": "영문 용어",
+   "pattern": "re:(?i)\\b(holding on|excitement)\\b(?=['’])",
+   "replacement": "‘Endurance’ / ‘Butterflies’",
+   "scope": "DB+AI",
+   "severity": "실패",
+   "note": "Q2 단어 옛 표기 (따옴표로 인용된 경우)"
+  },
+  {
+   "id": "BAN_EN_069",
+   "category": "영문 용어",
+   "pattern": "re:[‘'\"]Good people[’'\"]",
+   "replacement": "My people",
+   "scope": "DB+AI",
+   "severity": "경고",
+   "note": "Q3 선택지 옛 표기 (따옴표로 인용된 경우)"
+  },
+  {
+   "id": "BAN_EN_070",
+   "category": "영문 용어",
+   "pattern": "re:(?i)\\btemporary account\\b",
+   "replacement": "guest account",
+   "scope": "DB+AI",
+   "severity": "경고",
+   "note": "용어 통일"
+  },
+  {
+   "id": "BAN_EN_071",
+   "category": "영문 용어",
+   "pattern": "re:\\bSowella\\b(?! AI)",
+   "replacement": "Sowella AI (첫 언급·버튼·이용권)",
+   "scope": "DB+AI",
+   "severity": "경고",
+   "note": "문장 속 대화 상대로는 'Sowella'만도 허용 — 문맥 확인"
+  }
+ ]
+}
