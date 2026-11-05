@@ -51,4 +51,7 @@ test("영문 숨김: /en 화면은 모두 한국어 첫 화면으로, 다른 주
   assert.equal(hiddenEnRedirect("/english", true), null);
   assert.equal(hiddenEnRedirect("/results", true), null);
   assert.equal(hiddenEnRedirect("/en", false), null);
+  // 정책 페이지는 숨김 중에도 열람 가능
+  assert.equal(hiddenEnRedirect("/en/legal/privacy", true), null);
+  assert.equal(hiddenEnRedirect("/en/legal/terms", true), null);
 });

@@ -26,6 +26,8 @@ export const EN_PAGES_HIDDEN = true;
 
 /** 숨김일 때 /en·/en/… 화면을 어디로 보낼지(아니면 null) — API(/api/en/…)는 화면이 아니라 해당 없음 */
 export function hiddenEnRedirect(pathname: string, hidden: boolean = EN_PAGES_HIDDEN): string | null {
+  // 영문 정책 페이지(/en/legal/…)는 숨김 중에도 열린다(owner 2026-11-05: 검토용) — 검색 제외(noindex)는 그대로
+  if (pathname === "/en/legal" || pathname.startsWith("/en/legal/")) return null;
   return hidden && (pathname === "/en" || pathname.startsWith("/en/")) ? "/" : null;
 }
 
