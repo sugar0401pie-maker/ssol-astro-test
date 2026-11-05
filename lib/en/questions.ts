@@ -40,8 +40,8 @@ export const EN_Q3: ReadonlyArray<[Q3Wish, string]> = [
 ];
 
 export const EN_QUESTION_LIST = [
-  // Q1 라벨: DATA04는 "Main concern" 한 마디 — 한국어 화면의 '— 요즘 제일 신경 쓰이는 부분'에 맞춘 뒷말은 Claude 초안
-  { key: "q1", tag: "Q1", label: "Main concern — what’s on your mind most these days", options: EN_Q1 },
+  // Q1 라벨: DATA04 그대로(2026-11-05 신비 톤 수정분 v2.2 — "Main concern" → "What's on your mind")
+  { key: "q1", tag: "Q1", label: "What's on your mind", options: EN_Q1 },
   { key: "q2", tag: "Q2", label: "If you had to sum up your 2026 in one word, what would it be?", options: EN_Q2 },
   { key: "q3", tag: "Q3", label: "What do you hope for in 2027?", options: EN_Q3 },
 ] as const;

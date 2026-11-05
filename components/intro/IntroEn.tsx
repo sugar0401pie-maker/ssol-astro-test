@@ -44,10 +44,10 @@ export default function IntroEn() {
           <p className="count">✨ {PARTICIPANTS.toLocaleString("en-US")} people have already taken the test</p>
           <div className="intro-btns">
             <Link href="/en/start" className="btn block">
-              Start the test
+              Read my stars
             </Link>
             <Link href={loggedIn ? "/en/results" : "/en/login?next=/en/results"} className="btn block ghost">
-              See my results
+              My readings
             </Link>
           </div>
         </div>

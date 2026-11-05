@@ -29,21 +29,21 @@ export default function ResultsListEn() {
 
   return (
     <section className="screen on" lang="en" aria-labelledby="list-big">
-      <h1 className="big" id="list-big">My results</h1>
-      {failed && <p className="small">We couldn’t load your results. Please try again.</p>}
+      <h1 className="big" id="list-big">My readings</h1>
+      {failed && <p className="small">We couldn’t load your readings. Please try again.</p>}
       {!rows && !failed && <p className="small">Loading…</p>}
       {rows && rows.length === 0 && (
         <>
           {/* owner 2026-11-04: 테스트를 본 적이 없으면 캐릭터 그림(환영 화면과 같은 안내 그림 02 — 열 때마다 무작위) */}
           <GuideArt id="02" />
-          <p className="small">No saved results yet. Ready to take the test?</p>
+          <p className="small">No saved readings yet. Ready to read your stars?</p>
           {!session && (
             <Link href="/en/login?next=/en/results" className="btn ghost block">
-              Log in to see saved results
+              Log in to see your saved readings
             </Link>
           )}
           <Link href="/en/start" className="btn block">
-            Start the test
+            Read my stars
           </Link>
         </>
       )}

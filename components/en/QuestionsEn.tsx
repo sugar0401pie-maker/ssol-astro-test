@@ -144,7 +144,7 @@ export default function QuestionsEn() {
           ))}
           <p className="err" role="alert">{err}</p>
           <button className="btn block" type="button" onClick={submit}>
-            See my results
+            Reveal my chart
           </button>
           <div className="footer-ctrl">
             <button type="button" className="linkish" onClick={() => router.push("/en/start/birth")}>
@@ -201,9 +201,9 @@ export default function QuestionsEn() {
       {step === "limited" && (
         <section className="screen on">
           <h1 className="big">That’s all for today</h1>
-          <p className="small">You can save up to 3 results a day. Please come back tomorrow.</p>
+          <p className="small">You can save up to 3 readings a day. Please come back tomorrow.</p>
           <button className="btn block" type="button" onClick={() => router.push("/en/results")}>
-            See my results
+            My readings
           </button>
         </section>
       )}

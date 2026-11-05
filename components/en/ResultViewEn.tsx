@@ -74,7 +74,7 @@ export default function ResultViewEn({ id, page }: { id: string; page?: number }
     if (state === "none")
       return (
         <div className="box" lang="en">
-          <p className="lead">We couldn’t find this result.</p>
+          <p className="lead">We couldn’t find this reading.</p>
           <p>It may have been saved with a different account or on another device.</p>
           {!session && (
             <Link href={`/en/login?next=${encodeURIComponent(`/en/results/${id}/${page ?? 1}`)}`} className="btn block mt-3">
@@ -86,7 +86,7 @@ export default function ResultViewEn({ id, page }: { id: string; page?: number }
           </Link>
         </div>
       );
-    return <p className="text-center text-cream/70">{state === "error" ? "We couldn’t load your results. Please try again." : "Loading…"}</p>;
+    return <p className="text-center text-cream/70">{state === "error" ? "We couldn’t load your reading. Please try again." : "Loading…"}</p>;
   }
   return (
     <div className="flex flex-col gap-6" lang="en">

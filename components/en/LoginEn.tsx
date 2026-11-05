@@ -179,7 +179,7 @@ export default function LoginEn() {
           ? "One account works across SSOL Wellness House services."
           : mode === "reset"
             ? "We’ll email you a code to set a new password."
-            : "Save your results to your account and come back anytime."}
+            : "Save your readings to your account and come back anytime."}
       </p>
 
       {mode === "signin" && (

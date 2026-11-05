@@ -865,9 +865,9 @@
     {
      "key": "UI|0093|text",
      "ko": "</b><div><strong style=\"color:var(--cream)\">정확도 ",
-     "en": "</b><div><strong style=\"color:var(--cream)\">Accuracy ",
-     "tone_check": "해당없음",
-     "tone_reason": "",
+     "en": "</b><div><strong style=\"color:var(--cream)\">Chart detail ",
+     "tone_check": "수정",
+     "tone_reason": "2026-11-05 신비 톤 수정분 v2.2: 'accuracy'는 예측 적중률처럼 읽힘(보장 표현 위험). 실제는 출생 시간 정보 수준",
      "en_before_tone": "",
      "note": ""
     },
@@ -910,9 +910,9 @@
     {
      "key": "UI|0098|text",
      "ko": "</p><p class=\"guest-note\" id=\"sowella-guest\" style=\"text-align:left\">쏘웰라는 로그인한 계정에서만 이용할 수 있어요. 로그인하면 지금 결과가 그대로 옮겨져요.</p><button class=\"btn block\" id=\"btn-sowella\" type=\"button\">쏘웰라와 대화 시작하기</button></div>",
-     "en": "</p><p class=\"guest-note\" id=\"sowella-guest\" style=\"text-align:left\">Sowella AI is only available when you’re logged in. Log in and your current results will come with you.</p><button class=\"btn block\" id=\"btn-sowella\" type=\"button\">Start chatting with Sowella AI</button></div>",
-     "tone_check": "재번역",
-     "tone_reason": "제품명·가격 반영",
+     "en": "</p><p class=\"guest-note\" id=\"sowella-guest\" style=\"text-align:left\">Sowella AI is only available when you’re logged in. Log in and your current reading will come with you.</p><button class=\"btn block\" id=\"btn-sowella\" type=\"button\">Start chatting with Sowella AI</button></div>",
+     "tone_check": "수정",
+     "tone_reason": "2026-11-05 신비 톤 수정분 v2.2: 'results'는 검사 결과처럼 들림 → reading / star report",
      "en_before_tone": "</p><p class=\"guest-note\" id=\"sowella-guest\" style=\"text-align:left\">Sowella is available only when you’re logged in. Once you log in, your current results will carry over.</p><button class=\"btn block\" id=\"btn-sowella\" type=\"button\">Start chatting with Sowella</button></div>",
      "note": ""
     },
@@ -982,9 +982,9 @@
     {
      "key": "UI|0106|text",
      "ko": "<div class=\"grade\" id=\"grade-badge\"><b aria-label=\"정확도 ",
-     "en": "<div class=\"grade\" id=\"grade-badge\"><b aria-label=\"Accuracy ",
-     "tone_check": "해당없음",
-     "tone_reason": "",
+     "en": "<div class=\"grade\" id=\"grade-badge\"><b aria-label=\"Chart detail ",
+     "tone_check": "수정",
+     "tone_reason": "2026-11-05 신비 톤 수정분 v2.2: 'accuracy'는 예측 적중률처럼 읽힘(보장 표현 위험). 실제는 출생 시간 정보 수준",
      "en_before_tone": "",
      "note": ""
     },
@@ -1055,9 +1055,9 @@
     {
      "key": "UI|0114|text",
      "ko": "<h3 id=\"sheet-title\">결과 공유하기</h3><p class=\"kicker\">",
-     "en": "<h3 id=\"sheet-title\">Share your results</h3><p class=\"kicker\">",
-     "tone_check": "해당없음",
-     "tone_reason": "",
+     "en": "<h3 id=\"sheet-title\">Share my star report</h3><p class=\"kicker\">",
+     "tone_check": "수정",
+     "tone_reason": "2026-11-05 신비 톤 수정분 v2.2: 'results'는 검사 결과처럼 들림 → reading / star report",
      "en_before_tone": "",
      "note": ""
     },
@@ -1262,9 +1262,9 @@
     {
      "key": "UI|0137|text",
      "ko": "<p class=\"share-note\">결제하지 않더라도 지금까지의 결과를 공유할 수 있어요.</p>",
-     "en": "<p class=\"share-note\">You can share your results so far without paying.</p>",
-     "tone_check": "OK",
-     "tone_reason": "",
+     "en": "<p class=\"share-note\">You can share your reading so far without paying.</p>",
+     "tone_check": "수정",
+     "tone_reason": "2026-11-05 신비 톤 수정분 v2.2: 'results'는 검사 결과처럼 들림 → reading / star report",
      "en_before_tone": "",
      "note": ""
     },
@@ -1515,9 +1515,9 @@
     {
      "key": "UI|0165|text",
      "ko": ">결과 공유하기</h3><p class=",
-     "en": ">Share your results</h3><p class=",
-     "tone_check": "해당없음",
-     "tone_reason": "",
+     "en": ">Share my star report</h3><p class=",
+     "tone_check": "수정",
+     "tone_reason": "2026-11-05 신비 톤 수정분 v2.2: 'results'는 검사 결과처럼 들림 → reading / star report",
      "en_before_tone": "",
      "note": ""
     },
@@ -1551,9 +1551,9 @@
     {
      "key": "UI|0169|text",
      "ko": ">로그인 없이 테스트하기</button><button class=",
-     "en": ">Take the test without logging in</button><button class=",
-     "tone_check": "재번역",
-     "tone_reason": "원문 의미 반영",
+     "en": ">Continue as a guest</button><button class=",
+     "tone_check": "수정",
+     "tone_reason": "2026-11-05 신비 톤 수정분 v2.2: 같은 버튼 문구 통일",
      "en_before_tone": ">Try without logging in</button><button class=",
      "note": ""
     },
@@ -1605,9 +1605,9 @@
     {
      "key": "UI|0175|text",
      "ko": ">쏘웰라는 로그인한 계정에서만 이용할 수 있어요. 로그인하면 지금 결과가 그대로 옮겨져요.</p><button class=",
-     "en": ">Sowella AI is only available when you’re logged in. Log in and your current results will come with you.</p><button class=",
-     "tone_check": "재번역",
-     "tone_reason": "제품명·가격 반영",
+     "en": ">Sowella AI is only available when you’re logged in. Log in and your current reading will come with you.</p><button class=",
+     "tone_check": "수정",
+     "tone_reason": "2026-11-05 신비 톤 수정분 v2.2: 'results'는 검사 결과처럼 들림 → reading / star report",
      "en_before_tone": ">Sowella is available only when you’re logged in. Once you log in, your current results will carry over.</p><button class=",
      "note": ""
     },
@@ -2156,9 +2156,9 @@
     {
      "key": "UI|0236|text",
      "ko": "✨ 벌써 1,284명이 참여했어요",
-     "en": "✨ 1,284 people have already taken the test",
-     "tone_check": "재번역",
-     "tone_reason": "자연스러운 표현",
+     "en": "✨ 1,284 people have already read their stars",
+     "tone_check": "수정",
+     "tone_reason": "2026-11-05 신비 톤 수정분 v2.2: 'test'가 퀴즈 앱처럼 들림",
      "en_before_tone": "✨ 1,284 people have already taken part",
      "note": ""
     },
@@ -2292,45 +2292,45 @@
     {
      "key": "UI|0251|text",
      "ko": "결과 공유하기",
-     "en": "Share your results",
-     "tone_check": "해당없음",
-     "tone_reason": "",
+     "en": "Share my star report",
+     "tone_check": "수정",
+     "tone_reason": "2026-11-05 신비 톤 수정분 v2.2: 'results'는 검사 결과처럼 들림 → reading / star report",
      "en_before_tone": "",
      "note": ""
     },
     {
      "key": "UI|0252|text",
      "ko": "결과 보기",
-     "en": "See results",
-     "tone_check": "해당없음",
-     "tone_reason": "",
+     "en": "Reveal my chart",
+     "tone_check": "수정",
+     "tone_reason": "2026-11-05 신비 톤 수정분 v2.2: 'results'는 검사 결과처럼 들림 → reading / star report",
      "en_before_tone": "",
      "note": ""
     },
     {
      "key": "UI|0253|text",
      "ko": "결과 주제",
-     "en": "Result topics",
-     "tone_check": "해당없음",
-     "tone_reason": "",
+     "en": "Chapters",
+     "tone_check": "수정",
+     "tone_reason": "2026-11-05 신비 톤 수정분 v2.2: 'results'는 검사 결과처럼 들림 → reading / star report",
      "en_before_tone": "",
      "note": ""
     },
     {
      "key": "UI|0254|text",
      "ko": "결과는 내 계정에 저장돼서 언제든 다시 볼 수 있어요. 나중에 태어난 시간을 추가할 수도 있어요.",
-     "en": "Your results are saved to your account, so you can come back anytime. You can add your birth time later, too.",
-     "tone_check": "재번역",
-     "tone_reason": "같은 문장 표현 통일",
+     "en": "Your reading is saved to your account, so you can come back anytime. You can add your birth time later, too.",
+     "tone_check": "수정",
+     "tone_reason": "2026-11-05 신비 톤 수정분 v2.2: 'results'는 검사 결과처럼 들림 → reading / star report",
      "en_before_tone": "Your results are saved to your account, so you can come back to them anytime. You can also add your birth time later.",
      "note": ""
     },
     {
      "key": "UI|0255|text",
      "ko": "결과로 돌아가기",
-     "en": "Back to results",
-     "tone_check": "해당없음",
-     "tone_reason": "",
+     "en": "Back to my reading",
+     "tone_check": "수정",
+     "tone_reason": "2026-11-05 신비 톤 수정분 v2.2: 'results'는 검사 결과처럼 들림 → reading / star report",
      "en_before_tone": "",
      "note": ""
     },
@@ -2364,9 +2364,9 @@
     {
      "key": "UI|0259|text",
      "ko": "결제하지 않더라도 지금까지의 결과를 공유할 수 있어요.",
-     "en": "You can share your results so far, no payment needed.",
-     "tone_check": "재번역",
-     "tone_reason": "같은 문장 표현 통일",
+     "en": "You can share your reading so far, no payment needed.",
+     "tone_check": "수정",
+     "tone_reason": "2026-11-05 신비 톤 수정분 v2.2: 'results'는 검사 결과처럼 들림 → reading / star report",
      "en_before_tone": "You can share your results so far without paying.",
      "note": ""
     },
@@ -2391,9 +2391,9 @@
     {
      "key": "UI|0262|text",
      "ko": "계산 중 문제가 생겼어요. 입력을 확인해 주세요.",
-     "en": "Something went wrong with the calculation. Please check your details.",
-     "tone_check": "재번역",
-     "tone_reason": "자연스러운 표현",
+     "en": "We couldn't map your sky. Check your birth details and try again.",
+     "tone_check": "수정",
+     "tone_reason": "2026-11-05 신비 톤 수정분 v2.2: 계산기 말투",
      "en_before_tone": "Something went wrong during the calculation. Please check what you entered.",
      "note": ""
     },
@@ -2616,9 +2616,9 @@
     {
      "key": "UI|0287|text",
      "ko": "내 결과 보기",
-     "en": "See my results",
-     "tone_check": "해당없음",
-     "tone_reason": "",
+     "en": "My readings",
+     "tone_check": "수정",
+     "tone_reason": "2026-11-05 신비 톤 수정분 v2.2: 'results'는 검사 결과처럼 들림 → reading / star report",
      "en_before_tone": "",
      "note": ""
     },
@@ -2832,9 +2832,9 @@
     {
      "key": "UI|0310|text",
      "ko": "님의 결과를 저장하고 보려면 로그인해 주세요.",
-     "en": ", please log in to save and view your results.",
-     "tone_check": "OK",
-     "tone_reason": "",
+     "en": ", please log in to save and view your reading.",
+     "tone_check": "수정",
+     "tone_reason": "2026-11-05 신비 톤 수정분 v2.2: 'results'는 검사 결과처럼 들림 → reading / star report",
      "en_before_tone": "",
      "note": "앞에 닉네임이 붙는 조각."
     },
@@ -3195,36 +3195,36 @@
     {
      "key": "UI|0350|text",
      "ko": "로그인 없이 시작했어요. 결과는 이 기기에 30일 동안 저장돼요.",
-     "en": "You started without logging in. Your results stay on this device for 30 days.",
-     "tone_check": "재번역",
-     "tone_reason": "수동태→능동",
+     "en": "You started without logging in. Your reading stays on this device for 30 days.",
+     "tone_check": "수정",
+     "tone_reason": "2026-11-05 신비 톤 수정분 v2.2: 'results'는 검사 결과처럼 들림 → reading / star report",
      "en_before_tone": "You started without logging in. Your results will be saved on this device for 30 days.",
      "note": ""
     },
     {
      "key": "UI|0351|text",
      "ko": "로그인 없이 테스트하기",
-     "en": "Try without logging in",
-     "tone_check": "해당없음",
-     "tone_reason": "",
+     "en": "Continue as a guest",
+     "tone_check": "수정",
+     "tone_reason": "2026-11-05 신비 톤 수정분 v2.2: 같은 버튼 문구 통일",
      "en_before_tone": "",
      "note": ""
     },
     {
      "key": "UI|0352|text",
      "ko": "로그인 없이 하면 결과는 이 기기에 30일 동안만 저장되고, 쏘웰라는 이용할 수 없어요.",
-     "en": "Without logging in, your results stay on this device for 30 days only, and Sowella AI won't be available.",
-     "tone_check": "재번역",
-     "tone_reason": "제품명·가격 반영",
+     "en": "Without logging in, your reading stays on this device for 30 days only, and Sowella AI won't be available.",
+     "tone_check": "수정",
+     "tone_reason": "2026-11-05 신비 톤 수정분 v2.2: 'results'는 검사 결과처럼 들림 → reading / star report",
      "en_before_tone": "Without logging in, your results are saved on this device for only 30 days, and Sowella isn’t available.",
      "note": ""
     },
     {
      "key": "UI|0353|text",
      "ko": "로그인되었어요. 결과가 내 계정에 저장됐어요.",
-     "en": "You're logged in, and your results are saved to your account.",
-     "tone_check": "재번역",
-     "tone_reason": "같은 문장 표현 통일",
+     "en": "You're logged in, and your reading is saved to your account.",
+     "tone_check": "수정",
+     "tone_reason": "2026-11-05 신비 톤 수정분 v2.2: 'results'는 검사 결과처럼 들림 → reading / star report",
      "en_before_tone": "You’re logged in. Your results have been saved to your account.",
      "note": ""
     },
@@ -3240,9 +3240,9 @@
     {
      "key": "UI|0355|text",
      "ko": "로그인하고 내 결과를 다시 볼까요?",
-     "en": "Log in to see your results again",
-     "tone_check": "재번역",
-     "tone_reason": "간결화",
+     "en": "Log in to see your reading again",
+     "tone_check": "수정",
+     "tone_reason": "2026-11-05 신비 톤 수정분 v2.2: 'results'는 검사 결과처럼 들림 → reading / star report",
      "en_before_tone": "Would you like to log in and see your results again?",
      "note": ""
     },
@@ -3258,9 +3258,9 @@
     {
      "key": "UI|0357|text",
      "ko": "로그인하면 지금 결과가 내 계정으로 옮겨지고, 쏘웰라 3일 이용권도 함께 받을 수 있어요.",
-     "en": "Log in to move your results to your account and claim a 3-day Sowella AI pass.",
-     "tone_check": "재번역",
-     "tone_reason": "제품명·가격 반영",
+     "en": "Log in to move your reading to your account and claim a 3-day Sowella AI pass.",
+     "tone_check": "수정",
+     "tone_reason": "2026-11-05 신비 톤 수정분 v2.2: 'results'는 검사 결과처럼 들림 → reading / star report",
      "en_before_tone": "When you log in, your current results move to your account, and you’ll also get a 3-day Sowella pass.",
      "note": ""
     },
@@ -3790,9 +3790,9 @@
     {
      "key": "UI|0416|text",
      "ko": "별의 위치를 계산하는 중…",
-     "en": "Working out where the stars were…",
-     "tone_check": "재번역",
-     "tone_reason": "자연스러운 표현",
+     "en": "Charting where the stars stood…",
+     "tone_check": "수정",
+     "tone_reason": "2026-11-05 신비 톤 수정분 v2.2: 계산 말투",
      "en_before_tone": "Calculating the positions of the stars…",
      "note": ""
     },
@@ -3970,9 +3970,9 @@
     {
      "key": "UI|0436|text",
      "ko": "빠르게 로그인하고 내 별자리를 확인해볼까요?",
-     "en": "Log in and discover your star sign in seconds",
-     "tone_check": "재번역",
-     "tone_reason": "간결화",
+     "en": "Log in and meet your stars",
+     "tone_check": "수정",
+     "tone_reason": "2026-11-05 신비 톤 수정분 v2.2: 위와 같음",
      "en_before_tone": "Want to log in quickly and check your star sign?",
      "note": ""
     },
@@ -4177,9 +4177,9 @@
     {
      "key": "UI|0459|text",
      "ko": "세 가지 질문에 하나씩 골라 주세요.",
-     "en": "Pick one answer for each of the three questions.",
-     "tone_check": "재번역",
-     "tone_reason": "자연스러운 표현",
+     "en": "For each of the three, choose what feels truest.",
+     "tone_check": "수정",
+     "tone_reason": "2026-11-05 신비 톤 수정분 v2.2: 설문지 말투",
      "en_before_tone": "Choose one answer for each of the three questions.",
      "note": ""
     },
@@ -4358,9 +4358,9 @@
     {
      "key": "UI|0479|text",
      "ko": "쏘웰라는 로그인한 계정에서만 이용할 수 있어요. 로그인하면 지금 결과가 그대로 옮겨져요.",
-     "en": "Sowella AI is available only when you’re logged in. Log in, and your current results come with you.",
-     "tone_check": "재번역",
-     "tone_reason": "제품명·가격 반영",
+     "en": "Sowella AI is available only when you’re logged in. Log in, and your current reading comes with you.",
+     "tone_check": "수정",
+     "tone_reason": "2026-11-05 신비 톤 수정분 v2.2: 'results'는 검사 결과처럼 들림 → reading / star report",
      "en_before_tone": "Sowella is available only when you’re logged in. Once you log in, your current results will carry over.",
      "note": ""
     },
@@ -4448,9 +4448,9 @@
     {
      "key": "UI|0489|text",
      "ko": "아직 저장된 결과가 없어요. 테스트를 먼저 해 볼까요?",
-     "en": "No saved results yet. Ready to take the test?",
-     "tone_check": "재번역",
-     "tone_reason": "간결화",
+     "en": "No saved readings yet. Ready to read your stars?",
+     "tone_check": "수정",
+     "tone_reason": "2026-11-05 신비 톤 수정분 v2.2: 'test'가 퀴즈 앱처럼 들림",
      "en_before_tone": "You don’t have any saved results yet. Want to take the test first?",
      "note": ""
     },
@@ -4593,9 +4593,9 @@
     {
      "key": "UI|0505|text",
      "ko": "역량",
-     "en": "Capacity",
-     "tone_check": "해당없음",
-     "tone_reason": "",
+     "en": "Strength",
+     "tone_check": "수정",
+     "tone_reason": "2026-11-05 신비 톤 수정분 v2.2: 인사평가 용어처럼 들림",
      "en_before_tone": "",
      "note": ""
     },
@@ -4710,9 +4710,9 @@
     {
      "key": "UI|0518|text",
      "ko": "예시 값으로 채웠어요 — 결과 보기를 눌러 주세요",
-     "en": "We’ve filled in sample values — tap See results",
-     "tone_check": "재번역",
-     "tone_reason": "표현 다듬기",
+     "en": "We’ve filled in sample values — tap Reveal my chart",
+     "tone_check": "수정",
+     "tone_reason": "2026-11-05 신비 톤 수정분 v2.2: 버튼 이름 변경에 맞춤",
      "en_before_tone": "Filled in with example values — tap See results",
      "note": ""
     },
@@ -5289,9 +5289,9 @@
     {
      "key": "UI|0581|text",
      "ko": "정확도 ' + g + '등급",
-     "en": "Accuracy grade ' + g + '",
-     "tone_check": "해당없음",
-     "tone_reason": "",
+     "en": "Chart detail grade ' + g + '",
+     "tone_check": "수정",
+     "tone_reason": "2026-11-05 신비 톤 수정분 v2.2: 'accuracy'는 예측 적중률처럼 읽힘(보장 표현 위험). 실제는 출생 시간 정보 수준",
      "en_before_tone": "",
      "note": "'정확도 X등급' → 'Accuracy grade X'."
     },
@@ -5896,9 +5896,9 @@
     {
      "key": "UI|0648|text",
      "ko": "테스트 하기",
-     "en": "Start the test",
-     "tone_check": "해당없음",
-     "tone_reason": "",
+     "en": "Read my stars",
+     "tone_check": "수정",
+     "tone_reason": "2026-11-05 신비 톤 수정분 v2.2: 'test'가 퀴즈 앱처럼 들림",
      "en_before_tone": "",
      "note": ""
     },
@@ -6193,9 +6193,9 @@
     {
      "key": "UI|0681|text",
      "ko": "한 번 로그인하면 결과를 다시 보거나 나중에 태어난 시간을 추가할 수 있어요.",
-     "en": "Log in once and you can revisit your results or add your birth time later.",
-     "tone_check": "재번역",
-     "tone_reason": "자연스러운 표현",
+     "en": "Log in once and you can revisit your reading or add your birth time later.",
+     "tone_check": "수정",
+     "tone_reason": "2026-11-05 신비 톤 수정분 v2.2: 'results'는 검사 결과처럼 들림 → reading / star report",
      "en_before_tone": "Once you log in, you can view your results again or add your birth time later.",
      "note": ""
     },
@@ -6488,9 +6488,9 @@
     {
      "key": "DATA04|questions.Q1.label|text",
      "ko": "주요 고민",
-     "en": "Main concern",
-     "tone_check": "해당없음",
-     "tone_reason": "",
+     "en": "What's on your mind",
+     "tone_check": "수정",
+     "tone_reason": "2026-11-05 신비 톤 수정분 v2.2: 타로 'worry'와 같은 문제. UI|0013과 통일",
      "en_before_tone": "",
      "note": ""
     },
@@ -7180,9 +7180,9 @@
     {
      "key": "DATA04|onboarding_copy.5_questions.big|text",
      "ko": "{닉네임}님에 대해서 딱 3가지 더 여쭤보겠습니다.",
-     "en": "{닉네임}, just 3 more questions about you.",
-     "tone_check": "재번역",
-     "tone_reason": "간결화",
+     "en": "{닉네임}, tell us three things about where you are right now.",
+     "tone_check": "수정",
+     "tone_reason": "2026-11-05 신비 톤 수정분 v2.2: 설문지 말투. 리포트의 'Questions from the stars'와 겹침",
      "en_before_tone": "{닉네임}, we'd like to ask you just 3 more questions.",
      "note": ""
     },
@@ -7198,27 +7198,27 @@
     {
      "key": "DATA04|onboarding_copy.1_intro.count|text",
      "ko": "✨ 벌써 {n}명이 참여했어요",
-     "en": "✨ {n} people have already joined",
-     "tone_check": "재번역",
-     "tone_reason": "자연스러운 표현",
+     "en": "✨ {n} people have already read their stars",
+     "tone_check": "수정",
+     "tone_reason": "2026-11-05 신비 톤 수정분 v2.2: 인트로 숫자 문구 통일",
      "en_before_tone": "✨ {n} people have already taken part",
      "note": ""
     },
     {
      "key": "DATA04|onboarding_copy.1_intro.buttons.0|text",
      "ko": "테스트 하기",
-     "en": "Start the test",
-     "tone_check": "해당없음",
-     "tone_reason": "",
+     "en": "Read my stars",
+     "tone_check": "수정",
+     "tone_reason": "2026-11-05 신비 톤 수정분 v2.2: 'test'가 퀴즈 앱처럼 들림",
      "en_before_tone": "",
      "note": ""
     },
     {
      "key": "DATA04|onboarding_copy.1_intro.buttons.1|text",
      "ko": "내 결과 보기",
-     "en": "See my results",
-     "tone_check": "해당없음",
-     "tone_reason": "",
+     "en": "My readings",
+     "tone_check": "수정",
+     "tone_reason": "2026-11-05 신비 톤 수정분 v2.2: 'results'는 검사 결과처럼 들림 → reading / star report",
      "en_before_tone": "",
      "note": ""
     },
@@ -7252,18 +7252,18 @@
     {
      "key": "DATA04|onboarding_copy.2_login.big|text",
      "ko": "빠르게 로그인하고 내 별자리를 확인해볼까요?",
-     "en": "Log in and discover your star sign in seconds",
-     "tone_check": "재번역",
-     "tone_reason": "간결화",
+     "en": "Log in and meet your stars",
+     "tone_check": "수정",
+     "tone_reason": "2026-11-05 신비 톤 수정분 v2.2: 'in seconds'는 앱 속도 자랑, 'star sign'은 태양 별자리 하나로 좁혀 들림",
      "en_before_tone": "Want to log in quickly and check your star sign?",
      "note": ""
     },
     {
      "key": "DATA04|onboarding_copy.2_login.small|text",
      "ko": "결과는 내 계정에 저장돼서 언제든 다시 볼 수 있어요. 나중에 태어난 시간을 추가할 수도 있어요.",
-     "en": "Your results are saved to your account, so you can come back anytime. You can add your birth time later, too.",
-     "tone_check": "재번역",
-     "tone_reason": "자연스러운 표현",
+     "en": "Your reading is saved to your account, so you can come back anytime. You can add your birth time later, too.",
+     "tone_check": "수정",
+     "tone_reason": "2026-11-05 신비 톤 수정분 v2.2: 'results'는 검사 결과처럼 들림 → reading / star report",
      "en_before_tone": "Your results are saved to your account, so you can come back to them anytime. You can also add your birth time later.",
      "note": ""
     },
@@ -7309,18 +7309,18 @@
     {
      "key": "DATA04|onboarding_copy.2_login.guest_link|text",
      "ko": "로그인 없이 테스트하기",
-     "en": "Try without logging in",
-     "tone_check": "해당없음",
-     "tone_reason": "",
+     "en": "Continue as a guest",
+     "tone_check": "수정",
+     "tone_reason": "2026-11-05 신비 톤 수정분 v2.2: 같은 버튼 문구 통일",
      "en_before_tone": "",
      "note": ""
     },
     {
      "key": "DATA04|onboarding_copy.2_login.guest_note|text",
      "ko": "로그인 없이 하면 결과는 이 기기에 30일 동안만 저장되고, 쏘웰라는 이용할 수 없어요.",
-     "en": "Without logging in, your results stay on this device for 30 days only, and Sowella AI won't be available.",
-     "tone_check": "재번역",
-     "tone_reason": "제품명·가격 반영",
+     "en": "Without logging in, your reading stays on this device for 30 days only, and Sowella AI won't be available.",
+     "tone_check": "수정",
+     "tone_reason": "2026-11-05 신비 톤 수정분 v2.2: 'results'는 검사 결과처럼 들림 → reading / star report",
      "en_before_tone": "Without logging in, your results are saved on this device for only 30 days, and Sowella isn't available.",
      "note": ""
     },
@@ -7482,9 +7482,9 @@
     {
      "key": "DATA04|paywall.share_note|text",
      "ko": "결제하지 않더라도 지금까지의 결과를 공유할 수 있어요.",
-     "en": "You can share your results so far, no payment needed.",
-     "tone_check": "재번역",
-     "tone_reason": "자연스러운 표현",
+     "en": "You can share your reading so far, no payment needed.",
+     "tone_check": "수정",
+     "tone_reason": "2026-11-05 신비 톤 수정분 v2.2: 'results'는 검사 결과처럼 들림 → reading / star report",
      "en_before_tone": "You can share your results so far without paying.",
      "note": ""
     },
@@ -7848,9 +7848,9 @@
     {
      "key": "LEGAL|0016|line",
      "ko": "**제○조 (테스트 결과의 쏘웰라 대화 활용)**",
-     "en": "**Article ○ (Use of Test Results in Sowella AI Conversations)**",
-     "tone_check": "재번역",
-     "tone_reason": "제품명·가격 반영",
+     "en": "**Article ○ (Use of Your Star Report in Sowella AI Conversations)**",
+     "tone_check": "수정",
+     "tone_reason": "2026-11-05 신비 톤 수정분 v2.2: CSO 결정 — 영문 정책 문서도 같이 수정",
      "en_before_tone": "**Article ○ (Use of Test Results in Sowella Conversations)**",
      "note": ""
     },
@@ -8034,9 +8034,9 @@
     {
      "key": "SOWELLA|0006|line",
      "ko": "로그인한 계정(카카오·네이버·이메일)만. ‘로그인 없이 테스트하기’로 한 임시 계정은 쏘웰라에 들어갈 수 없고, 리포트 끝 버튼이 [로그인하고 쏘웰라 시작하기]로 바뀐다. 로그인하면 같은 계정으로 연결된 뒤 아래 1~5가 진행된다.",
-     "en": "Logged-in accounts only (Kakao, Naver or email). Guest accounts created with 'Try without logging in' can't access Sowella AI; for them, the button at the end of the report becomes [Log in and start with Sowella AI]. Once the user logs in and is linked to the same account, steps 1–5 below run as usual.",
-     "tone_check": "재번역",
-     "tone_reason": "제품명·가격 반영",
+     "en": "Logged-in accounts only (Google or email). Guest accounts created with 'Continue as a guest' can't access Sowella AI; for them, the button at the end of the report becomes [Log in and start with Sowella AI]. Once the user logs in and is linked to the same account, steps 1–5 below run as usual.",
+     "tone_check": "수정",
+     "tone_reason": "2026-11-05 신비 톤 수정분 v2.2: 같은 버튼 문구 통일 (같은 문구) / 영문판 로그인 결정(Google + 이메일)과 맞춤",
      "en_before_tone": "Logged-in accounts only (Kakao, Naver, email). Temporary accounts created via 'Try without logging in' cannot enter Sowella, and the button at the end of the report changes to [Log in and start with Sowella]. After the user logs in and is linked to the same account, steps 1–5 below proceed.",
      "note": ""
     },
@@ -8115,9 +8115,9 @@
     {
      "key": "SOWELLA|0020|line",
      "ko": "| user | 닉네임, 정확도 등급, soft_tone | soft_tone = 2026 단어가 이별·고생·그만하자 |",
-     "en": "| user | nickname, accuracy grade, soft_tone | soft_tone = true when the 2026 word is Farewell, Hardship or Letting go |",
-     "tone_check": "재번역",
-     "tone_reason": "직역투 → 자연스러운 표현",
+     "en": "| user | nickname, chart detail grade, soft_tone | soft_tone = true when the 2026 word is Farewell, Hardship or Letting go |",
+     "tone_check": "수정",
+     "tone_reason": "2026-11-05 신비 톤 수정분 v2.2: 프롬프트 변수 설명 — 배지 이름 통일(변수명은 그대로)",
      "en_before_tone": "| user | nickname, accuracy grade, soft_tone | soft_tone = the 2026 word is Farewell, Hardship or Letting go |",
      "note": ""
     },
@@ -8661,9 +8661,9 @@
     {
      "key": "PROMPT|0035|line",
      "ko": "- 주요 고민 우선: 장면의 배경은 {q1_domain}에 맞춥니다(직업·커리어 = 직장·업무·회의·퇴근길, 연애 = 연락·만남, 가족 = 집·명절·안부, 교우·사회관계 = 모임·부탁과 거절, 진로·자기계발 = 공부·선택·준비, 재정·생활안정 = 지출·저축·생활 리듬). 다른 영역의 이벤트가 매우 강하면 한두 문장으로만 짚습니다.",
-     "en": "- Main concern comes first: set your scenes in the world of {q1_domain} (Work & career = the office, tasks, meetings, the commute home; Love = texts and calls, dates; Family = home, holidays, checking in; Friends & social life = get-togethers, asking for and saying no to favors; Direction & growth = studying, choices, getting ready; Money & stability = spending, saving, everyday routines). If an event in another area is especially strong, mention it in just a sentence or two.",
-     "tone_check": "재번역",
-     "tone_reason": "지시문 명확화",
+     "en": "- Q1 (What's on your mind) comes first: set your scenes in the world of {q1_domain} (Work & career = the office, tasks, meetings, the commute home; Love = texts and calls, dates; Family = home, holidays, checking in; Friends & social life = get-togethers, asking for and saying no to favors; Direction & growth = studying, choices, getting ready; Money & stability = spending, saving, everyday routines). If an event in another area is especially strong, mention it in just a sentence or two.",
+     "tone_check": "수정",
+     "tone_reason": "2026-11-05 신비 톤 수정분 v2.2: Q1 라벨 변경에 맞춤(AI 프롬프트)",
      "en_before_tone": "- Main concern first: set the scenes to fit {q1_domain} (Work & career = workplace, tasks, meetings, the commute home; Love = texting/calling, dates; Family = home, holidays, checking in; Friends & social life = get-togethers, asking for and turning down favors; Direction & growth = studying, choices, preparation; Money & stability = spending, saving, daily rhythm). If an event in another area is very strong, touch on it in only a sentence or two.",
      "note": ""
     },

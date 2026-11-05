@@ -10,7 +10,7 @@ SSOL Astro House offers astrology readings for entertainment and self-reflection
 
 ## 2. Who can use the Service
 
-You must be at least 18 years old. The Service, including Sowella AI, may not be suitable for minors. You must give accurate birth details; your reading depends on them. You can use the test and buy a report without an account; results saved that way stay on that device (browser) and are deleted 30 days after saving or payment, unless you sign in before then. Sowella AI requires an account. You may hold one account. Keep your sign-in details safe; you are responsible for what happens under your account.
+You must be at least 18 years old. The Service, including Sowella AI, may not be suitable for minors. You must give accurate birth details; your reading depends on them. You can read your stars and buy a report without an account; readings saved that way stay on that device (browser) and are deleted 30 days after saving or payment, unless you sign in before then. Sowella AI requires an account. You may hold one account. Keep your sign-in details safe; you are responsible for what happens under your account.
 
 ## 3. What we provide
 

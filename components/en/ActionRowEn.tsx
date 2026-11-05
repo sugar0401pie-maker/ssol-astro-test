@@ -114,7 +114,7 @@ export default function ActionRowEn({ resultId, page, saveDone }: { resultId: st
       </div>
       <BottomSheet open={open} onClose={() => setOpen(false)} labelledBy="en-share-title">
         <h3 id="en-share-title">Share SSOL Astro House</h3>
-        <p className="kicker">We share the site link only — never your birth details or your results page.</p>
+        <p className="kicker">We share the site link only — never your birth details or your reading page.</p>
         <div className="share-grid">
           {channels.map((c) => (
             <button key={c.key} type="button" id={`share-${c.key}`} onClick={c.go}>

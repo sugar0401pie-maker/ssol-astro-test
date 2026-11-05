@@ -99,7 +99,7 @@ export default function CheckoutEn({ resultId, page }: { resultId: string; page:
   return (
     <section className="screen on flex flex-col gap-4" lang="en" aria-labelledby="pay-big">
       <Link href={`/en/results/${resultId}/${page}`} className="text-sm text-cream/80 underline">
-        ← Back to results
+        ← Back to my reading
       </Link>
       {!TOSS_CLIENT_KEY && <p className="err">Payments aren’t available right now. You won’t be charged.</p>}
       {/* 토스 결제 UI가 그려지는 자리(흰 바탕) */}

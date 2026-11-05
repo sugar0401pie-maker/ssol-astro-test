@@ -105,7 +105,7 @@ const EN_T: ViewT = {
   sec1: (n) => `${n} — the sky at the moment you were born`,
   sec2: "Your type, as the stars see it",
   sec3: (n) => `2026: ${n}’s year went like this`,
-  topics: "Result topics",
+  topics: "Chapters",
   eyebrow: "SSOL Astro House · Star report",
   editTimeAria: "Edit your birth time", // ★
   edit: "Edit", // ★
@@ -142,7 +142,7 @@ const EN_T: ViewT = {
   thPeriod: "Period",
   forYou: (n) => `${n}, for you`,
   skyHappened: "▸ What happened in the sky",
-  shareNote: "You can share your results so far, no payment needed.",
+  shareNote: "You can share your reading so far, no payment needed.",
   prev: "‹ Back",
   nextStory: "Next story ›",
   first: "Back to the first topic",
