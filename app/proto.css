@@ -65,6 +65,7 @@ button{font:inherit;cursor:pointer}
 .logo-row svg{flex:none}
 .btn.kakao{background:#FEE500;border-color:#FEE500;color:#191919}
 .btn.naver{background:#03C75A;border-color:#03C75A;color:#fff}
+.btn.google{background:#fff;border-color:#dadce0;color:#1f1f1f}
 .btn svg{flex:none}
 .site-foot{margin:18px 0 0;font-size:.72rem;line-height:1.7;color:var(--cream-55);user-select:text;-webkit-user-select:text}
 .site-foot p{margin:0}
