@@ -22,7 +22,7 @@ export function enSiteEnabled(value: string | undefined = process.env.NEXT_PUBLI
  * true면 스위치(NEXT_PUBLIC_EN_SITE)와 상관없이 /en으로 시작하는 모든 화면을 한국어 첫 화면("/")으로 보내고,
  * 첫 화면의 지역별 영문 안내·하단 English 링크도 끈다. 다시 열 때는 false로 바꿔 배포한다(코드 상수라 환경변수 실수로 열리지 않음).
  */
-export const EN_PAGES_HIDDEN = false;
+export const EN_PAGES_HIDDEN = true;
 
 /**
  * 영문판 알리기 끔(owner 2026-11-05: 결제 시험 때문에 영문 페이지를 '잠깐' 열되, 주소를 아는 사람만 들어오게).
