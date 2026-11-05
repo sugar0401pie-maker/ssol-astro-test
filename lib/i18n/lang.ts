@@ -13,7 +13,7 @@ export const LANG_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
 /** 영문판 공개 스위치. 영문 테스트 흐름이 다 갖춰진 뒤 Vercel에 NEXT_PUBLIC_EN_SITE=1을 넣어 켠다. */
 // process.env.NEXT_PUBLIC_EN_SITE는 반드시 이 모양 그대로 써야 빌드 때 값이 박힌다(브라우저·proxy 모두).
 // env 객체를 넘겨 env.X로 읽으면 빌드가 값을 넣지 못해 브라우저에서는 늘 꺼진 것으로 보인다(2026-11-04 확인).
-export function enSiteEnabled(value: string | undefined = process.env.NEXT_PUBLIC_EN_SITE, hidden: boolean = EN_PAGES_HIDDEN): boolean {
+export function enSiteEnabled(value: string | undefined = process.env.NEXT_PUBLIC_EN_SITE, hidden: boolean = EN_PAGES_HIDDEN || EN_PROMOTION_OFF): boolean {
   return !hidden && value === "1";
 }
 
@@ -22,7 +22,14 @@ export function enSiteEnabled(value: string | undefined = process.env.NEXT_PUBLI
  * true면 스위치(NEXT_PUBLIC_EN_SITE)와 상관없이 /en으로 시작하는 모든 화면을 한국어 첫 화면("/")으로 보내고,
  * 첫 화면의 지역별 영문 안내·하단 English 링크도 끈다. 다시 열 때는 false로 바꿔 배포한다(코드 상수라 환경변수 실수로 열리지 않음).
  */
-export const EN_PAGES_HIDDEN = true;
+export const EN_PAGES_HIDDEN = false;
+
+/**
+ * 영문판 알리기 끔(owner 2026-11-05: 결제 시험 때문에 영문 페이지를 '잠깐' 열되, 주소를 아는 사람만 들어오게).
+ * true면 /en 화면은 열리지만 해외 접속자를 /en으로 보내지 않고, 하단 English 링크·hreflang도 없고, 검색 제외(noindex) 그대로.
+ * 시험이 끝나면 EN_PAGES_HIDDEN = true로 되돌린다. 정식 공개 때는 둘 다 false + NEXT_PUBLIC_EN_SITE=1.
+ */
+export const EN_PROMOTION_OFF = true;
 
 /** 숨김일 때 /en·/en/… 화면을 어디로 보낼지(아니면 null) — API(/api/en/…)는 화면이 아니라 해당 없음 */
 export function hiddenEnRedirect(pathname: string, hidden: boolean = EN_PAGES_HIDDEN): string | null {
