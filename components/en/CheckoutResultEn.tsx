@@ -96,6 +96,13 @@ export function CheckoutFailEn() {
     <div className="flex flex-col gap-4 text-cream" lang="en">
       <h1 className="big">{cancel ? "Payment stopped" : "Your payment didn’t go through"}</h1>
       <p className="small">{cancel ? "Everything you’ve seen so far is still here." : "You haven’t been charged. You can try again."}</p>
+      {/* 토스가 돌려준 실패 이유(코드·문구)를 그대로 — 결제 설정 문제를 찾는 데 필요 */}
+      {!cancel && params.get("code") && (
+        <p className="text-xs text-cream/70">
+          ({params.get("code")}
+          {params.get("message") ? `: ${params.get("message")}` : ""})
+        </p>
+      )}
       {retry && !cancel && (
         <Link href={retry} className="btn block">
           Try again

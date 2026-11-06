@@ -65,9 +65,11 @@ export async function POST(req: NextRequest) {
       else {
         const lookup = await getTossPayment(paymentKey, secret);
         const decision = decideAfterConfirmFailure(lookup, { orderId, amount: tossAmount });
+        // 토스 승인 실패 이유(코드)만 기록·표시 — 결제 설정 문제 진단용, 개인정보 없음
+        console.warn("[en-confirm] toss confirm failed", r.code ?? "no-code");
         if (decision === "cancel") {
           await settleOrder(orderId, "canceled");
-          return NextResponse.json({ error: "Your payment didn’t go through. You haven’t been charged." }, { status: 502 });
+          return NextResponse.json({ error: `Your payment didn’t go through. You haven’t been charged.${r.code ? ` (${r.code})` : ""}` }, { status: 502 });
         }
         if (decision === "retry") return NextResponse.json({ error: RETRY }, { status: 503 });
         method = lookup?.method ?? null;
