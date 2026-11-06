@@ -41,3 +41,20 @@ test("AI 검사: 리턴 주기 '12년 만에'·'약 29년 만에'는 허용, 다
   assert.ok(!codes("목성이 12년 만에 태어날 때의 자리로 돌아오는 해예요. 토성이 약 29년 만에 돌아오는 때입니다.").includes("digit_outside_token"));
   assert.ok(codes("3년 만에 좋은 일이 생겨요.").includes("digit_outside_token"));
 });
+
+// 2026-11-06 A16b 영문 번역이 들어와 영문 리포트도 이 표를 쓴다 — 행성·하우스 자리에 한국어가 끼면 안 된다
+test("영문 A16b: 별자리 이동·같은 행성 구절에 한글이 없다", async () => {
+  const { buildEnDb } = await import("./dbEn.ts");
+  const overlay = JSON.parse(readFileSync(new URL("../../data/astro/db/astro_db_en_overlay.json", import.meta.url), "utf8"));
+  const en = buildEnDb(db, overlay);
+  const lines = [
+    ingressLine(en, "jupiter", 3, "en"), ingressLine(en, "saturn", 1, "en"), ingressLine(en, "uranus", null, "en"),
+    selfAspectPhrase(en, "mars", false, "en") ?? "", selfAspectPhrase(en, "jupiter", true, "en") ?? "",
+  ];
+  for (const l of lines) {
+    assert.ok(l.length > 0);
+    assert.ok(!/[가-힣]/.test(l), l);
+  }
+  assert.match(lines[0], /your learning & communication area/);
+  assert.match(lines[2], /Uranus/);
+});

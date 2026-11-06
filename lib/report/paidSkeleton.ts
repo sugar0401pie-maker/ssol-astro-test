@@ -201,7 +201,7 @@ export function evidencePhrase(db: AstroDb, f: WishFactor | undefined): string |
   const g = aspectGroup(f.aspect);
   // 같은 행성끼리(리턴 등): "목성이 목성과 겹치는" 대신 A16b 문구(영문 A16b는 아직 번역이 없어 영문 구절)
   if (f.target === f.transit) {
-    const self = selfAspectPhrase(db, f.transit, g === "CONJ") || P.evSelf(p, g === "CONJ");
+    const self = selfAspectPhrase(db, f.transit, g === "CONJ", P.en ? "en" : "ko") || P.evSelf(p, g === "CONJ");
     if (self) return self;
   }
   if (g === "CONJ") return P.evConj(p, target);
@@ -217,7 +217,7 @@ function factorMeaning(db: AstroDb, f: WishFactor): string {
 }
 
 function eventMeaning(db: AstroDb, e: TimelineEvent): string {
-  if (e.kind === "ingress") return ingressLine(db, e.planet, e.house);
+  if (e.kind === "ingress") return ingressLine(db, e.planet, e.house, P.en ? "en" : "ko");
   if (e.kind === "chiron_return") return t(db, "A16", "TERM_RETURN", "meaning_line");
   const id = a8Id(e);
   return id ? row(db, "A8", id)?.meaning_line ?? "" : "";
@@ -718,13 +718,13 @@ function buildPaidSkeletonIn(args: Parameters<typeof buildPaidSkeleton>[0]): Pai
       if (m.exact.slice(0, 4) !== "2027") continue;
       const name = moveName(m);
       const meaning =
-        m.kind === "outer" ? row(db, "A8", `TR_${POINT_ID[m.transit]}_${POINT_ID[m.target!]}_${aspectGroup(m.aspect!)}`)?.meaning_line ?? "" : m.kind === "saturn_ingress" ? ingressLine(db, "saturn", m.house) : t(db, "A16", "TERM_RETURN", "meaning_line");
+        m.kind === "outer" ? row(db, "A8", `TR_${POINT_ID[m.transit]}_${POINT_ID[m.target!]}_${aspectGroup(m.aspect!)}`)?.meaning_line ?? "" : m.kind === "saturn_ingress" ? ingressLine(db, "saturn", m.house, P.en ? "en" : "ko") : t(db, "A16", "TERM_RETURN", "meaning_line");
       put(m.exact, { title: `${P.en ? "Movement" : "움직임"} · ${name}`, when: fd(m.exact), meaning });
     }
   }
   for (const s of stages) {
     if (s.kind === "mars" && s.start) put(s.start, { title: P.en ? "Mars retrograde" : "화성 역행", when: rangeText(s.start, s.end ?? null), meaning: t(db, "A10", `RX_MARS_H${pad2(s.house!)}`, "why_line") });
-    if (s.kind === "jupiter" && s.date) put(s.date, { title: P.en ? `Jupiter moves into ${P.sign(s.sign ?? "")}${s.house ? ` (${P.house(s.house)})` : ""}` : `목성 ${s.sign}${s.house ? `(${s.house}하우스)` : ""} 이동`, when: fd(s.date), meaning: ingressLine(db, "jupiter", s.house) });
+    if (s.kind === "jupiter" && s.date) put(s.date, { title: P.en ? `Jupiter moves into ${P.sign(s.sign ?? "")}${s.house ? ` (${P.house(s.house)})` : ""}` : `목성 ${s.sign}${s.house ? `(${s.house}하우스)` : ""} 이동`, when: fd(s.date), meaning: ingressLine(db, "jupiter", s.house, P.en ? "en" : "ko") });
   }
   for (const g of why5) (g.items as Array<WhyItem & { iso: string }>).sort((a, b) => (a.iso < b.iso ? -1 : 1));
   const why5Clean: WhyGroup[] = why5.map((g) => ({ label: g.label, items: g.items.map(({ title, when, meaning }) => ({ title, when, meaning })) }));
@@ -792,7 +792,7 @@ function buildPaidSkeletonIn(args: Parameters<typeof buildPaidSkeleton>[0]): Pai
     for (const m of y.moves) {
       const name = moveName(m);
       const meaning =
-        m.kind === "outer" ? row(db, "A8", `TR_${POINT_ID[m.transit]}_${POINT_ID[m.target!]}_${aspectGroup(m.aspect!)}`)?.meaning_line ?? "" : m.kind === "saturn_ingress" ? ingressLine(db, "saturn", m.house) : t(db, "A16", "TERM_RETURN", "meaning_line");
+        m.kind === "outer" ? row(db, "A8", `TR_${POINT_ID[m.transit]}_${POINT_ID[m.target!]}_${aspectGroup(m.aspect!)}`)?.meaning_line ?? "" : m.kind === "saturn_ingress" ? ingressLine(db, "saturn", m.house, P.en ? "en" : "ko") : t(db, "A16", "TERM_RETURN", "meaning_line");
       items.push({ title: `${P.en ? "Movement" : "움직임"} · ${name}`, when: fd(m.exact), meaning });
     }
     return { label: P.en ? `${y.year} · ${P.level(y.level)}${y.movementLabel ? ` · ${P.movement(y.movementLabel)}` : ""}` : `${y.year}년 · ${WISH_LEVEL_DISPLAY[y.level]}${y.movementLabel ? ` · ${y.movementLabel}` : ""}`, items };
