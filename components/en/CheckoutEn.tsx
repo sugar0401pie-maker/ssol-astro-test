@@ -27,6 +27,8 @@ export const EN_PAY_COPY = {
 const TOSS_CLIENT_KEY = enTossClientKey();
 /** 결제위젯 키면 위젯, API 개별 연동 키면 결제창을 바로 연다 */
 const KEY_KIND = tossKeyKind(TOSS_CLIENT_KEY);
+/** 진단용(키 값은 안 보임): 어느 상점 키로, 어떤 방식으로 결제를 여는지 — 오류가 날 때만 화면에 작게 */
+const KEY_SOURCE = process.env.NEXT_PUBLIC_TOSS_EN_CLIENT_KEY ? "overseas store key" : "Korean store key (EN key not found)";
 /** 토스 결제 어드민의 외화결제 UI(owner 설정 2026-11-04) */
 const EN_VARIANT = process.env.NEXT_PUBLIC_TOSS_EN_VARIANT || "dollaronly";
 
@@ -128,6 +130,7 @@ export default function CheckoutEn({ resultId, page }: { resultId: string; page:
         {after}
       </p>
       <p className="err" role="alert">{err}</p>
+      {err && <p className="text-[11px] text-cream/60">[{KEY_SOURCE} · {KEY_KIND ?? "unknown key type"}]</p>}
       {KEY_KIND === "api" ? (
         <>
           <button type="button" className="btn block" onClick={() => void payWindow("card")} disabled={busy} aria-busy={busy}>
