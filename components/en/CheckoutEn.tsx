@@ -1,9 +1,9 @@
 "use client";
 
 // 영문 결제 화면 /en/checkout/{resultId}((나) 영문 전용). 2026-11-04 owner 설정에 맞춰 토스 '결제위젯'으로 연다:
-// 한국어판과 같은 결제위젯 키(NEXT_PUBLIC_TOSS_CLIENT_KEY / TOSS_SECRET_KEY) + 결제 UI variantKey 'dollaronly'(외화결제 — 해외카드·PayPal을
+// 한국어판과 같은 결제위젯 키(NEXT_PUBLIC_TOSS_CLIENT_KEY / TOSS_SECRET_KEY) + 결제 UI variantKey 'dollar.only'(외화결제 — 해외카드·PayPal을
 // 토스 화면 안에서 고름), 금액은 USD 2.99. 처음엔 'API 개별 연동 키'로 결제창을 직접 열었지만 토스가 '계약된 곳이 아닙니다'로 거절했다 —
-// 해외결제 설정이 그 키가 아니라 결제위젯 쪽(dollaronly UI)에 되어 있어서. 화면에 들어오면 토스 결제 UI가 바로 그려진다.
+// 해외결제 설정이 그 키가 아니라 결제위젯 쪽(dollar.only UI)에 되어 있어서. 화면에 들어오면 토스 결제 UI가 바로 그려진다.
 // 금액·주문은 서버(/api/en/checkout)가 정하고, 승인은 /en/checkout/success → /api/en/checkout/confirm에서 서버가 확인한다.
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -30,7 +30,8 @@ export const KEY_KIND = tossKeyKind(TOSS_CLIENT_KEY);
 /** 진단용(키 값은 안 보임): 어느 상점 키로, 어떤 방식으로 결제를 여는지 — 오류가 날 때만 화면에 작게 */
 export const KEY_SOURCE = process.env.NEXT_PUBLIC_TOSS_EN_CLIENT_KEY ? "overseas store key" : "Korean store key (EN key not found)";
 /** 토스 결제 어드민의 외화결제 UI(owner 설정 2026-11-04) */
-const EN_VARIANT = process.env.NEXT_PUBLIC_TOSS_EN_VARIANT || "dollaronly";
+// 토스 관리자(해외결제 상점, 라이브)의 외화결제 UI 이름은 점이 들어간 "dollar.only"(owner 확인 2026-11-06)
+const EN_VARIANT = process.env.NEXT_PUBLIC_TOSS_EN_VARIANT || "dollar.only";
 
 type Widgets = ReturnType<Awaited<ReturnType<typeof import("@tosspayments/tosspayments-sdk")["loadTossPayments"]>>["widgets"]>;
 
@@ -55,13 +56,8 @@ export default function CheckoutEn({ resultId, page }: { resultId: string; page:
         const toss = await loadTossPayments(TOSS_CLIENT_KEY);
         const widgets = toss.widgets({ customerKey: session?.user?.id ?? ANONYMOUS });
         await widgets.setAmount({ currency: EN_CURRENCY, value: centsToUsd(EN_REPORT_PRICE_CENTS) });
-        // 해외결제 상점에 'dollaronly' 화면이 없으면 그 상점의 기본 화면(DEFAULT)으로 한 번 더(2026-11-06)
-        try {
-          await widgets.renderPaymentMethods({ selector: "#toss-en-methods", variantKey: EN_VARIANT });
-        } catch (e) {
-          if (EN_VARIANT === "DEFAULT") throw e;
-          await widgets.renderPaymentMethods({ selector: "#toss-en-methods", variantKey: "DEFAULT" });
-        }
+        // 외화결제 UI만 쓴다 — 기본 UI(DEFAULT)는 국내 일반결제라 달러로 열면 2003으로 거절된다(되돌아가지 않음)
+        await widgets.renderPaymentMethods({ selector: "#toss-en-methods", variantKey: EN_VARIANT });
         if (cancelled) return;
         widgetsRef.current = widgets;
         setReady(true);
