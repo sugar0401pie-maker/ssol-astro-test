@@ -23,9 +23,8 @@ LOOKUP = {
 
 # 번역이 영문 금지어 검사(C1_EN)에 걸려 기획에 고쳐 달라고 한 칸 — 고친 번역이 오면 이 목록에서 뺀다.
 # (표, ID, 칸): 이유
-HOLD = {
-    ("A12b", "Q2_11_CL_3", "text"): "BAN_EN_047 'leave them'(이별 권유 패턴에 걸림, 2026-11-06 기획에 재번역 요청)",
-}
+# (2026-11-06 A12b Q2_11_CL_3은 owner 승인 표현으로 엑셀을 고쳐 목록에서 뺌)
+HOLD: dict = {}
 
 
 def main(free_path, paid_path, out_path, *extra):
