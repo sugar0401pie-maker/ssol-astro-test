@@ -103,6 +103,13 @@ export function CheckoutFailEn() {
           ({params.get("code")}
           {params.get("message") ? `: ${params.get("message")}` : ""})
           <br />[{KEY_SOURCE} · {KEY_KIND ?? "unknown key type"}]
+          {/* 토스 고객센터 문의용 주문 번호(토스가 실패 주소에 붙여 줌) */}
+          {params.get("orderId") && (
+            <>
+              <br />
+              order: {params.get("orderId")}
+            </>
+          )}
         </p>
       )}
       {retry && !cancel && (
