@@ -9,7 +9,8 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { track } from "@/lib/analytics/track";
 import { enLegalUrl } from "@/lib/legal/en/blocks";
-import { EN_CURRENCY, EN_REPORT_PRICE_CENTS, centsToUsd } from "@/lib/billing/pricingEn";
+import { EN_CURRENCY, EN_REPORT_PRICE_CENTS, centsToUsd, enTossClientKey, tossKeyKind, type EnPayMethod } from "@/lib/billing/pricingEn";
+import { startEnPayment } from "@/lib/billing/enPayClient";
 import { apiHeaders } from "@/lib/guest/client";
 import { getAttribution } from "@/lib/attribution/client";
 import { useRealSession } from "@/components/results/useSession";
@@ -22,7 +23,10 @@ export const EN_PAY_COPY = {
   methods: "Visa · Mastercard · JCB · PayPal. Your bank may add a foreign-transaction fee.",
 } as const;
 
-const TOSS_CLIENT_KEY = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY;
+// 해외결제 상점 키가 있으면 그것, 없으면 한국어판 결제위젯 키(2026-11-06 — 원화 상점 키로는 2003)
+const TOSS_CLIENT_KEY = enTossClientKey();
+/** 결제위젯 키면 위젯, API 개별 연동 키면 결제창을 바로 연다 */
+const KEY_KIND = tossKeyKind(TOSS_CLIENT_KEY);
 /** 토스 결제 어드민의 외화결제 UI(owner 설정 2026-11-04) */
 const EN_VARIANT = process.env.NEXT_PUBLIC_TOSS_EN_VARIANT || "dollaronly";
 
@@ -41,7 +45,7 @@ export default function CheckoutEn({ resultId, page }: { resultId: string; page:
 
   // 들어오자마자 토스 결제 UI(외화결제)를 그린다
   useEffect(() => {
-    if (session === undefined || !TOSS_CLIENT_KEY) return;
+    if (session === undefined || !TOSS_CLIENT_KEY || KEY_KIND !== "widget") return;
     let cancelled = false;
     void (async () => {
       try {
@@ -94,6 +98,15 @@ export default function CheckoutEn({ resultId, page }: { resultId: string; page:
     }
   }
 
+  async function payWindow(method: EnPayMethod) {
+    if (busy) return;
+    setBusy(true);
+    setErr("");
+    const e = await startEnPayment(resultId, page, method);
+    if (e) setErr(e);
+    setBusy(false);
+  }
+
   const [before, rest] = EN_PAY_COPY.notice.split("[Terms of Use]");
   const [mid, after] = rest.split("[Refund Policy]");
   return (
@@ -103,10 +116,10 @@ export default function CheckoutEn({ resultId, page }: { resultId: string; page:
       </Link>
       {!TOSS_CLIENT_KEY && <p className="err">Payments aren’t available right now. You won’t be charged.</p>}
       {/* 토스 결제 UI가 그려지는 자리(흰 바탕) */}
-      <div className="overflow-hidden rounded-2xl bg-white">
+      {KEY_KIND === "widget" && <div className="overflow-hidden rounded-2xl bg-white">
         <div id="toss-en-methods" />
         <div id="toss-en-agreement" />
-      </div>
+      </div>}
       <p className="text-xs text-cream/80">
         {before}
         <Link href={enLegalUrl("terms")} target="_blank" rel="noopener" className="underline">Terms of Use</Link>
@@ -115,9 +128,20 @@ export default function CheckoutEn({ resultId, page }: { resultId: string; page:
         {after}
       </p>
       <p className="err" role="alert">{err}</p>
-      <button type="button" className="btn block" onClick={() => void pay()} disabled={!ready || busy} aria-busy={busy}>
-        {ready ? "Pay US$2.99" : "Opening secure payment…"}
-      </button>
+      {KEY_KIND === "api" ? (
+        <>
+          <button type="button" className="btn block" onClick={() => void payWindow("card")} disabled={busy} aria-busy={busy}>
+            {EN_PAY_COPY.button}
+          </button>
+          <button type="button" className="btn ghost block" onClick={() => void payWindow("paypal")} disabled={busy}>
+            Pay with PayPal
+          </button>
+        </>
+      ) : (
+        <button type="button" className="btn block" onClick={() => void pay()} disabled={!ready || busy} aria-busy={busy}>
+          {ready ? "Pay US$2.99" : "Opening secure payment…"}
+        </button>
+      )}
     </section>
   );
 }
