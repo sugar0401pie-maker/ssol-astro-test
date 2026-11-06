@@ -26,9 +26,9 @@ export const EN_PAY_COPY = {
 // 해외결제 상점 키가 있으면 그것, 없으면 한국어판 결제위젯 키(2026-11-06 — 원화 상점 키로는 2003)
 const TOSS_CLIENT_KEY = enTossClientKey();
 /** 결제위젯 키면 위젯, API 개별 연동 키면 결제창을 바로 연다 */
-const KEY_KIND = tossKeyKind(TOSS_CLIENT_KEY);
+export const KEY_KIND = tossKeyKind(TOSS_CLIENT_KEY);
 /** 진단용(키 값은 안 보임): 어느 상점 키로, 어떤 방식으로 결제를 여는지 — 오류가 날 때만 화면에 작게 */
-const KEY_SOURCE = process.env.NEXT_PUBLIC_TOSS_EN_CLIENT_KEY ? "overseas store key" : "Korean store key (EN key not found)";
+export const KEY_SOURCE = process.env.NEXT_PUBLIC_TOSS_EN_CLIENT_KEY ? "overseas store key" : "Korean store key (EN key not found)";
 /** 토스 결제 어드민의 외화결제 UI(owner 설정 2026-11-04) */
 const EN_VARIANT = process.env.NEXT_PUBLIC_TOSS_EN_VARIANT || "dollaronly";
 
@@ -55,7 +55,13 @@ export default function CheckoutEn({ resultId, page }: { resultId: string; page:
         const toss = await loadTossPayments(TOSS_CLIENT_KEY);
         const widgets = toss.widgets({ customerKey: session?.user?.id ?? ANONYMOUS });
         await widgets.setAmount({ currency: EN_CURRENCY, value: centsToUsd(EN_REPORT_PRICE_CENTS) });
-        await widgets.renderPaymentMethods({ selector: "#toss-en-methods", variantKey: EN_VARIANT });
+        // 해외결제 상점에 'dollaronly' 화면이 없으면 그 상점의 기본 화면(DEFAULT)으로 한 번 더(2026-11-06)
+        try {
+          await widgets.renderPaymentMethods({ selector: "#toss-en-methods", variantKey: EN_VARIANT });
+        } catch (e) {
+          if (EN_VARIANT === "DEFAULT") throw e;
+          await widgets.renderPaymentMethods({ selector: "#toss-en-methods", variantKey: "DEFAULT" });
+        }
         if (cancelled) return;
         widgetsRef.current = widgets;
         setReady(true);

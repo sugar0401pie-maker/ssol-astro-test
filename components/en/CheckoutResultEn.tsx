@@ -13,6 +13,7 @@ import { gaPurchase } from "@/lib/analytics/gaClient";
 import { xPixelEvent } from "@/lib/x/pixelClient";
 import { X_EVENT_IDS } from "@/lib/x/events";
 import { setFlash } from "@/lib/ui/flash";
+import { KEY_KIND, KEY_SOURCE } from "@/components/en/CheckoutEn";
 
 export function CheckoutSuccessEn() {
   const params = useSearchParams();
@@ -101,6 +102,7 @@ export function CheckoutFailEn() {
         <p className="text-xs text-cream/70">
           ({params.get("code")}
           {params.get("message") ? `: ${params.get("message")}` : ""})
+          <br />[{KEY_SOURCE} · {KEY_KIND ?? "unknown key type"}]
         </p>
       )}
       {retry && !cancel && (
