@@ -1,24 +1,12 @@
-"use client";
-
-// 하단 언어 링크(owner 2026-11-04): 한국어 화면엔 'English', 영문 화면엔 '한국어'. 누르면 고른 언어를 쿠키에 1년 기억하고
-// 같은 화면의 다른 언어판(없으면 그 언어 첫 화면)으로 간다. 영문판 스위치가 꺼져 있으면 아무것도 그리지 않는다.
-import { usePathname } from "next/navigation";
-import { LANG_COOKIE, LANG_COOKIE_MAX_AGE, enSiteEnabled, switchTarget, type Lang } from "@/lib/i18n/lang";
+// 하단 언어 링크: 한국어 화면엔 'English'(영문 사이트, 별도 프로젝트), 예전 /en 화면엔 '한국어'.
+// 영문 사이트 연결 스위치(NEXT_PUBLIC_EN_SITE_LIVE)가 꺼져 있으면 아무것도 그리지 않는다.
+import { enSiteEnabled, type Lang } from "@/lib/i18n/lang";
+import { EN_SITE } from "@/lib/site";
 
 export default function LangLink({ to }: { to: Lang }) {
-  const pathname = usePathname() ?? "/";
   if (!enSiteEnabled()) return null;
-  const href = switchTarget(pathname, to);
   return (
-    <a
-      href={href}
-      lang={to}
-      hrefLang={to}
-      className="underline"
-      onClick={() => {
-        document.cookie = `${LANG_COOKIE}=${to}; Max-Age=${LANG_COOKIE_MAX_AGE}; Path=/; SameSite=Lax`;
-      }}
-    >
+    <a href={to === "en" ? `${EN_SITE}/` : "/?lang=ko"} lang={to} hrefLang={to} className="underline">
       {to === "en" ? "English" : "한국어"}
     </a>
   );

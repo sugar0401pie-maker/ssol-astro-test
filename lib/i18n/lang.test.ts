@@ -1,57 +1,59 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { enSiteEnabled, hiddenEnRedirect, isBot, rootRedirect, switchTarget } from "./lang.ts";
+import { enSiteEnabled, isBot, koRoute, withoutLangParam } from "./lang.ts";
+import { EN_SITE } from "../site.ts";
 
 const UA = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1";
-const base = { pathname: "/", country: "US", cookieLang: null, userAgent: UA, enabled: true };
+const base = { pathname: "/", search: "", country: "US", cookieLang: null, userAgent: UA, enabled: true };
 
-test("스위치가 꺼져 있으면 아무도 보내지 않는다", () => {
-  assert.equal(rootRedirect({ ...base, enabled: false }), null);
-  assert.equal(enSiteEnabled(undefined, false), false);
-  assert.equal(enSiteEnabled("1", false), true);
-  assert.equal(enSiteEnabled("true", false), false);
-  // 숨김이면 스위치가 켜져 있어도 꺼진 것으로
-  assert.equal(enSiteEnabled("1", true), false);
+test("스위치: 정확히 '1'일 때만 켜짐", () => {
+  assert.equal(enSiteEnabled(undefined), false);
+  assert.equal(enSiteEnabled("true"), false);
+  assert.equal(enSiteEnabled("1"), true);
 });
 
-test("한국 밖에서 처음 오면 영문 첫 화면, 한국이면 그대로", () => {
-  assert.equal(rootRedirect(base), "/en");
-  assert.equal(rootRedirect({ ...base, country: "kr" }), null);
-  assert.equal(rootRedirect({ ...base, country: "" }), null);
-  assert.equal(rootRedirect({ ...base, country: null }), null);
+test("스위치가 꺼져 있으면 해외 접속도 보내지 않는다", () => {
+  assert.deepEqual(koRoute({ ...base, enabled: false }), { kind: "pass" });
+  assert.deepEqual(koRoute({ ...base, pathname: "/results/abc/3", enabled: false }), { kind: "pass" });
 });
 
-test("고른 언어가 지역보다 우선", () => {
-  assert.equal(rootRedirect({ ...base, cookieLang: "ko" }), null);
-  assert.equal(rootRedirect({ ...base, country: "KR", cookieLang: "en" }), "/en");
-  assert.equal(rootRedirect({ ...base, cookieLang: "fr" }), "/en");
+test("해외 접속은 어느 화면이든 영문 첫 화면으로(매번), 광고 쿼리는 그대로", () => {
+  assert.deepEqual(koRoute(base), { kind: "redirect", to: `${EN_SITE}/` });
+  assert.deepEqual(koRoute({ ...base, pathname: "/test" }), { kind: "redirect", to: `${EN_SITE}/` });
+  assert.deepEqual(koRoute({ ...base, pathname: "/results/abc/3" }), { kind: "redirect", to: `${EN_SITE}/` });
+  assert.deepEqual(koRoute({ ...base, search: "?utm_source=x&twclid=1" }), { kind: "redirect", to: `${EN_SITE}/?utm_source=x&twclid=1` });
 });
 
-test("첫 화면만 보내고, 로봇·빈 User-Agent는 보내지 않는다", () => {
-  assert.equal(rootRedirect({ ...base, pathname: "/results/abc/3" }), null);
-  assert.equal(rootRedirect({ ...base, pathname: "/test" }), null);
-  assert.equal(rootRedirect({ ...base, pathname: "/en" }), null);
-  assert.equal(rootRedirect({ ...base, userAgent: "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)" }), null);
-  assert.equal(rootRedirect({ ...base, userAgent: "" }), null);
-  assert.equal(isBot("facebookexternalhit/1.1"), true);
+test("한국·지역 모름은 그대로", () => {
+  assert.deepEqual(koRoute({ ...base, country: "kr" }), { kind: "pass" });
+  assert.deepEqual(koRoute({ ...base, country: "" }), { kind: "pass" });
+  assert.deepEqual(koRoute({ ...base, country: null }), { kind: "pass" });
+});
+
+test("예외 ①: 검색 로봇·빈 User-Agent는 보내지 않는다", () => {
+  assert.deepEqual(koRoute({ ...base, userAgent: "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)" }), { kind: "pass" });
+  assert.deepEqual(koRoute({ ...base, userAgent: "" }), { kind: "pass" });
   assert.equal(isBot("Mozilla/5.0 (compatible; Yeti/1.1; +http://naver.me/spd)"), true);
   assert.equal(isBot(UA), false);
 });
 
-test("언어 링크는 같은 화면이 있으면 그 화면, 없으면 그 언어 첫 화면", () => {
-  assert.equal(switchTarget("/", "en"), "/en");
-  assert.equal(switchTarget("/en", "ko"), "/");
-  assert.equal(switchTarget("/results/abc/3", "en"), "/en");
-  assert.equal(switchTarget("/en/start", "ko"), "/");
+test("예외 ②: 영문 사이트에서 '한국어'로 돌아온 사람은 기억하고 보내지 않는다", () => {
+  assert.deepEqual(koRoute({ ...base, search: "?lang=ko" }), { kind: "remember-ko" });
+  assert.deepEqual(koRoute({ ...base, cookieLang: "ko" }), { kind: "pass" });
+  assert.equal(withoutLangParam("?lang=ko&utm_source=x"), "?utm_source=x");
+  assert.equal(withoutLangParam("?lang=ko"), "");
 });
 
-test("영문 숨김: /en 화면은 모두 한국어 첫 화면으로, 다른 주소는 그대로", () => {
-  assert.equal(hiddenEnRedirect("/en", true), "/");
-  assert.equal(hiddenEnRedirect("/en/results/abc/4", true), "/");
-  assert.equal(hiddenEnRedirect("/english", true), null);
-  assert.equal(hiddenEnRedirect("/results", true), null);
-  assert.equal(hiddenEnRedirect("/en", false), null);
-  // 정책 페이지는 숨김 중에도 열람 가능
-  assert.equal(hiddenEnRedirect("/en/legal/privacy", true), null);
-  assert.equal(hiddenEnRedirect("/en/legal/terms", true), null);
+test("결제 복귀·검색엔진 파일은 해외 접속이어도 그대로", () => {
+  assert.deepEqual(koRoute({ ...base, pathname: "/checkout/success" }), { kind: "pass" });
+  assert.deepEqual(koRoute({ ...base, pathname: "/robots.txt" }), { kind: "pass" });
+  assert.deepEqual(koRoute({ ...base, pathname: "/sitemap.xml" }), { kind: "pass" });
+});
+
+test("예전 영문 주소(/en/…)는 켜져 있으면 영문 사이트의 같은 화면으로, 꺼져 있으면 숨김", () => {
+  assert.deepEqual(koRoute({ ...base, country: "KR", pathname: "/en/start", search: "?a=1" }), { kind: "redirect", to: `${EN_SITE}/start?a=1` });
+  assert.deepEqual(koRoute({ ...base, country: "KR", pathname: "/en" }), { kind: "redirect", to: `${EN_SITE}/` });
+  assert.deepEqual(koRoute({ ...base, enabled: false, pathname: "/en/results/x/4" }), { kind: "redirect", to: "/" });
+  assert.deepEqual(koRoute({ ...base, enabled: false, pathname: "/en/legal/privacy" }), { kind: "pass" });
+  assert.deepEqual(koRoute({ ...base, enabled: false, pathname: "/english" }), { kind: "pass" });
 });
