@@ -12,6 +12,8 @@ import { claimReportEmail, claimReportGeneration, getAccountEmail, getResultForR
 import { findRow } from "@/lib/report/db";
 import { buildReportEmail } from "@/lib/report/reportEmail";
 import { sendEmail } from "@/lib/email/resend";
+import { allPartsAi, usedDbFallback } from "@/lib/report/fallback";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { kakaoArtUrl, pickSignArt, signArtChoices } from "@/lib/share/signShare";
 
 const SITE_URL = "https://astro.ssolwellnesshouse.com";
@@ -93,4 +95,69 @@ export async function emailReportIfReady(resultId: string): Promise<void> {
   } catch (e) {
     console.warn("리포트 메일 확인 실패:", e instanceof Error ? e.name : "unknown");
   }
+}
+
+// ── AI 없이 나간 리포트 다시 만들기(owner 2026-11-08: OpenAI 키가 막혀 있던 동안 해석 DB 문장만으로 나간 결제 리포트를
+//    새 키로 다시 써서 고객에게 다시 보낸다). 관리자 화면(/admin/reports)에서만 부른다.
+
+export interface FallbackItem { id: string; paidAt: string | null; lang: "ko" | "en"; member: boolean }
+
+/** AI 없이 나간 결제 리포트 목록(최근 결제 순). 리포트 본문·개인정보는 돌려주지 않는다. */
+export async function listFallbackReports(): Promise<FallbackItem[]> {
+  const out: FallbackItem[] = [];
+  for (let from = 0; ; from += 500) {
+    const { data, error } = await createAdminClient()
+      .from("astro_results")
+      .select("id, paid_at, user_id, birth_input, report")
+      .not("paid_at", "is", null)
+      .eq("report_status", "ready")
+      .order("paid_at", { ascending: false })
+      .range(from, from + 499);
+    if (error) throw new Error(`목록 조회 실패: ${error.code}`);
+    for (const r of data ?? []) {
+      if (!usedDbFallback(r.report)) continue;
+      out.push({ id: r.id as string, paidAt: (r.paid_at as string) ?? null, lang: (r.birth_input as { lang?: string })?.lang === "en" ? "en" : "ko", member: !!r.user_id });
+    }
+    if (!data || data.length < 500) return out;
+  }
+}
+
+export type RedoResult = "redone_emailed" | "redone_no_email" | "ai_still_failing" | "skipped";
+
+/**
+ * 한 건 다시 만들기. 모든 파트가 AI로 써졌을 때만 저장한다 — AI가 아직 안 되면 기존 리포트를 그대로 두고 'ai_still_failing'.
+ * 저장하면 계정이 있는 한국어 결과에 '다시 다듬었다' 메일을 보낸다(이전에 완성 메일을 받았어도). 비회원은 주소가 없어 리포트만 바뀐다.
+ */
+export async function redoFallbackReport(resultId: string): Promise<RedoResult> {
+  const row = await getResultForReport(resultId);
+  if (!row || row.report_status !== "ready" || !usedDbFallback(row.report)) return "skipped";
+  const en = row.birth_input.lang === "en";
+  const c = computeFree(row.birth_input, row.answers, row.nickname, { lang: en ? "en" : "ko" });
+  if (c.kind !== "result") return "skipped";
+  const report = await generatePaidReport({ db: en ? ASTRO_DB_EN : ASTRO_DB, lang: en ? "en" : "ko", resolved: c.birth.resolved, wishContext: wishContextOf(c.birth.stored, c.birth.accuracy), answers: row.answers, nickname: row.nickname, birthKey: birthKeyOf(row.birth_input) });
+  if (!allPartsAi(report)) return "ai_still_failing";
+  if (!(await saveReport(resultId, report))) return "skipped";
+  if (en) return "redone_no_email"; // 영문 완성 메일은 아직 없음
+  await saveChatSummary(resultId, chatSummaryFor(c, row.answers, report, row.nickname));
+  if (!row.user_id || !process.env.RESEND_API_KEY) return "redone_no_email";
+  const to = await getAccountEmail(row.user_id);
+  if (!to) return "redone_no_email";
+  const card = cardOf(c);
+  const art = pickSignArt(card.sunSignIndex) ?? signArtChoices(0)[0];
+  const mail = buildReportEmail({
+    nickname: row.nickname,
+    sunSign: card.sunSign,
+    oneLiner: card.oneLiner,
+    imageUrl: kakaoArtUrl(art, SITE_URL),
+    resultUrl: `${SITE_URL}/results/${resultId}/4?utm_source=email&utm_medium=report_redo`,
+    disclaimer: findRow(ASTRO_DB, "A15", (r) => r.id === "FIX_DISCLAIMER")?.text ?? "",
+  });
+  const note = `${row.nickname}님, 처음 보내 드린 리포트가 저희 쪽 문제로 일부 내용이 충분히 다듬어지지 않은 채 나갔어요. 다시 정성껏 써서 보내 드려요. 늦어져서 죄송합니다.`;
+  const sent = await sendEmail({
+    to,
+    subject: `[쏠 아스트로 하우스] ${row.nickname}님의 별 리포트를 다시 다듬어 보내 드려요`,
+    text: `${note}\n\n${mail.text}`,
+    html: `<p style="font-size:15px;line-height:1.7;margin:0 0 16px">${note.replace(/[&<>]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[ch]!)}</p>${mail.html}`,
+  });
+  return sent.ok ? "redone_emailed" : "redone_no_email";
 }

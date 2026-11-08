@@ -28,7 +28,7 @@ export const PAGE_UPDATED: Record<(typeof PUBLIC_PATHS)[number], string> = {
 };
 
 /** 검색엔진이 가져가지 않을 경로(앞부분 일치) */
-export const DISALLOW_PATHS = ["/api/", "/results", "/checkout", "/login", "/share/", "/test/"] as const;
+export const DISALLOW_PATHS = ["/api/", "/results", "/checkout", "/login", "/share/", "/test/", "/admin"] as const;
 
 // 검색 결과·공유 미리보기 제목·설명 — owner 지정 문구 그대로(2026-11-04). 바꿀 때도 owner 문구 그대로 쓴다.
 export const SEO_TITLE = "쏠 아스트로 하우스 | 2027년 별자리 운세를 무료로 알아보세요";
