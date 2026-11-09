@@ -29,7 +29,22 @@ export function rate(cur: number, prev: number): number | null {
   return Math.round((cur / prev) * 1000) / 10;
 }
 
-export type FunnelRow = { key: keyof AdminStats; label: string; note: string; day: number; total: number; dayRate: number | null; totalRate: number | null };
+export type FunnelRow = {
+  key: keyof AdminStats; label: string; note: string; day: number; total: number; dayRate: number | null; totalRate: number | null;
+  /** 전날 숫자와 전날 대비 증감(%) — 전날 숫자를 못 받았거나 전날이 0이면 null */
+  prevDay: number | null; dayChange: number | null;
+};
+
+/** 하루 전 한국 날짜 */
+export function previousDay(day: string): string {
+  return new Date(Date.parse(`${day}T00:00:00Z`) - 86_400_000).toISOString().slice(0, 10);
+}
+
+/** 전날 대비 증감(%) — 전날이 0이면 null(표시 '–') */
+export function change(cur: number, prev: number): number | null {
+  if (!prev) return null;
+  return Math.round(((cur - prev) / prev) * 1000) / 10;
+}
 
 /** 깔때기 순서: 방문 → 테스트 시작 → 출생 정보 입력 → 테스트 본 사람(결과 저장) → 결제. 비율은 바로 앞 줄 대비. */
 export const FUNNEL: Array<{ key: keyof AdminStats; label: string; note: string }> = [
@@ -40,11 +55,16 @@ export const FUNNEL: Array<{ key: keyof AdminStats; label: string; note: string 
   { key: "paid", label: "결제", note: "결제 완료 주문 수(관리자 무료 열람 제외)" },
 ];
 
-export function funnelRows(s: AdminStats): FunnelRow[] {
+export function funnelRows(s: AdminStats, yesterday: AdminStats | null = null): FunnelRow[] {
   return FUNNEL.map((f, i) => {
     const cur = s[f.key];
     const prev = i > 0 ? s[FUNNEL[i - 1].key] : null;
-    return { ...f, day: cur.day, total: cur.total, dayRate: prev ? rate(cur.day, prev.day) : null, totalRate: prev ? rate(cur.total, prev.total) : null };
+    const y = yesterday ? yesterday[f.key].day : null;
+    return {
+      ...f, day: cur.day, total: cur.total,
+      dayRate: prev ? rate(cur.day, prev.day) : null, totalRate: prev ? rate(cur.total, prev.total) : null,
+      prevDay: y, dayChange: y === null ? null : change(cur.day, y),
+    };
   });
 }
 

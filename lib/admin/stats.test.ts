@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { amountLabel, birthDateLabel, birthTimeLabel, csvCell, funnelRows, kstDayRange, kstStamp, loginMethodLabel, parseAdminDay, rate, toCsv, todayKst, type AdminStats } from "./stats.ts";
+import { amountLabel, birthDateLabel, birthTimeLabel, change, previousDay, csvCell, funnelRows, kstDayRange, kstStamp, loginMethodLabel, parseAdminDay, rate, toCsv, todayKst, type AdminStats } from "./stats.ts";
 
 test("parseAdminDay", () => {
   assert.equal(parseAdminDay("2026-11-08"), "2026-11-08");
@@ -51,4 +51,17 @@ test("birthDateLabel·birthTimeLabel", () => {
   assert.equal(birthTimeLabel({ kind: "exact", hour: 9, minute: 5 }), "09:05");
   assert.equal(birthTimeLabel({ kind: "band", band: "morning" }), "오전(시간대)");
   assert.equal(birthTimeLabel({ kind: "unknown" }), "모름");
+});
+
+test("previousDay·change·전날 대비", () => {
+  assert.equal(previousDay("2026-11-01"), "2026-10-31");
+  assert.equal(change(120, 100), 20);
+  assert.equal(change(80, 100), -20);
+  assert.equal(change(5, 0), null);
+  const p = (day: number, total: number) => ({ day, total });
+  const mk = (v: number): AdminStats => ({ visitors: p(v, 0), starts: p(v, 0), births: p(v, 0), results: p(v, 0), members: p(0, 0), paid: p(v, 0), krw: p(0, 0), usd_cents: p(0, 0) });
+  const rows = funnelRows(mk(150), mk(100));
+  assert.equal(rows[0].prevDay, 100);
+  assert.equal(rows[0].dayChange, 50);
+  assert.equal(funnelRows(mk(1))[0].dayChange, null);
 });

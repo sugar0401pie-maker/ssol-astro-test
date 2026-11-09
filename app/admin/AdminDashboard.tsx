@@ -9,6 +9,7 @@ import { todayKst, type AdminStats, type FunnelRow } from "@/lib/admin/stats";
 
 const pct = (v: number | null) => (v === null ? "–" : `${v}%`);
 const num = (v: number) => v.toLocaleString("ko-KR");
+const signed = (v: number | null) => (v === null ? "–" : `${v > 0 ? "+" : ""}${v}%`);
 
 export default function AdminDashboard() {
   const [day, setDay] = useState(() => todayKst());
@@ -79,14 +80,15 @@ export default function AdminDashboard() {
       {rows && stats && (
         <>
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[440px] border-collapse text-sm">
+            <table className="w-full min-w-[520px] border-collapse text-sm">
               <thead>
                 <tr className="border-b border-cream/30 text-left text-cream/70">
                   <th className="py-2 pr-2">단계</th>
                   <th className="py-2 pr-2 text-right">그날</th>
-                  <th className="py-2 pr-2 text-right">전 단계 대비</th>
+                  <th className="py-2 pr-2 text-right">전 단계 전환율</th>
+                  <th className="py-2 pr-2 text-right">전날 대비</th>
                   <th className="py-2 pr-2 text-right">누적</th>
-                  <th className="py-2 text-right">전 단계 대비</th>
+                  <th className="py-2 text-right">전 단계 전환율</th>
                 </tr>
               </thead>
               <tbody>
@@ -98,6 +100,10 @@ export default function AdminDashboard() {
                     </td>
                     <td className="py-2 pr-2 text-right tabular-nums">{num(r.day)}</td>
                     <td className="py-2 pr-2 text-right tabular-nums">{pct(r.dayRate)}</td>
+                    <td className="py-2 pr-2 text-right tabular-nums">
+                      {signed(r.dayChange)}
+                      {r.prevDay !== null && <div className="text-[11px] text-cream/60">전날 {num(r.prevDay)}</div>}
+                    </td>
                     <td className="py-2 pr-2 text-right tabular-nums">{num(r.total)}</td>
                     <td className="py-2 text-right tabular-nums">{pct(r.totalRate)}</td>
                   </tr>
@@ -116,7 +122,7 @@ export default function AdminDashboard() {
             </li>
           </ul>
           <p className="text-xs text-cream/60">
-            방문·시작·출생 정보는 브라우저 기준이고 2026-10-11부터 기록돼요. 누적은 기준 날짜가 끝나는 때(한국 자정)까지예요. 비회원 결과는 30일 뒤 지워져서 &lsquo;테스트 본 사람&rsquo; 누적에서 빠지고, 결제는 주문 기록이 남아 그대로 세요.
+            방문·시작·출생 정보는 브라우저 기준이고 2026-10-11부터 기록돼요. 누적은 기준 날짜가 끝나는 때(한국 자정)까지예요. 전 단계 전환율은 바로 위 줄 대비, 전날 대비는 같은 줄의 하루 전 숫자 대비 증감이에요. 비회원 결과는 30일 뒤 지워져서 &lsquo;테스트 본 사람&rsquo; 누적에서 빠지고, 결제는 주문 기록이 남아 그대로 세요.
           </p>
         </>
       )}

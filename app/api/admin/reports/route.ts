@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isAdmin } from "@/lib/admin/data";
+import { adminGuard } from "@/lib/admin/data";
 import { parseDayParam } from "@/lib/report/fallback";
 import { listFallbackReports, redoFallbackReport, type RedoResult } from "@/lib/results/report";
 
@@ -10,7 +10,8 @@ export const maxDuration = 300;
 
 
 export async function GET(req: NextRequest) {
-  if (!(await isAdmin(req))) return NextResponse.json({ error: "관리자 계정으로 로그인해 주세요." }, { status: 403 });
+  const deny = await adminGuard(req);
+  if (deny) return deny;
   const day = parseDayParam(req.nextUrl.searchParams.get("day"));
   if (day === null) return NextResponse.json({ error: "날짜 형식이 맞지 않아요." }, { status: 400 });
   try {
@@ -23,7 +24,8 @@ export async function GET(req: NextRequest) {
 
 /** 한 번에 최대 3건(리포트 한 건에 AI 20~60초). AI가 아직 안 되면 바로 멈춘다 — 기존 리포트는 그대로. */
 export async function POST(req: NextRequest) {
-  if (!(await isAdmin(req))) return NextResponse.json({ error: "관리자 계정으로 로그인해 주세요." }, { status: 403 });
+  const deny = await adminGuard(req);
+  if (deny) return deny;
   const day = parseDayParam(req.nextUrl.searchParams.get("day"));
   if (day === null) return NextResponse.json({ error: "날짜 형식이 맞지 않아요." }, { status: 400 });
   try {
