@@ -4,7 +4,7 @@ import "server-only";
 // 모델은 스펙 이름(GPT-6.1 Sol)을 기본으로, 실제 모델 ID가 다르면 REPORT_MODEL 환경변수로 바꾼다.
 // AI 호출은 이 파일 한 곳에서만 한다(제공사·모델 교체 지점).
 import { createHash } from "node:crypto";
-import { AI_ALERT_TEXT, classifyAiError, shouldAlert, type AiFailureKind } from "./aiAlert.ts";
+import { AI_ALERT_TEXT, alertRecipients, classifyAiError, shouldAlert, type AiFailureKind } from "./aiAlert.ts";
 import { sendEmail } from "@/lib/email/resend";
 import OpenAI from "openai";
 import { CHARACTER_GRID } from "@/lib/astro/constants";
@@ -58,15 +58,17 @@ export interface PaidReport {
 
 const lastAlert = new Map<AiFailureKind, number>();
 
-/** 키·크레딧·모델 설정 문제로 AI가 실패하면 운영자에게 메일(한 시간에 한 번). 받는 곳 OPS_ALERT_EMAIL, 없으면 문의 메일. */
+/** 키·크레딧·모델 설정 문제로 AI가 실패하면 운영자에게 메일(한 시간에 한 번). 받는 곳은 aiAlert.ts DEFAULT_ALERT_EMAILS(또는 OPS_ALERT_EMAIL). */
 function notifyAiFailure(e: unknown): void {
   const kind = classifyAiError(e);
   if (!kind) return;
   console.error(`[ai-alert] OpenAI ${kind} 오류 — 리포트가 AI 없이 DB 문장으로 나가고 있어요`);
   if (!shouldAlert(lastAlert, kind, Date.now())) return;
-  const to = process.env.OPS_ALERT_EMAIL || "contact@ssolwellness.com";
+
   const text = `${AI_ALERT_TEXT[kind]}\n\n지금 결제한 리포트는 AI 없이 해석 DB 문장으로만 만들어지고 있어요(화면에는 오류가 보이지 않음).\n고친 뒤에 만들어지는 리포트부터 다시 AI로 쓰여요.\n\n— 쏠 아스트로 하우스 자동 알림(같은 종류는 1시간에 한 번)`;
-  void sendEmail({ to, subject: `[쏠 아스트로] 리포트 AI 오류 — ${kind}`, text }).catch(() => {});
+  for (const to of alertRecipients(process.env.OPS_ALERT_EMAIL)) {
+    void sendEmail({ to, subject: `[쏠 아스트로] 리포트 AI 오류 — ${kind}`, text }).catch(() => {});
+  }
 }
 
 async function callModel(system: string, user: string, log: PartLog): Promise<string> {

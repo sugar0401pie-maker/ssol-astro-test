@@ -31,3 +31,11 @@ export function shouldAlert(last: Map<AiFailureKind, number>, kind: AiFailureKin
   last.set(kind, now);
   return true;
 }
+
+/** 알림 받는 곳(owner 2026-11-08). Vercel OPS_ALERT_EMAIL(쉼표로 여러 개)이 있으면 그 목록을 쓴다. */
+export const DEFAULT_ALERT_EMAILS = ["contact@ssolwellness.com", "sugar0401pie@gmail.com", "cso@ssolwellness.com"];
+
+export function alertRecipients(env: string | undefined): string[] {
+  const list = (env ?? "").split(",").map((s) => s.trim()).filter((s) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(s));
+  return list.length ? [...new Set(list)] : DEFAULT_ALERT_EMAILS;
+}
