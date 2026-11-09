@@ -1,6 +1,7 @@
 "use client";
 
 // 관리자 화면: AI 없이 나간 결제 리포트를 새 키로 다시 써서 고객에게 다시 보낸다(owner 2026-11-08).
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { getRealSession } from "@/lib/supabase/browser";
 import { apiHeaders } from "@/lib/guest/client";
@@ -58,6 +59,7 @@ export default function AdminReports() {
 
   return (
     <section className="flex flex-col gap-4">
+      <Link href="/admin" className="small underline">← 관리자 메인</Link>
       <h1 className="big">AI 없이 나간 리포트 다시 만들기</h1>
       <label className="small flex items-center gap-2">
         리포트가 만들어진 날(한국 날짜)

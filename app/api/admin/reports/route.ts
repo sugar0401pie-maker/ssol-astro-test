@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getUserIdFromAuthHeader } from "@/lib/supabase/auth";
-import { getAccountEmail } from "@/lib/results/store";
-import { isCompEmail } from "@/lib/billing/comp";
+import { isAdmin } from "@/lib/admin/data";
 import { parseDayParam } from "@/lib/report/fallback";
 import { listFallbackReports, redoFallbackReport, type RedoResult } from "@/lib/results/report";
 
@@ -10,11 +8,6 @@ import { listFallbackReports, redoFallbackReport, type RedoResult } from "@/lib/
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
-async function isAdmin(req: NextRequest): Promise<boolean> {
-  const userId = await getUserIdFromAuthHeader(req.headers.get("authorization"));
-  if (!userId) return false;
-  return isCompEmail(await getAccountEmail(userId));
-}
 
 export async function GET(req: NextRequest) {
   if (!(await isAdmin(req))) return NextResponse.json({ error: "관리자 계정으로 로그인해 주세요." }, { status: 403 });
