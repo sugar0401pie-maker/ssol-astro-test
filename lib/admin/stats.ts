@@ -85,3 +85,21 @@ export function amountLabel(amount: number | null | undefined, currency: string 
   if (amount === null || amount === undefined) return "";
   return (currency ?? "KRW") === "USD" ? `US$${(amount / 100).toFixed(2)}` : `${amount}원`;
 }
+
+const BAND_LABEL: Record<string, string> = { dawn: "새벽", morning: "오전", afternoon: "오후", evening: "저녁" };
+
+/** 출생 날짜 'YYYY-MM-DD'(입력값 그대로) */
+export function birthDateLabel(b: { year?: number; month?: number; day?: number } | null | undefined): string {
+  if (!b?.year || !b.month || !b.day) return "";
+  return `${b.year}-${String(b.month).padStart(2, "0")}-${String(b.day).padStart(2, "0")}`;
+}
+
+/** 출생 시각: 시·분 입력이면 'HH:MM', 시간대면 '오전(시간대)', 모르면 '모름' */
+export function birthTimeLabel(t: { kind?: string; hour?: number; minute?: number; band?: string } | null | undefined): string {
+  if (!t?.kind) return "";
+  if (t.kind === "exact" && typeof t.hour === "number" && typeof t.minute === "number")
+    return `${String(t.hour).padStart(2, "0")}:${String(t.minute).padStart(2, "0")}`;
+  if (t.kind === "band") return `${BAND_LABEL[t.band ?? ""] ?? t.band ?? ""}(시간대)`;
+  if (t.kind === "unknown") return "모름";
+  return "";
+}

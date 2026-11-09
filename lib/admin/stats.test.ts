@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { amountLabel, csvCell, funnelRows, kstDayRange, kstStamp, loginMethodLabel, parseAdminDay, rate, toCsv, todayKst, type AdminStats } from "./stats.ts";
+import { amountLabel, birthDateLabel, birthTimeLabel, csvCell, funnelRows, kstDayRange, kstStamp, loginMethodLabel, parseAdminDay, rate, toCsv, todayKst, type AdminStats } from "./stats.ts";
 
 test("parseAdminDay", () => {
   assert.equal(parseAdminDay("2026-11-08"), "2026-11-08");
@@ -43,4 +43,12 @@ test("loginMethodLabel·kstStamp·amountLabel", () => {
   assert.equal(kstStamp("2026-11-08T15:30:00Z"), "2026-11-09 00:30");
   assert.equal(amountLabel(299, "USD"), "US$2.99");
   assert.equal(amountLabel(1900, null), "1900원");
+});
+
+test("birthDateLabel·birthTimeLabel", () => {
+  assert.equal(birthDateLabel({ year: 1996, month: 4, day: 1 }), "1996-04-01");
+  assert.equal(birthDateLabel(null), "");
+  assert.equal(birthTimeLabel({ kind: "exact", hour: 9, minute: 5 }), "09:05");
+  assert.equal(birthTimeLabel({ kind: "band", band: "morning" }), "오전(시간대)");
+  assert.equal(birthTimeLabel({ kind: "unknown" }), "모름");
 });
