@@ -12,7 +12,7 @@ import { claimReportEmail, claimReportGeneration, getAccountEmail, getResultForR
 import { findRow } from "@/lib/report/db";
 import { buildReportEmail } from "@/lib/report/reportEmail";
 import { sendEmail } from "@/lib/email/resend";
-import { allPartsAi, usedDbFallback } from "@/lib/report/fallback";
+import { allPartsAi, generatedOnKstDay, usedDbFallback } from "@/lib/report/fallback";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { kakaoArtUrl, pickSignArt, signArtChoices } from "@/lib/share/signShare";
 
@@ -103,7 +103,8 @@ export async function emailReportIfReady(resultId: string): Promise<void> {
 export interface FallbackItem { id: string; paidAt: string | null; lang: "ko" | "en"; member: boolean }
 
 /** AI 없이 나간 결제 리포트 목록(최근 결제 순). 리포트 본문·개인정보는 돌려주지 않는다. */
-export async function listFallbackReports(): Promise<FallbackItem[]> {
+/** day(YYYY-MM-DD, 한국 날짜)를 주면 그날 만들어진 리포트만 */
+export async function listFallbackReports(day = ""): Promise<FallbackItem[]> {
   const out: FallbackItem[] = [];
   for (let from = 0; ; from += 500) {
     const { data, error } = await createAdminClient()
@@ -116,6 +117,7 @@ export async function listFallbackReports(): Promise<FallbackItem[]> {
     if (error) throw new Error(`목록 조회 실패: ${error.code}`);
     for (const r of data ?? []) {
       if (!usedDbFallback(r.report)) continue;
+      if (day && !generatedOnKstDay(r.report, day)) continue;
       out.push({ id: r.id as string, paidAt: (r.paid_at as string) ?? null, lang: (r.birth_input as { lang?: string })?.lang === "en" ? "en" : "ko", member: !!r.user_id });
     }
     if (!data || data.length < 500) return out;

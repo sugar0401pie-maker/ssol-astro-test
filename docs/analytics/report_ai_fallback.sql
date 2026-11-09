@@ -5,6 +5,7 @@
 select
   r.id                                   as result_id,
   r.paid_at,
+  r.report->>'generatedAt'               as generated_at,
   coalesce(r.birth_input->>'lang', 'ko') as lang,
   r.report->'log'->>'promptVersion'      as prompt_version,
   (select string_agg(p.key || '=' || (p.value->>'result'), ', ' order by p.key)
@@ -18,6 +19,8 @@ where r.paid_at is not null
     select 1 from jsonb_each(r.report->'log'->'parts') p
     where p.value->>'result' = 'db'
   )
+  -- 일요일(2026-11-08, 한국 날짜)에 만들어진 것만 보려면 아래 줄의 -- 를 지우세요
+  -- and ((r.report->>'generatedAt')::timestamptz at time zone 'Asia/Seoul')::date = date '2026-11-08'
 order by r.paid_at desc;
 
 -- 하루별 요약(AI로 쓴 리포트 vs AI 없이 나간 리포트)

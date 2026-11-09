@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUserIdFromAuthHeader } from "@/lib/supabase/auth";
 import { getAccountEmail } from "@/lib/results/store";
 import { isCompEmail } from "@/lib/billing/comp";
+import { parseDayParam } from "@/lib/report/fallback";
 import { listFallbackReports, redoFallbackReport, type RedoResult } from "@/lib/results/report";
 
 // 관리자 전용(owner 2026-11-08): AI 없이 나간 결제 리포트 목록 보기·다시 만들어 보내기.
@@ -17,8 +18,10 @@ async function isAdmin(req: NextRequest): Promise<boolean> {
 
 export async function GET(req: NextRequest) {
   if (!(await isAdmin(req))) return NextResponse.json({ error: "관리자 계정으로 로그인해 주세요." }, { status: 403 });
+  const day = parseDayParam(req.nextUrl.searchParams.get("day"));
+  if (day === null) return NextResponse.json({ error: "날짜 형식이 맞지 않아요." }, { status: 400 });
   try {
-    return NextResponse.json({ items: await listFallbackReports() });
+    return NextResponse.json({ items: await listFallbackReports(day) });
   } catch (e) {
     console.error(e instanceof Error ? e.message : "목록 실패");
     return NextResponse.json({ error: "목록을 불러오지 못했어요." }, { status: 500 });
@@ -28,8 +31,10 @@ export async function GET(req: NextRequest) {
 /** 한 번에 최대 3건(리포트 한 건에 AI 20~60초). AI가 아직 안 되면 바로 멈춘다 — 기존 리포트는 그대로. */
 export async function POST(req: NextRequest) {
   if (!(await isAdmin(req))) return NextResponse.json({ error: "관리자 계정으로 로그인해 주세요." }, { status: 403 });
+  const day = parseDayParam(req.nextUrl.searchParams.get("day"));
+  if (day === null) return NextResponse.json({ error: "날짜 형식이 맞지 않아요." }, { status: 400 });
   try {
-    const items = (await listFallbackReports()).slice(0, 3);
+    const items = (await listFallbackReports(day)).slice(0, 3);
     const done: Array<{ id: string; result: RedoResult }> = [];
     for (const it of items) {
       const result = await redoFallbackReport(it.id);

@@ -18,15 +18,18 @@ export default function AdminReports() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [log, setLog] = useState<string[]>([]);
+  // 기본은 키가 막혔던 일요일(2026-11-08, 한국 날짜) — 비우면 전체
+  const [day, setDay] = useState("2026-11-08");
+  const q = day ? `?day=${encodeURIComponent(day)}` : "";
 
   const load = useCallback(async () => {
     const session = await getRealSession();
-    const res = await fetch("/api/admin/reports", { headers: apiHeaders(session), cache: "no-store" });
+    const res = await fetch(`/api/admin/reports${q}`, { headers: apiHeaders(session), cache: "no-store" });
     const d = await res.json().catch(() => ({}));
     if (!res.ok) return setError(d.error ?? "불러오지 못했어요.");
     setError("");
     setItems(d.items);
-  }, []);
+  }, [q]);
 
   useEffect(() => {
     queueMicrotask(() => void load());
@@ -37,7 +40,7 @@ export default function AdminReports() {
     try {
       for (;;) {
         const session = await getRealSession();
-        const res = await fetch("/api/admin/reports", { method: "POST", headers: apiHeaders(session) });
+        const res = await fetch(`/api/admin/reports${q}`, { method: "POST", headers: apiHeaders(session) });
         const d = await res.json().catch(() => ({}));
         if (!res.ok) {
           setLog((l) => [...l, d.error ?? "실패"]);
@@ -56,6 +59,11 @@ export default function AdminReports() {
   return (
     <section className="flex flex-col gap-4">
       <h1 className="big">AI 없이 나간 리포트 다시 만들기</h1>
+      <label className="small flex items-center gap-2">
+        리포트가 만들어진 날(한국 날짜)
+        <input type="date" value={day} disabled={busy} onChange={(e) => setDay(e.target.value)} className="rounded-lg px-2 py-1 text-navy" />
+        <button type="button" className="underline" disabled={busy} onClick={() => setDay("")}>전체 보기</button>
+      </label>
       {error && <p className="rounded-xl bg-cream px-3 py-2 text-sm text-navy">{error}</p>}
       {items && (
         <>
