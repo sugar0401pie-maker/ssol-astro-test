@@ -16,7 +16,7 @@ export default function AdminDashboard() {
   const [rows, setRows] = useState<FunnelRow[] | null>(null);
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [error, setError] = useState("");
-  const [busy, setBusy] = useState<"" | "day" | "upto">("");
+  const [busy, setBusy] = useState("");
 
   const load = useCallback(async () => {
     setError("");
@@ -35,12 +35,13 @@ export default function AdminDashboard() {
     queueMicrotask(() => void load());
   }, [load]);
 
-  async function download(scope: "day" | "upto") {
-    setBusy(scope);
+  // kind: participants = 참가자 목록, reports = 사용자에게 나간 유료 리포트 본문
+  async function download(kind: "participants" | "reports", scope: "day" | "upto") {
+    setBusy(`${kind}:${scope}`);
     setError("");
     try {
       const session = await getRealSession();
-      const res = await fetch(`/api/admin/export?day=${day}&scope=${scope}`, { headers: apiHeaders(session), cache: "no-store" });
+      const res = await fetch(`/api/admin/${kind === "reports" ? "export-reports" : "export"}?day=${day}&scope=${scope}`, { headers: apiHeaders(session), cache: "no-store" });
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
         return setError(d.error ?? "엑셀 파일을 만들지 못했어요.");
@@ -49,7 +50,7 @@ export default function AdminDashboard() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `astro_participants_${scope === "day" ? day : `upto_${day}`}.csv`;
+      a.download = `astro_${kind}_${scope === "day" ? day : `upto_${day}`}.csv`;
       a.click();
       URL.revokeObjectURL(url);
     } finally {
@@ -128,14 +129,26 @@ export default function AdminDashboard() {
       )}
 
       <div className="flex flex-col gap-2">
-        <button type="button" className="btn block" disabled={!!busy} onClick={() => void download("day")}>
-          {busy === "day" ? "만드는 중…" : `${day} 참가자 엑셀 받기`}
+        <button type="button" className="btn block" disabled={!!busy} onClick={() => void download("participants", "day")}>
+          {busy === "participants:day" ? "만드는 중…" : `${day} 참가자 엑셀 받기`}
         </button>
-        <button type="button" className="btn block ghost" disabled={!!busy} onClick={() => void download("upto")}>
-          {busy === "upto" ? "만드는 중…" : `${day}까지 전체 참가자 엑셀 받기`}
+        <button type="button" className="btn block ghost" disabled={!!busy} onClick={() => void download("participants", "upto")}>
+          {busy === "participants:upto" ? "만드는 중…" : `${day}까지 전체 참가자 엑셀 받기`}
         </button>
         <p className="text-xs text-cream/60">
           참가 시각·닉네임·로그인 수단·이메일·결제·출생 날짜·시각·장소·유형·답·유입 경로가 들어가요. 내려받은 파일은 개인정보라 안전한 곳에만 보관해 주세요.
+        </p>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <button type="button" className="btn block" disabled={!!busy} onClick={() => void download("reports", "day")}>
+          {busy === "reports:day" ? "만드는 중…" : `${day} 리포트 본문 엑셀 받기`}
+        </button>
+        <button type="button" className="btn block ghost" disabled={!!busy} onClick={() => void download("reports", "upto")}>
+          {busy === "reports:upto" ? "만드는 중…" : `${day}까지 전체 리포트 본문 엑셀 받기`}
+        </button>
+        <p className="text-xs text-cream/60">
+          결제한 사람에게 나간 유료 리포트(4~7장)와 질문·실천·맺음말이 한 장에 한 줄씩 들어가요. 날짜는 리포트가 만들어진 날 기준이고, &lsquo;출처&rsquo;가 db면 AI 대신 해석 DB 문장이 나간 장이에요. 결과_id로 참가자 엑셀과 맞춰 볼 수 있어요. 무료 결과(1~3장)는 저장된 글이 없어 빠져요.
         </p>
       </div>
 

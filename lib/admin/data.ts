@@ -5,6 +5,7 @@ import { getUserIdFromAuthHeader } from "@/lib/supabase/auth";
 import { getAccountEmail } from "@/lib/results/store";
 import { isCompEmail } from "@/lib/billing/comp";
 import { GATE_COOKIE, verifyGate } from "./gate";
+import { REPORT_HEADER, reportRows, type StoredReport } from "./reportExport";
 import { amountLabel, birthDateLabel, birthTimeLabel, kstDayRange, kstStamp, loginMethodLabel, toCsv, type AdminStats } from "./stats";
 
 // 관리자 화면(owner 2026-11-09) 서버 쪽: 관리자 확인, 날짜 기준 숫자, 엑셀(CSV) 내보내기.
@@ -121,4 +122,35 @@ export async function buildExportCsv(day: string, scope: "day" | "upto"): Promis
     ];
   });
   return { csv: toCsv(HEADER, body), count: rows.length };
+}
+
+/**
+ * 사용자에게 나간 유료 리포트 본문(owner 2026-11-10). 기준은 리포트가 만들어진 시각(report.generatedAt) —
+ * scope 'day' = 그날(한국), 'upto' = 그날까지 전체. 리포트가 커서 200건씩 나눠 읽는다.
+ */
+export async function buildReportCsv(day: string, scope: "day" | "upto"): Promise<{ csv: string; count: number }> {
+  const { start, end } = kstDayRange(day);
+  const rows: unknown[][] = [];
+  let count = 0;
+  for (let from = 0; ; from += 200) {
+    let q = createAdminClient()
+      .from("astro_results")
+      .select("id, birth_input, answers, report")
+      .eq("report_status", "ready")
+      .not("paid_at", "is", null)
+      .lt("report->>generatedAt", end);
+    if (scope === "day") q = q.gte("report->>generatedAt", start);
+    const { data, error } = await q.order("created_at", { ascending: false }).range(from, from + 199);
+    if (error) throw new Error(`리포트 조회 실패: ${error.code}`);
+    for (const r of data ?? []) {
+      const out = reportRows(
+        { id: r.id as string, lang: (r.birth_input as { lang?: string } | null)?.lang, answers: r.answers as { q1?: string; q2?: string; q3?: string } | null },
+        r.report as StoredReport | null,
+      );
+      if (out.length) count++;
+      rows.push(...out);
+    }
+    if (!data || data.length < 200) break;
+  }
+  return { csv: toCsv(REPORT_HEADER, rows), count };
 }
