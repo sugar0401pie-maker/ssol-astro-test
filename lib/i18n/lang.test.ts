@@ -53,7 +53,10 @@ test("결제 복귀·검색엔진 파일은 해외 접속이어도 그대로", (
 test("예전 영문 주소(/en/…)는 켜져 있으면 영문 사이트의 같은 화면으로, 꺼져 있으면 숨김", () => {
   assert.deepEqual(koRoute({ ...base, country: "KR", pathname: "/en/start", search: "?a=1" }), { kind: "redirect", to: `${EN_SITE}/start?a=1` });
   assert.deepEqual(koRoute({ ...base, country: "KR", pathname: "/en" }), { kind: "redirect", to: `${EN_SITE}/` });
-  assert.deepEqual(koRoute({ ...base, enabled: false, pathname: "/en/results/x/4" }), { kind: "redirect", to: "/" });
-  assert.deepEqual(koRoute({ ...base, enabled: false, pathname: "/en/legal/privacy" }), { kind: "pass" });
+  assert.deepEqual(koRoute({ ...base, enabled: false, enPagesOpen: false, pathname: "/en/results/x/4" }), { kind: "redirect", to: "/" });
+  assert.deepEqual(koRoute({ ...base, enabled: false, enPagesOpen: false, pathname: "/en/legal/privacy" }), { kind: "pass" });
+  // 2026-11-12: 영문 사이트 배포 전 — /en 화면을 주소로 직접 연다(자동 이동은 여전히 없음)
+  assert.deepEqual(koRoute({ ...base, enabled: false, enPagesOpen: true, pathname: "/en/results/x/4" }), { kind: "pass" });
+  assert.deepEqual(koRoute({ ...base, enabled: false, enPagesOpen: true, pathname: "/en" }), { kind: "pass" });
   assert.deepEqual(koRoute({ ...base, enabled: false, pathname: "/english" }), { kind: "pass" });
 });

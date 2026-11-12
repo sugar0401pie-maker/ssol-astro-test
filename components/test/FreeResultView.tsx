@@ -16,6 +16,7 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { track } from "@/lib/analytics/track";
 import { REPORT_PRICE } from "@/lib/billing/pricing";
+import { enPriceLabel } from "@/lib/billing/pricingEn";
 import { apiHeaders } from "@/lib/guest/client";
 import { getRealSession } from "@/lib/supabase/browser";
 import Wheel from "@/components/chart/Wheel";
@@ -150,7 +151,7 @@ const EN_T: ViewT = {
   myResults: "See all my results", // ★
   saveToPay: "Save your results to unlock the full report.", // ★
   payAria: "Payment", // ★
-  payButton: "Pay US$2.99 and get my report now",
+  payButton: `Pay ${enPriceLabel()} and get my report now`,
   saveFail: "We couldn’t save your results. Please try again in a moment.", // ★
   saveFirst: "Your results need to be saved before you pay. Tap the button and we’ll save them first.", // ★
   switched: "Your report now matches the type you chose",

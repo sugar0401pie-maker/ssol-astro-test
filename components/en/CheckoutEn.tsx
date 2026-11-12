@@ -9,17 +9,17 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { track } from "@/lib/analytics/track";
 import { enLegalUrl } from "@/lib/legal/en/blocks";
-import { EN_CURRENCY, EN_REPORT_PRICE_CENTS, centsToUsd, enTossClientKey, tossKeyKind, type EnPayMethod } from "@/lib/billing/pricingEn";
+import { EN_CURRENCY, EN_REPORT_PRICE_CENTS, centsToUsd, enPriceLabel, enTossClientKey, tossKeyKind, type EnPayMethod } from "@/lib/billing/pricingEn";
 import { startEnPayment } from "@/lib/billing/enPayClient";
 import { apiHeaders } from "@/lib/guest/client";
 import { getAttribution } from "@/lib/attribution/client";
 import { useRealSession } from "@/components/results/useSession";
 
 export const EN_PAY_COPY = {
-  product: "Star report — US$2.99, one-time payment. No subscription, no automatic renewal.",
+  product: `Star report — ${enPriceLabel()}, one-time payment. No subscription, no automatic renewal.`,
   notice:
     "Your report unlocks right after payment. By paying, you ask us to deliver it now and agree that you can't cancel once it is shown, as set out in the [Terms of Use] and [Refund Policy].",
-  button: "Pay US$2.99 and get my report now",
+  button: `Pay ${enPriceLabel()} and get my report now`,
   methods: "Visa · Mastercard · JCB · PayPal. Your bank may add a foreign-transaction fee.",
 } as const;
 
@@ -144,7 +144,7 @@ export default function CheckoutEn({ resultId, page }: { resultId: string; page:
         </>
       ) : (
         <button type="button" className="btn block" onClick={() => void pay()} disabled={!ready || busy} aria-busy={busy}>
-          {ready ? "Pay US$2.99" : "Opening secure payment…"}
+          {ready ? `Pay ${enPriceLabel()}` : "Opening secure payment…"}
         </button>
       )}
     </section>

@@ -1,5 +1,6 @@
 // 영문판 주문 확인 이메일(08_on-screen-texts §4 — EU·UK 소비자법상 청약철회 포기 확인을 남는 매체로 보내야 한다, 결제 직후 자동).
 // 문구는 08 §4 그대로. 단 원문의 '(includes a 3-day Sowella AI pass)'는 뺐다 — 쏘웰라 이용권은 리포트와 따로 주지 않는다(owner 10-08·10-15).
+import { enPriceLabel } from "./pricingEn.ts";
 export const ORDER_SUPPORT = "contact@ssolwellness.com";
 const SITE = "https://astro.ssolwellnesshouse.com";
 
@@ -32,7 +33,7 @@ const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&l
 
 export function buildOrderEmailEn(m: OrderMailInput): { subject: string; text: string; html: string } {
   const subject = "Your SSOL star report — order confirmation";
-  const body = `Thanks for your order. Order no. ${m.orderId} · Star report · US$2.99, one-time payment, no renewal · Paid on ${formatPaidAt(m.paidAt)} with ${methodLabel(m.method)}.`;
+  const body = `Thanks for your order. Order no. ${m.orderId} · Star report · ${enPriceLabel()}, one-time payment, no renewal · Paid on ${formatPaidAt(m.paidAt)} with ${methodLabel(m.method)}.`;
   const waiver = "Before paying, you asked us to deliver your report right away and acknowledged that you lose your right to cancel once it is shown to you.";
   const seller = `Seller: SSOL Wellness House · 572-07-03549 · Room 408, 4F, 100 Dongmak-ro, Mapo-gu, Seoul · ${ORDER_SUPPORT} · Contact number +82-10-2835-2263`;
   const terms = `${SITE}/en/legal/terms`;
@@ -58,7 +59,7 @@ ${m.sunSign ? `<p style="margin:0 0 4px;font-size:12px;letter-spacing:2px;color:
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
 ${row("Order no.", m.orderId)}
 ${row("Item", "Star report")}
-${row("Amount", "US$2.99 · one-time, no renewal")}
+${row("Amount", `${enPriceLabel()} · one-time, no renewal`)}
 ${row("Paid on", formatPaidAt(m.paidAt))}
 ${row("Method", methodLabel(m.method))}
 </table>

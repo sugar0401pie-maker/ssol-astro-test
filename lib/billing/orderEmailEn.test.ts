@@ -5,7 +5,7 @@ import { buildOrderEmailEn, formatPaidAt, isEmail, methodLabel } from "./orderEm
 test("주문 확인 이메일: 08 §4 문구(주문 번호·가격·결제 시각·수단·철회권 확인·판매자·약관 링크)", () => {
   const m = buildOrderEmailEn({ orderId: "ord-1", paidAt: new Date("2026-11-06T09:05:00Z"), method: "카드", resultId: "r1" });
   assert.equal(m.subject, "Your SSOL star report — order confirmation");
-  assert.ok(m.text.includes("Order no. ord-1 · Star report · US$2.99, one-time payment, no renewal · Paid on November 6, 2026, 09:05 UTC with card."));
+  assert.ok(m.text.includes("Order no. ord-1 · Star report · US$29.99, one-time payment, no renewal · Paid on November 6, 2026, 09:05 UTC with card."));
   assert.ok(m.text.includes("you lose your right to cancel once it is shown to you"));
   assert.ok(m.text.includes("572-07-03549") && m.text.includes("/en/legal/terms") && m.text.includes("/en/legal/refund"));
   assert.ok(!/Sowella AI pass/.test(m.text));

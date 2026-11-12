@@ -3,6 +3,7 @@
 // - 행을 찾는 칸(word·wish·character 등)은 한국어 그대로 둔다 — 코드가 한국어 키로 찾기 때문. 영문은 '<칸>_en'.
 // - 번역이 없는 칸에 한글이 남아 있으면 빈 문자열로 바꾼다: 영문 화면에 한국어가 새지 않게(빈 문장은 화면 조립에서 빠진다 — fail safe).
 import type { AstroDb } from "./db.ts";
+import { withEnReportPrice } from "../billing/pricingEn.ts";
 
 export type EnOverlay = Record<string, Record<string, Record<string, string>>>;
 
@@ -27,7 +28,7 @@ export function buildEnDb(ko: AstroDb, overlay: EnOverlay): AstroDb {
         const out: Record<string, string> = {};
         for (const [k, v] of Object.entries(r)) {
           if (LOOKUP_FIELDS.has(k)) out[k] = v;
-          else if (en[k] !== undefined) out[k] = en[k];
+          else if (en[k] !== undefined) out[k] = withEnReportPrice(en[k]); // 결제 문구 속 가격 = 지금 가격
           else out[k] = typeof v === "string" && HANGUL.test(v) ? "" : v;
         }
         for (const [k, v] of Object.entries(en)) if (k.endsWith("_en")) out[k] = v;

@@ -1,3 +1,4 @@
+import { withEnReportPrice } from "@/lib/billing/pricingEn";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import LegalDocEn from "@/components/legal/LegalDocEn";
@@ -42,5 +43,7 @@ export default async function EnLegalPage({ params }: PageProps<"/en/legal/[slug
   const { slug } = await params;
   const doc = DOCS[slug as EnLegalSlug];
   if (!doc) notFound();
-  return <LegalDocEn blocks={doc as LegalBlock[]} current={slug} />;
+  // 약관·환불 정책 속 가격 글자는 지금 가격으로(2026-11-12 한시적 US$29.99 — pricingEn.ts)
+  const priced = JSON.parse(withEnReportPrice(JSON.stringify(doc))) as LegalBlock[];
+  return <LegalDocEn blocks={priced} current={slug} />;
 }

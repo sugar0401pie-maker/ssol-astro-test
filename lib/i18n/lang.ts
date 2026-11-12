@@ -17,6 +17,12 @@ export const LANG_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
  * 영문 사이트 연결 스위치. process.env.NEXT_PUBLIC_EN_SITE_LIVE는 이 모양 그대로 읽어야 빌드 때 값이 박힌다(브라우저·proxy 모두).
  * 예전 스위치(NEXT_PUBLIC_EN_SITE)와 이름을 일부러 다르게 했다 — 예전 값이 남아 있어도 영문 사이트 배포 전에 켜지지 않게.
  */
+/**
+ * 영문 화면(/en…)을 주소로 직접 열 수 있게 할지(owner 2026-11-12: 별도 영문 사이트가 아직 배포 전이라 이 사이트의 /en을 연다).
+ * 열려 있어도 해외 접속자 자동 이동·하단 English 링크·검색 노출은 없다(그건 NEXT_PUBLIC_EN_SITE_LIVE). 다시 숨기려면 false.
+ */
+export const EN_PAGES_OPEN = true;
+
 export function enSiteEnabled(value: string | undefined = process.env.NEXT_PUBLIC_EN_SITE_LIVE): boolean {
   return value === "1";
 }
@@ -50,6 +56,8 @@ export function koRoute(input: {
   cookieLang: string | null | undefined;
   userAgent: string | null | undefined;
   enabled: boolean;
+  /** 테스트용 — 기본은 EN_PAGES_OPEN */
+  enPagesOpen?: boolean;
 }): KoRoute {
   const { pathname, search, enabled } = input;
   const params = new URLSearchParams(search);
@@ -57,7 +65,8 @@ export function koRoute(input: {
 
   if (isEnPath(pathname)) {
     if (enabled) return { kind: "redirect", to: `${EN_SITE}${pathname.slice(3) || "/"}${search}` };
-    // 영문 사이트 연결 전: 예전처럼 영문 화면은 숨기고(한국어 첫 화면), 영문 정책 페이지만 연다
+    // 영문 사이트 연결 전: EN_PAGES_OPEN이면 주소로 직접 열고, 아니면 숨김(한국어 첫 화면) — 영문 정책 페이지는 늘 연다
+    if (input.enPagesOpen ?? EN_PAGES_OPEN) return { kind: "pass" };
     if (pathname === "/en/legal" || pathname.startsWith("/en/legal/")) return { kind: "pass" };
     return { kind: "redirect", to: "/" };
   }
