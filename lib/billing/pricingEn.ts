@@ -4,7 +4,9 @@
 // 화면·메일·약관·번역 DB의 가격 글자는 모두 이 값에서 만든다(enPriceLabel·withEnReportPrice).
 export const EN_REPORT_PRICE_CENTS = 2999;
 export const EN_CURRENCY = "USD" as const;
-export const EN_ORDER_NAME = "SSOL Astro House star report";
+// 상품 이름(owner 2026-11-12) — 결제 화면·토스 주문명·주문 확인 메일·약관 §3·환불 정책이 같은 이름을 쓴다.
+export const EN_PRODUCT_NAME = "2027 Complete Astrology Reading + Love, Career & Money Package";
+export const EN_ORDER_NAME = `SSOL Astro House — ${EN_PRODUCT_NAME}`;
 
 export const centsToUsd = (cents: number) => Math.round(cents) / 100;
 /** 토스가 돌려준 달러 금액(2.99 등)을 센트로 — 소수 비교 오차를 피하려고 센트로 맞춰 비교한다 */

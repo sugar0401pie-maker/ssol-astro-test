@@ -9,14 +9,14 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { track } from "@/lib/analytics/track";
 import { enLegalUrl } from "@/lib/legal/en/blocks";
-import { EN_CURRENCY, EN_REPORT_PRICE_CENTS, centsToUsd, enPriceLabel, enTossClientKey, tossKeyKind, type EnPayMethod } from "@/lib/billing/pricingEn";
+import { EN_CURRENCY, EN_REPORT_PRICE_CENTS, centsToUsd, EN_PRODUCT_NAME, enPriceLabel, enTossClientKey, tossKeyKind, type EnPayMethod } from "@/lib/billing/pricingEn";
 import { startEnPayment } from "@/lib/billing/enPayClient";
 import { apiHeaders } from "@/lib/guest/client";
 import { getAttribution } from "@/lib/attribution/client";
 import { useRealSession } from "@/components/results/useSession";
 
 export const EN_PAY_COPY = {
-  product: `Star report — ${enPriceLabel()}, one-time payment. No subscription, no automatic renewal.`,
+  product: `${EN_PRODUCT_NAME} — ${enPriceLabel()}, one-time payment. No subscription, no automatic renewal.`,
   notice:
     "Your report unlocks right after payment. By paying, you ask us to deliver it now and agree that you can't cancel once it is shown, as set out in the [Terms of Use] and [Refund Policy].",
   button: `Pay ${enPriceLabel()} and get my report now`,

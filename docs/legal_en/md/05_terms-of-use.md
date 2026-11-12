@@ -17,7 +17,7 @@ You must be at least 18 years old. The Service, including Sowella AI, may not be
 | Item | Price | What you get |
 | --- | --- | --- |
 | Birth chart, your type, 2026 look-back | Free | Shown on the site |
-| Star report | US$2.99, one-time | The rest of 2026, your 2027 reading, your 5-year flow, and personal wellness tips |
+| 2027 Complete Astrology Reading + Love, Career & Money Package | US$2.99, one-time | The rest of 2026, your 2027 reading, your 5-year flow, and personal wellness tips |
 | 3-day Sowella AI pass | Included with the star report | 3 days of chat with Sowella AI from the time you start |
 
 The star report is a one-time purchase. It does not renew automatically and we never charge you again. Because the report is digital content delivered right after payment, by buying it you ask us to deliver it immediately and agree that you lose your right to cancel once it is shown to you (see the Refund Policy for when we still refund). Prices include any taxes we must collect, unless the checkout page says otherwise. Your bank may add its own foreign-transaction fee.

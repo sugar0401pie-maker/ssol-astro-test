@@ -2,7 +2,7 @@
 
 **Effective date:** November 6, 2026
 
-The star report (US$2.99) is a one-time digital purchase that unlocks right away, so it is usually not refundable once you have opened it. We do refund when something goes wrong on our side.
+The 2027 Complete Astrology Reading + Love, Career & Money Package (US$2.99) is a one-time digital purchase that unlocks right away, so it is usually not refundable once you have opened it. We do refund when something goes wrong on our side.
 
 ## When we refund in full
 
