@@ -18,8 +18,8 @@ export const PUBLIC_PATHS = [
  * 배포 때 IndexNow가 lastmod가 오늘인 주소만 검색엔진에 알리므로(scripts/indexnow.mjs), 안 바꾸면 알림이 안 간다.
  */
 export const PAGE_UPDATED: Record<(typeof PUBLIC_PATHS)[number], string> = {
-  "/": "2026-11-05",
-  "/about": "2026-11-05",
+  "/": "2026-11-14",
+  "/about": "2026-11-14",
   "/about/how-it-works": "2026-11-05",
   "/about/report": "2026-11-05",
   "/about/trust": "2026-11-05",
