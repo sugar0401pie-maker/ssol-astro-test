@@ -45,3 +45,8 @@ test("출생 정보 답은 처리방침대로 '출생차트에만, 통계 포함
 test("고지는 '예측 도구가 아니며'로 시작", () => {
   assert.ok(c.ABOUT_DISCLAIMER.startsWith("쏠 아스트로 하우스는 예측 도구가 아니며"));
 });
+
+test("소개 문구·구조화 데이터에 팀원 이름이 없다(owner 2026-11-15)", () => {
+  const all = JSON.stringify([c, c.aboutJsonLd(), c.SUB_PAGES.map((p) => c.subPageJsonLd(p))]);
+  for (const name of ["김준석", "곽혜진", "오세민", "오유주"]) assert.ok(!all.includes(name), name);
+});

@@ -25,10 +25,10 @@ export const SIGN_PAGES_UPDATED = "2026-11-15";
  */
 export const PAGE_UPDATED: Record<(typeof PUBLIC_PATHS)[number], string> = {
   "/": "2026-11-14",
-  "/about": "2026-11-14",
+  "/about": "2026-11-15",
   "/about/how-it-works": "2026-11-05",
   "/about/report": "2026-11-05",
-  "/about/trust": "2026-11-05",
+  "/about/trust": "2026-11-15",
   "/about/privacy-refund": "2026-11-05",
   "/about/signs": "2026-11-15",
   "/legal": "2026-10-26",
