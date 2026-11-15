@@ -26,7 +26,11 @@ export const H2 = ({ children }: { children: React.ReactNode }) => (
 
 /** 소개 페이지 사이를 오가는 목록(현재 페이지는 굵게) */
 function AboutNav({ current }: { current: string }) {
-  const items = [{ href: "/about", label: "소개" }, ...SUB_PAGES.map((p) => ({ href: `/about/${p.slug}`, label: p.nav }))];
+  const items = [
+    { href: "/about", label: "소개" },
+    ...SUB_PAGES.map((p) => ({ href: `/about/${p.slug}`, label: p.nav })),
+    { href: "/about/signs", label: "12별자리" },
+  ];
   return (
     <nav aria-label="소개 페이지" className="mt-4 flex flex-wrap gap-x-3 gap-y-1.5 text-[13px]">
       {items.map((it) =>

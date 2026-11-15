@@ -24,7 +24,7 @@ test("가격·별점 같은 구조화 데이터는 넣지 않는다", () => {
 
 test("주제별 하위 페이지는 사이트맵 공개 경로와 같고, 각자 FAQ가 있다", async () => {
   const { PUBLIC_PATHS, PAGE_UPDATED } = await import("../seo.ts");
-  const subs = PUBLIC_PATHS.filter((p) => p.startsWith("/about/"));
+  const subs = PUBLIC_PATHS.filter((p) => p.startsWith("/about/") && p !== "/about/signs");
   assert.deepEqual([...subs].sort(), c.SUB_PAGES.map((p) => `/about/${p.slug}`).sort());
   for (const p of PUBLIC_PATHS) assert.match(PAGE_UPDATED[p], /^\d{4}-\d{2}-\d{2}$/);
   for (const p of c.SUB_PAGES) assert.ok(c.faqsOf(p.groups).length > 0, p.slug);

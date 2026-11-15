@@ -10,8 +10,14 @@ export const PUBLIC_PATHS = [
   "/about/report",
   "/about/trust",
   "/about/privacy-refund",
+  "/about/signs",
   "/legal",
 ] as const;
+
+/** 12별자리 페이지(/about/signs/<영문>) — 해석 DB A1의 영문명과 같아야 한다(테스트가 확인) */
+export const SIGN_SLUGS = ["aries", "taurus", "gemini", "cancer", "leo", "virgo", "libra", "scorpio", "sagittarius", "capricorn", "aquarius", "pisces"] as const;
+/** 12별자리 페이지 내용이 마지막으로 바뀐 날(KST) — 별자리 문장(해석 DB A1~A4)을 바꾸면 이 날짜도 바꾼다 */
+export const SIGN_PAGES_UPDATED = "2026-11-15";
 
 /**
  * 페이지 내용이 마지막으로 바뀐 날(KST, sitemap lastmod). 그 페이지 글을 고치면 이 날짜도 바꾼다 —
@@ -24,6 +30,7 @@ export const PAGE_UPDATED: Record<(typeof PUBLIC_PATHS)[number], string> = {
   "/about/report": "2026-11-05",
   "/about/trust": "2026-11-05",
   "/about/privacy-refund": "2026-11-05",
+  "/about/signs": "2026-11-15",
   "/legal": "2026-10-26",
 };
 

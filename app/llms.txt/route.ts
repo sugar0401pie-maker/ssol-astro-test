@@ -1,5 +1,7 @@
 // AI 검색·답변 도구가 읽기 쉬운 사이트 안내(llms.txt 관례, owner 2026-11-05 'AI 수집이 잘 되게').
 // 공개 소개 페이지 목록과 한 줄 설명만 — 개인 결과·결제 주소는 넣지 않는다. 내용은 lib/about/content.ts 한 곳에서.
+import { SIGNS_DESCRIPTION, SIGNS_URL, buildSignPages, signUrl } from "@/lib/about/signs";
+import { ASTRO_DB } from "@/lib/report/dbData";
 import { ABOUT_DESCRIPTION, ABOUT_INTRO, ABOUT_URL, FAQS, SITE, SOWELLA_URL, SUB_PAGES, subPageUrl } from "@/lib/about/content";
 
 export const dynamic = "force-static";
@@ -15,6 +17,8 @@ export function GET() {
     "## 소개 페이지",
     `- [쏠 아스트로 하우스 소개](${ABOUT_URL}): 한눈에 보기, 이용 순서, 만든 사람, 자주 묻는 질문 전체`,
     ...SUB_PAGES.map((p) => `- [${p.nav}](${subPageUrl(p.slug)}): ${p.description}`),
+    `- [12별자리](${SIGNS_URL}): ${SIGNS_DESCRIPTION}`,
+    ...buildSignPages(ASTRO_DB).map((p) => `  - [${p.name}](${signUrl(p.slug)}): ${p.dates} · ${p.keywords} — ${p.oneLiner}`),
     `- [개인정보처리방침·이용약관](${SITE}/legal)`,
     "",
     "## 자주 묻는 질문",
