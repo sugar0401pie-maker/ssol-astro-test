@@ -411,3 +411,8 @@ details.why ul{list-style:disc}
 .lo-orbit .tw{animation:twinkleRw 1.2s ease-in-out infinite alternate}
 .loading .lo-title{animation:breathe 2s ease-in-out infinite}
 @media (prefers-reduced-motion:reduce){.lo-orbit .lo-orb,.lo-orbit .lo-zodiac,.lo-orbit .lo-ring-rev,.lo-orbit .lo-core,.lo-orbit .tw,.loading .lo-title{animation:none}}
+/* 결제 카드 고객 후기(owner 2026-11-18) — 가운데 한 줄, 1.5초마다 아래에서 올라옴 */
+.pf-reviews{height:2.9em;overflow:hidden;margin:0 0 10px;font-size:.8rem;line-height:1.45;display:flex;align-items:center;justify-content:center}
+.pf-review{margin:0;color:var(--cream);opacity:.92;text-align:center;word-break:keep-all;animation:pfReviewIn .45s ease backwards;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+@keyframes pfReviewIn{from{transform:translateY(100%);opacity:0}to{transform:none;opacity:.92}}
+@media (prefers-reduced-motion:reduce){.pf-review{animation:none}}

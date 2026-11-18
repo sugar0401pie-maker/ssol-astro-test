@@ -16,6 +16,7 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { track } from "@/lib/analytics/track";
 import { REPORT_PRICE } from "@/lib/billing/pricing";
+import { PAYWALL_REVIEWS, REVIEW_MS, shuffled } from "@/lib/results/paywallReviews";
 import { enPriceLabel } from "@/lib/billing/pricingEn";
 import { apiHeaders } from "@/lib/guest/client";
 import { getRealSession } from "@/lib/supabase/browser";
@@ -860,6 +861,8 @@ export default function FreeResultView({
               {/* 영문 번역 묶음의 PAY_POPUP에 아직 '3-day Sowella AI pass'가 남아 있다(한국어 DB는 v1.2.4에서 삭제) — 이용권은 따로 주지 않으므로 그 부분만 숨긴다. 번역 묶음을 고치면 이 처리는 할 일이 없어진다 */}
               {popup.sub && <p className="pp-s">{en ? popup.sub.replace(/\s*·?\s*Includes a 3-day Sowella AI pass\.?/i, "") : popup.sub}</p>}
             </div>
+            {/* 고객 후기 한 줄씩 1.5초마다(owner 2026-11-18, 쏠 타로 하우스와 같은 방식) — 한국어만 */}
+            {!en && <PaywallReviews />}
             {resultId ? (
               <Link href={`${en ? "/en" : ""}/checkout/${resultId}?page=${page}`} className="btn block">
                 {popup.button || T.payButton}
@@ -888,6 +891,27 @@ export default function FreeResultView({
         {sheet && <SheetBody sheet={sheet} />}
       </BottomSheet>
       <Toast msg={toast} />
+    </div>
+  );
+}
+
+/** 결제 카드 고객 후기 — 가운데 정렬 한 줄, 1.5초마다 다음 후기가 아래에서 올라온다(owner 2026-11-18).
+ *  첫 그림은 목록 첫 후기(서버·브라우저 화면이 같게), 그 뒤 한 번 섞은 순서로 돈다. 화면 읽기 프로그램에는 읽히지 않게. */
+function PaywallReviews() {
+  const [order, setOrder] = useState<readonly string[]>(PAYWALL_REVIEWS);
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const t0 = setTimeout(() => setOrder(shuffled(PAYWALL_REVIEWS)), 0);
+    const t = setInterval(() => setTick((n) => n + 1), REVIEW_MS);
+    return () => {
+      clearTimeout(t0);
+      clearInterval(t);
+    };
+  }, []);
+  if (!order.length) return null;
+  return (
+    <div className="pf-reviews" aria-hidden="true">
+      <p key={tick} className="pf-review">“{order[tick % order.length]}”</p>
     </div>
   );
 }
