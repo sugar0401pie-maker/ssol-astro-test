@@ -303,7 +303,7 @@ export default function LegalPage() {
 
         <section id="privacy" className="mt-10 border-t border-navy/15 pt-8">
           <h2 className="text-[18px] font-semibold text-navy">개인정보처리방침</h2>
-          <p className="mt-1 text-[13px] text-navy/60">공고일자: 2026년 10월 26일 · 시행일자: 2026년 10월 26일</p>
+          <p className="mt-1 text-[13px] text-navy/60">공고일자: 2026년 11월 18일 · 시행일자: 2026년 11월 18일</p>
 
           <P>
             쏠 웰니스 하우스(이하 &ldquo;회사&rdquo;)는 웰니스 자기이해 플랫폼 &ldquo;쏠 웰니스 하우스&rdquo;(이하
@@ -423,6 +423,10 @@ export default function LegalPage() {
                 <tr>
                   <td className="px-3 py-2">토스페이먼츠 주식회사(전자결제대행업체, PG사)</td>
                   <td className="px-3 py-2">유료 서비스 결제 처리</td>
+                </tr>
+                <tr>
+                  <td className="px-3 py-2">주식회사 카카오페이</td>
+                  <td className="px-3 py-2">유료 서비스 결제 처리(카카오페이 결제)</td>
                 </tr>
                 <tr>
                   <td className="px-3 py-2">카카오, 네이버</td>
