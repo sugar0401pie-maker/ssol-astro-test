@@ -8,7 +8,8 @@ import { clampPage } from "@/lib/results/lastPage";
 import { useEffect } from "react";
 import { track } from "@/lib/analytics/track";
 
-const CANCEL_CODES = new Set(["PAY_PROCESS_CANCELED", "USER_CANCEL"]);
+// KAKAOPAY_CANCEL: 카카오페이 결제창에서 취소·뒤로 가기(owner 2026-11-18)
+const CANCEL_CODES = new Set(["PAY_PROCESS_CANCELED", "USER_CANCEL", "KAKAOPAY_CANCEL"]);
 
 export default function CheckoutFail() {
   const params = useSearchParams();

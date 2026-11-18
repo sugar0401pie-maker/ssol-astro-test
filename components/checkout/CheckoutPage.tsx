@@ -4,13 +4,15 @@
 // 그 화면이 서버에 승인 확인을 요청한다. 가짜 카운트다운·"지금만 할인" 같은 문구는 쓰지 않는다(디자인가이드 2장).
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { apiHeaders } from "@/lib/guest/client";
 import { useRealSession } from "@/components/results/useSession";
 import { track } from "@/lib/analytics/track";
 import { WITHDRAWAL_CHECK_LABEL, WITHDRAWAL_NOTICE_LINES } from "@/lib/billing/withdrawal";
 import { getAttribution } from "@/lib/attribution/client";
+import KakaoPayMark from "@/components/checkout/KakaoPayMark";
 import { REPORT_PRICE } from "@/lib/billing/pricing";
+import { PayStartError, kakaopayOn, startKakaoPay } from "@/lib/billing/kakaopayStart";
 
 const TOSS_CLIENT_KEY = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY;
 
@@ -34,14 +36,46 @@ export default function CheckoutPage({ resultId, page }: { resultId: string; pag
   // 청약철회 제한 사전 고지 동의(약관 제13조 2항) — 결제 버튼 바로 위 한 줄. 체크해야 주문을 만들고 결제로 넘어간다
   const [ack, setAck] = useState(false);
 
+  // 카카오페이가 켜져 있으면(owner 2026-11-18) 이 화면은 그리지 않고 곧바로 카카오페이 결제창으로(뒤로 가기는 결과 화면으로).
+  // undefined = 확인 중, false = 예전 토스 결제 화면
+  const [kakao, setKakao] = useState<boolean | undefined>(undefined);
+  const [kakaoError, setKakaoError] = useState<string | null>(null);
+  const kakaoStarted = useRef(false);
+
   useEffect(() => {
     track("pay_click", { page }, `pay_click:${resultId}`);
   }, [resultId, page]);
 
+  useEffect(() => {
+    let alive = true;
+    void kakaopayOn().then((on) => alive && setKakao(on));
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const goKakao = useCallback(async () => {
+    setKakaoError(null);
+    try {
+      track("pay_start", { page, method: "kakaopay" });
+      await startKakaoPay(resultId, page, session ?? null, { replace: true });
+    } catch (e) {
+      if (e instanceof PayStartError && e.paid) return router.replace(`/results/${resultId}/${page}`);
+      setKakaoError(e instanceof Error ? e.message : "결제를 시작하지 못했어요.");
+    }
+  }, [resultId, page, session, router]);
+
+  useEffect(() => {
+    if (kakao !== true || session === undefined || kakaoStarted.current) return;
+    kakaoStarted.current = true;
+    const t = setTimeout(() => void goKakao(), 0);
+    return () => clearTimeout(t);
+  }, [kakao, session, goKakao]);
+
   // 화면을 열자마자 토스 결제 수단을 그린다(owner 2026-11-04 '결제창 바로 뜨게'). 금액은 표시용이고,
   // 실제 청구 금액은 결제 버튼을 누를 때 서버가 만든 주문 금액이다(토스 승인 때 서버가 다시 맞춰 봄).
   useEffect(() => {
-    if (session === undefined || !TOSS_CLIENT_KEY) return;
+    if (session === undefined || kakao !== false || !TOSS_CLIENT_KEY) return;
     let cancelled = false;
     const customerKey = session?.user?.id ?? "@@ANONYMOUS";
     void import("@tosspayments/payment-widget-sdk").then(async ({ loadPaymentWidget }) => {
@@ -57,7 +91,7 @@ export default function CheckoutPage({ resultId, page }: { resultId: string; pag
     return () => {
       cancelled = true;
     };
-  }, [session]);
+  }, [session, kakao]);
 
   async function pay() {
     if (!widgetRef.current || busy) return;
@@ -93,7 +127,24 @@ export default function CheckoutPage({ resultId, page }: { resultId: string; pag
     }
   }
 
-  if (session === undefined) return <p className="text-center text-cream/70">확인하는 중…</p>;
+  if (session === undefined || kakao === undefined) return <p className="text-center text-cream/70">확인하는 중…</p>;
+  if (kakao)
+    return (
+      <div className="flex flex-col items-center gap-4 text-center text-cream">
+        {kakaoError ? (
+          <>
+            <p className="rounded-xl bg-cream px-3 py-2 text-sm text-navy">{kakaoError}</p>
+            <button type="button" className="btn block kakaopay" onClick={() => void goKakao()}>
+              <KakaoPayMark />
+              <span>카카오페이로 다시 결제하기</span>
+            </button>
+            <Link href={`/results/${resultId}/${page}`} className="linkish">결과로 돌아가기</Link>
+          </>
+        ) : (
+          <p>카카오페이로 이동하고 있어요…</p>
+        )}
+      </div>
+    );
 
   return (
     <div className="flex flex-col gap-4">

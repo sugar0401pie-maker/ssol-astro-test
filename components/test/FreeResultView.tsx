@@ -17,6 +17,8 @@ import { createPortal } from "react-dom";
 import { track } from "@/lib/analytics/track";
 import { REPORT_PRICE } from "@/lib/billing/pricing";
 import { PAYWALL_REVIEWS, REVIEW_MS, shuffled } from "@/lib/results/paywallReviews";
+import { PayStartError, kakaopayOn, startKakaoPay } from "@/lib/billing/kakaopayStart";
+import KakaoPayMark from "@/components/checkout/KakaoPayMark";
 import { enPriceLabel } from "@/lib/billing/pricingEn";
 import { apiHeaders } from "@/lib/guest/client";
 import { getRealSession } from "@/lib/supabase/browser";
@@ -266,6 +268,31 @@ export default function FreeResultView({
   const [showAll, setShowAll] = useState(false);
   const [tip, setTip] = useState(() => (tipsSeen() ? 0 : 1));
   const [toast, setToast] = useToast();
+  // 카카오페이 바로 결제(owner 2026-11-18) — 서버 설정으로 켜짐/꺼짐(키가 없으면 예전 결제 화면 링크)
+  const [kakao, setKakao] = useState(false);
+  const [payBusy, setPayBusy] = useState(false);
+  const [payError, setPayError] = useState<string | null>(null);
+  useEffect(() => {
+    let alive = true;
+    void kakaopayOn().then((on) => alive && setKakao(on));
+    return () => {
+      alive = false;
+    };
+  }, []);
+  async function payKakao() {
+    if (!resultId || payBusy) return;
+    setPayBusy(true);
+    setPayError(null);
+    track("pay_click", { page }, `pay_click:${resultId}`);
+    try {
+      track("pay_start", { page, method: "kakaopay" });
+      await startKakaoPay(resultId, page, await getRealSession());
+    } catch (e) {
+      if (e instanceof PayStartError && e.paid) return window.location.reload();
+      setPayError(e instanceof Error ? e.message : "결제를 시작하지 못했어요.");
+      setPayBusy(false);
+    }
+  }
   const [switching, setSwitching] = useState(false);
   // 결제 전: 유료 섹션의 굵은 요약 + 본문 첫 두 문장(서버가 DB 뼈대에서 그만큼만 보냄) + 흐린 자리용 B13 가짜 문장
   const [preview, setPreview] = useState<Record<number, { first: string; lines: string[]; dummy: string[] }>>({});
@@ -863,7 +890,21 @@ export default function FreeResultView({
             </div>
             {/* 고객 후기 한 줄씩 1.5초마다(owner 2026-11-18, 쏠 타로 하우스와 같은 방식) — 한국어만 */}
             {!en && <PaywallReviews />}
-            {resultId ? (
+            {resultId && kakao && !en ? (
+              // 카카오페이(owner 2026-11-18): 노란 버튼, 누르면 결제 화면 없이 바로 카카오페이 결제창(로그인 없이도 — 비회원 열쇠로 주문)
+              <>
+                <button type="button" className="btn block kakaopay" disabled={payBusy} onClick={() => void payKakao()}>
+                  <KakaoPayMark />
+                  <span>{payBusy ? "카카오페이로 이동하고 있어요…" : "카카오페이로 결제하고 바로 보기"}</span>
+                </button>
+                {payError && <p className="payerr" role="alert">{payError}</p>}
+                <small className="payterms">
+                  결제 시 쏠 아스트로 하우스{" "}
+                  <a href="/legal#terms" target="_blank" rel="noopener">이용약관</a>과{" "}
+                  <a href="/legal#privacy" target="_blank" rel="noopener">개인정보 처리방침</a>에 동의합니다.
+                </small>
+              </>
+            ) : resultId ? (
               <Link href={`${en ? "/en" : ""}/checkout/${resultId}?page=${page}`} className="btn block">
                 {popup.button || T.payButton}
               </Link>

@@ -235,6 +235,19 @@ export async function markOrderPaid(orderId: string, extra: { paymentKey: string
   return "ok";
 }
 
+/** 카카오페이 결제 준비에서 받은 결제 번호(tid)를 주문에 남긴다(처리 전 주문만, 새 칸 없음 — payment_key·method). */
+export async function setOrderPaymentKey(orderId: string, paymentKey: string, method: string): Promise<void> {
+  const { error } = await createAdminClient().from("astro_orders").update({ payment_key: paymentKey, method }).eq("id", orderId).eq("status", "pending");
+  if (error) throw new Error(`주문 갱신 실패: ${error.code}`);
+}
+
+/** 주문의 결제 번호(카카오페이 tid). */
+export async function getOrderPaymentKey(orderId: string): Promise<string | null> {
+  const { data, error } = await createAdminClient().from("astro_orders").select("payment_key").eq("id", orderId).maybeSingle();
+  if (error) throw new Error(`주문 조회 실패: ${error.code}`);
+  return (data?.payment_key as string | null) ?? null;
+}
+
 /** 결과가 이미 결제됐는지(같은 결과를 두 번 결제하지 않게, 토스 승인 전에 확인). */
 export async function isResultPaid(resultId: string): Promise<boolean> {
   const { data, error } = await createAdminClient().from(TABLE).select("paid_at").eq("id", resultId).maybeSingle();

@@ -1,0 +1,15 @@
+import type { Metadata } from "next";
+import { Suspense } from "react";
+import KakaoPaySuccess from "@/components/checkout/KakaoPaySuccess";
+
+export const metadata: Metadata = { title: "쏠 아스트로 하우스 — 결제", robots: { index: false } };
+
+export default function Page() {
+  return (
+    <main className="flex w-full flex-1 flex-col gap-6 pb-8 pt-7">
+      <Suspense fallback={null}>
+        <KakaoPaySuccess />
+      </Suspense>
+    </main>
+  );
+}

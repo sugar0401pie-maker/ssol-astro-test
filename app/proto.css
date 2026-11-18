@@ -416,3 +416,11 @@ details.why ul{list-style:disc}
 .pf-review{margin:0;color:var(--cream);opacity:.92;text-align:center;word-break:keep-all;animation:pfReviewIn .45s ease backwards;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 @keyframes pfReviewIn{from{transform:translateY(100%);opacity:0}to{transform:none;opacity:.92}}
 @media (prefers-reduced-motion:reduce){.pf-review{animation:none}}
+/* 카카오페이 결제 버튼(owner 2026-11-18, 쏠 타로 하우스와 같은 모양) — 노란 바탕·검정 글자·가운데 카카오페이 표시 */
+.btn.kakaopay{background:#fee500!important;color:#191919!important;border-color:#fee500!important;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:700}
+.btn.kakaopay .kpmark{display:inline-flex;align-items:center;gap:3px;flex:none}
+.btn.kakaopay .kpmark b{font-size:15px;font-weight:800;color:#191919;letter-spacing:-.02em}
+.btn.kakaopay:disabled{opacity:.8}
+.pf-in .payterms{display:block;margin-top:8px;font-size:10.5px;line-height:1.5;color:var(--cream-70);word-break:keep-all}
+.pf-in .payterms a{color:inherit;text-decoration:underline}
+.pf-in .payerr{margin:8px 0 0;font-size:12px;line-height:1.5;color:#ffb4a8;word-break:keep-all}
