@@ -64,7 +64,7 @@ export default function LegalPage() {
 
         <section id="terms" className="mt-10 border-t border-navy/15 pt-8">
           <h2 className="text-[18px] font-semibold text-navy">쏠 웰니스 하우스 이용약관</h2>
-          <p className="mt-1 text-[13px] text-navy/60">시행일자: 2026년 10월 17일</p>
+          <p className="mt-1 text-[13px] text-navy/60">시행일자: 2026년 11월 18일</p>
 
           <H3>제1장 총칙</H3>
           <p className="mt-2 text-[14px] font-medium text-navy">제1조 (목적)</p>
@@ -196,7 +196,7 @@ export default function LegalPage() {
           <OL
             items={[
               "심층 리포트는 건당 1,900원(부가가치세 포함, 가격은 변경될 수 있으며 변경 시 사전 공지한다)에 결제 후 이용할 수 있다.",
-              "결제수단은 신용카드, 간편결제 등 회사가 정하는 방법에 따르며, 결제는 전자결제대행업체(PG사)인 토스페이먼츠 주식회사를 통해 처리된다. 회사는 이용자의 카드 정보 등 결제 수단의 민감한 정보를 직접 저장하지 않는다.",
+              "결제수단은 신용카드, 간편결제 등 회사가 정하는 방법에 따르며, 결제는 전자결제대행업체(PG사)인 토스페이먼츠 주식회사 또는 주식회사 카카오페이(카카오페이 결제)를 통해 처리된다. 회사는 이용자의 카드 정보 등 결제 수단의 민감한 정보를 직접 저장하지 않는다.",
               "심층 리포트는 결제 완료 후 이용자 개인의 응답 데이터를 기반으로 생성되어 제공된다.",
             ]}
           />
@@ -298,7 +298,7 @@ export default function LegalPage() {
           <P>회사는 서비스 내에 타 사이트로 연결되는 링크(SNS 공유 등)를 제공할 수 있으며, 해당 사이트의 내용에 대해서는 책임지지 않는다.</P>
 
           <p className="mt-4 text-[14px] font-medium text-navy">부칙</p>
-          <P>본 약관은 2026년 10월 17일부터 시행한다.</P>
+          <P>본 약관은 2026년 11월 18일부터 시행한다.</P>
         </section>
 
         <section id="privacy" className="mt-10 border-t border-navy/15 pt-8">
