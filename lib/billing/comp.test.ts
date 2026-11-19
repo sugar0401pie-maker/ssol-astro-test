@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { isCompEmail } from "./comp.ts";
+import { isAdminEmail, isCompEmail } from "./comp.ts";
 
 test("관리자 계정 이메일만 무료 열람(대소문자·공백 무시)", () => {
   assert.equal(isCompEmail("seotaiji0124@naver.com", ""), true);
@@ -18,4 +18,12 @@ test("환경변수로 더한 계정도 무료 열람", () => {
 test("기한 있는 무료 열람은 그 시각까지만(시험 계정 2026-11-02 하루)", () => {
   assert.equal(isCompEmail("owner-test@ssolwellnesshouse.com", "", new Date("2026-11-02T14:00:00Z")), true); // 23시 KST
   assert.equal(isCompEmail("owner-test@ssolwellnesshouse.com", "", new Date("2026-11-02T15:00:01Z")), false); // 11월 3일 0시 넘음
+});
+
+test("관리자 화면 전용 계정은 관리자지만 무료 열람은 아님(owner 2026-11-19)", () => {
+  assert.equal(isAdminEmail(" Sneaker112@naver.com "), true);
+  assert.equal(isCompEmail("sneaker112@naver.com", ""), false);
+  assert.equal(isAdminEmail("seotaiji0124@naver.com"), true);
+  assert.equal(isAdminEmail("someone@naver.com", ""), false);
+  assert.equal(isAdminEmail(null), false);
 });

@@ -3,13 +3,13 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getUserIdFromAuthHeader } from "@/lib/supabase/auth";
 import { getAccountEmail } from "@/lib/results/store";
-import { isCompEmail } from "@/lib/billing/comp";
+import { isAdminEmail } from "@/lib/billing/comp";
 import { GATE_COOKIE, verifyGate } from "./gate";
 import { REPORT_HEADER, reportRows, type StoredReport } from "./reportExport";
 import { amountLabel, birthDateLabel, birthTimeLabel, kstDayRange, kstStamp, loginMethodLabel, toCsv, type AdminStats } from "./stats";
 
 // 관리자 화면(owner 2026-11-09) 서버 쪽: 관리자 확인, 날짜 기준 숫자, 엑셀(CSV) 내보내기.
-// 관리자 = lib/billing/comp.ts 목록(+ Vercel ASTRO_COMP_EMAILS).
+// 관리자 = lib/billing/comp.ts isAdminEmail(무료 열람 목록 + ASTRO_COMP_EMAILS + 관리자 전용 목록).
 
 /** 2차 암호 서명 열쇠의 덧붙임 값(서버 비밀) — 없어도 암호만으로 동작 */
 export const gatePepper = () => process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
@@ -19,7 +19,7 @@ export type AdminState = { state: "login" } | { state: "locked"; userId: string 
 /** 관리자 계정 로그인 + 2차 암호 쿠키까지 확인(owner 2026-11-09). 암호 설정(ADMIN_PASSWORD)이 없으면 늘 locked. */
 export async function adminState(req: NextRequest): Promise<AdminState> {
   const userId = await getUserIdFromAuthHeader(req.headers.get("authorization"));
-  if (!userId || !isCompEmail(await getAccountEmail(userId))) return { state: "login" };
+  if (!userId || !isAdminEmail(await getAccountEmail(userId))) return { state: "login" };
   const ok = verifyGate(req.cookies.get(GATE_COOKIE)?.value, userId, Date.now(), process.env.ADMIN_PASSWORD, gatePepper());
   return ok ? { state: "ok", userId } : { state: "locked", userId };
 }

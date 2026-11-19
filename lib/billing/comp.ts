@@ -17,3 +17,13 @@ export function isCompEmail(email: string | null | undefined, env?: string, now:
   if (compEmails(env).includes(e)) return true;
   return TEMP_COMP.some((t) => t.email.toLowerCase() === e && now.getTime() <= Date.parse(t.until));
 }
+
+// 관리자 화면(/admin)만 여는 계정(owner 2026-11-19) — 무료 열람(COMP)은 주지 않는다.
+// 관리자 = 무료 열람 계정(위 목록) + 이 목록. 관리자 화면은 여전히 2차 암호(ADMIN_PASSWORD)가 필요하다.
+export const ADMIN_ONLY_EMAILS = ["sneaker112@naver.com"];
+
+export function isAdminEmail(email: string | null | undefined, env?: string, now: Date = new Date()): boolean {
+  if (!email) return false;
+  const e = email.trim().toLowerCase();
+  return ADMIN_ONLY_EMAILS.some((a) => a.toLowerCase() === e) || isCompEmail(email, env, now);
+}
