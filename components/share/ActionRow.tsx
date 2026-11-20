@@ -11,7 +11,10 @@ import { claimGuestResults } from "@/lib/guest/client";
 import { getRealSession } from "@/lib/supabase/browser";
 import { track } from "@/lib/analytics/track";
 import KakaoTalkLogo from "./KakaoTalkLogo";
-import ShareSheet, { type ShareProps } from "./ShareSheet";
+import type { ShareProps } from "./ShareSheet";
+import { KAKAO_CARD_ENABLED, preloadKakao, shareKakaoCard } from "./kakaoShare";
+import { makeShareLink } from "./shareLink";
+import { balancedTwoLines, kakaoArtUrl, pickSignArt, signShareMessage } from "@/lib/share/signShare";
 import { b14, useCopy } from "@/lib/copy/useCopy";
 
 export interface SaveCopy {
@@ -44,7 +47,37 @@ export default function ActionRow({
   resultId: string | null;
   prefill?: { birthDate?: string; nickname?: string };
 }) {
-  const [shareOpen, setShareOpen] = useState(false);
+  // 별자리 그림 하나(무작위, 처음 한 번) — 카카오 카드 그림
+  const [artPath] = useState(() => pickSignArt(share.sunSignIndex));
+  // [SNS 공유하기]를 누르면 공유 시트 없이 바로 카카오톡(owner 2026-11-20). 누른 순간 열리도록 SDK를 미리 불러 둔다.
+  useEffect(() => {
+    if (KAKAO_CARD_ENABLED) preloadKakao();
+  }, []);
+
+  async function shareKakao() {
+    track("share_open");
+    track("share_done", { channel: "kakao" });
+    const url = makeShareLink("kakao", resultId);
+    const intro = share.sunSignIntro;
+    if (artPath && intro && (await shareKakaoCard({ title: `${share.sunSign} — 쏠 아스트로 하우스`, description: balancedTwoLines(intro.oneLiner), imageUrl: kakaoArtUrl(artPath), url }))) return;
+    // 카카오 카드를 못 띄우면(키·도메인 문제, SDK 실패) 기기 공유창 → 그것도 없으면 주소 복사
+    const message = signShareMessage(share.sunSign, intro);
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: "쏠 아스트로 하우스", text: message, url });
+      } catch {
+        /* 취소 */
+      }
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setToast("링크를 복사했어요. 카카오톡 대화창에 붙여 넣어 보내 주세요.");
+    } catch {
+      setToast(`이 주소를 복사해 주세요: ${url}`);
+    }
+  }
+
   const [modal, setModal] = useState(false);
   const [login, setLogin] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -97,16 +130,15 @@ export default function ActionRow({
     <>
       {/* 프로토타입 actRow: .act-row 반반, 56px */}
       <div className="act-row">
-        <button type="button" className="btn kakao act-btn" onClick={() => { setShareOpen(true); track("share_open"); }}>
+        <button type="button" className="btn kakao act-btn" onClick={() => void shareKakao()}>
           {KAKAO_ICON}
-          SNS 공유하기
+          카카오톡 공유하기
         </button>
         <button type="button" className="btn act-btn save-btn" onClick={(e) => void save(e)}>
           {SAVE_ICON}
           저장하기
         </button>
       </div>
-      <ShareSheet {...share} resultId={resultId} open={shareOpen} onClose={() => setShareOpen(false)} />
 
       {/* "저장되었습니다!"(프로토타입 .saved-modal — 금색 동그라미 체크, 뒤 배경 없음) */}
       <div className={`saved-modal${modal ? " on" : ""}`} role="status" aria-live="polite" hidden={!modal}>

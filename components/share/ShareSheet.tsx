@@ -15,11 +15,10 @@ import { composeSignShare } from "./shareImage";
 import KakaoTalkLogo from "./KakaoTalkLogo";
 import { balancedTwoLines, kakaoArtUrl, pickSignArt, signShareMessage, signShareTexts } from "@/lib/share/signShare";
 import { KAKAO_CARD_ENABLED, preloadKakao, shareKakaoCard } from "./kakaoShare";
-import { newSlug, shareUrl, type ShareChannel } from "@/lib/attribution/attribution";
-import { apiHeaders } from "@/lib/guest/client";
-import { getRealSession } from "@/lib/supabase/browser";
+import type { ShareChannel } from "@/lib/attribution/attribution";
+import { makeShareLink, SITE_URL } from "./shareLink";
 
-export const SITE_URL = "https://astro.ssolwellnesshouse.com";
+export { SITE_URL };
 
 export interface ShareProps {
   chart: NatalChart;
@@ -93,22 +92,8 @@ export default function ShareSheet({ open, onClose, resultId = null, ...props }:
     const channel = CHANNEL[key];
     const known = links.current[channel];
     if (known) return known;
-    const slug = newSlug((n) => crypto.getRandomValues(new Uint8Array(n)));
-    const url = shareUrl(SITE_URL, slug, channel);
+    const url = makeShareLink(channel, resultId);
     links.current[channel] = url;
-    void getRealSession()
-      .catch(() => null)
-      .then((session) =>
-        fetch("/api/share-links", {
-          method: "POST",
-          keepalive: true,
-          headers: apiHeaders(session, { "content-type": "application/json" }),
-          body: JSON.stringify({ slug, channel, resultId }),
-        }),
-      )
-      .catch(() => {
-        /* 기록이 안 돼도 링크는 그대로 동작한다(utm으로 채널은 남음) */
-      });
     return url;
   }
 
