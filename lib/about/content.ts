@@ -73,7 +73,7 @@ export const MAKERS =
  * 별자리 해석 최종 검수일(owner 2026-11-21). 화면 문구로만 쓰고 JSON-LD에는 넣지 않는다.
  * 해석을 실제로 다시 검수하거나 크게 고칠 때만 바꾼다. 비어 있으면(owner가 날짜를 정하기 전) 날짜 없이 보여 준다.
  */
-export const REVIEW_DATE = "";
+export const REVIEW_DATE = "2026.11.20";
 export const reviewLine = (date: string = REVIEW_DATE): string =>
   `${date ? `별자리 해석 최종 검수일: ${date} · ` : ""}CEO(상담심리사 및 청소년상담사 자격 보유)와 CSO(산업심리상담사 자격 보유)가 항상 검수해요.`;
 
