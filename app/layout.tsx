@@ -5,7 +5,7 @@ import GoogleAnalytics from "@/components/analytics/GoogleAnalytics";
 import XPixel from "@/components/analytics/XPixel";
 import { Gowun_Batang, Noto_Sans_KR, Noto_Sans_Symbols, Noto_Sans_Symbols_2 } from "next/font/google";
 import "./globals.css";
-import { SEO_DESCRIPTION, SEO_TITLE } from "@/lib/seo";
+import { OG_DESCRIPTION, SEO_DESCRIPTION, SEO_TITLE } from "@/lib/seo";
 
 const notoSansKr = Noto_Sans_KR({
   variable: "--font-noto-sans-kr",
@@ -34,20 +34,20 @@ export const metadata: Metadata = {
       "naver-site-verification": "a8872583b5154e500ccfa782f0a1a31aaf710635",
     },
   },
-  // 검색 결과용 제목·설명(lib/seo.ts). 공유 미리보기 설명도 같은 문장(owner 2026-11-04), 제목은 짧은 이름 그대로.
+  // 검색 결과용 제목·설명(lib/seo.ts). 공유 미리보기 설명은 따로(OG_DESCRIPTION), 제목은 짧은 이름 그대로.
   title: SEO_TITLE,
   description: SEO_DESCRIPTION,
   openGraph: {
     type: "website",
     siteName: "쏠 아스트로 하우스",
     title: "쏠 아스트로 하우스",
-    description: SEO_DESCRIPTION,
+    description: OG_DESCRIPTION,
     url: "/",
     locale: "ko_KR",
     // 공유 썸네일(owner 2026-10-22 지정 그림, 원본 크기 그대로 jpg — 카카오톡·X가 webp를 잘 못 읽어서)
     images: [{ url: "/og/share.jpg", width: 1774, height: 887, alt: "밤하늘 별자리 원을 가리키는 양" }],
   },
-  twitter: { card: "summary_large_image", title: "쏠 아스트로 하우스", description: SEO_DESCRIPTION, images: ["/og/share.jpg"] },
+  twitter: { card: "summary_large_image", title: "쏠 아스트로 하우스", description: OG_DESCRIPTION, images: ["/og/share.jpg"] },
 };
 
 export const viewport: Viewport = {

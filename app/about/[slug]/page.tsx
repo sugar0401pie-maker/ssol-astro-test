@@ -5,6 +5,7 @@ import FaqList from "@/components/about/FaqList";
 import {
   ASTROLOGY_STANCE,
   MAKERS,
+  reviewLine,
   REPORT_CHAPTERS,
   STEPS,
   SUB_PAGES,
@@ -86,6 +87,7 @@ function Body({ slug }: { slug: string }) {
         <p className="mt-3">{ASTROLOGY_STANCE}</p>
         <H2>만든 사람</H2>
         <p className="mt-3">{MAKERS}</p>
+        <p className="mt-2 text-[13px] text-navy/70">{reviewLine()}</p>
       </>
     );
   return (

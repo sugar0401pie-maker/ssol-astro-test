@@ -50,3 +50,12 @@ test("소개 문구·구조화 데이터에 팀원 이름이 없다(owner 2026-1
   const all = JSON.stringify([c, c.aboutJsonLd(), c.SUB_PAGES.map((p) => c.subPageJsonLd(p))]);
   for (const name of ["김준석", "곽혜진", "오세민", "오유주"]) assert.ok(!all.includes(name), name);
 });
+
+test("검수 표기: 날짜가 있을 때만 날짜를 붙이고, 이름은 쓰지 않는다(owner 2026-11-21)", async () => {
+  const { reviewLine, MAKERS } = await import("./content.ts");
+  assert.ok(!reviewLine("").includes("최종 검수일"));
+  assert.ok(reviewLine("2026.10.29").startsWith("별자리 해석 최종 검수일: 2026.10.29 · CEO"));
+  for (const t of [reviewLine("2026.10.29"), MAKERS]) for (const n of ["김준석", "곽혜진", "오세민", "오유주"]) assert.ok(!t.includes(n));
+  assert.ok(MAKERS.includes("심리학 전공 학사·석사 학위와 상담심리사 2급"));
+  assert.ok(MAKERS.includes("산업심리상담사 1급 자격을 가진 CSO"));
+});

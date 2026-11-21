@@ -13,6 +13,7 @@ import {
   AT_A_GLANCE,
   FAQS,
   MAKERS,
+  reviewLine,
   STEPS,
   SUB_PAGES,
   aboutJsonLd,
@@ -70,6 +71,7 @@ export default function AboutPage() {
 
         <H2>만든 사람</H2>
         <p className="mt-3">{MAKERS}</p>
+        <p className="mt-2 text-[13px] text-navy/70">{reviewLine()}</p>
 
         <FaqList faqs={FAQS} />
 
