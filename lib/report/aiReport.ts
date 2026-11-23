@@ -1,7 +1,7 @@
 import "server-only";
 // 유료 리포트 생성(마스터스펙 7-4): 연말·2027·5년+질문 3파트를 병렬로 부르고, 파트마다 자동 검증 →
 // 실패하면 그 파트만 1회 재생성 → 그래도 실패하거나 모델 호출이 안 되면 DB 뼈대 문장으로(fail safe).
-// 모델은 스펙 이름(GPT-6.1 Sol)을 기본으로, 실제 모델 ID가 다르면 REPORT_MODEL 환경변수로 바꾼다.
+// 모델 기본값 gpt-5.6-luna(owner 2026-11-23, 비용 — 예전 gpt-6.1-sol). Vercel REPORT_MODEL이 있으면 그 값.
 // AI 호출은 이 파일 한 곳에서만 한다(제공사·모델 교체 지점).
 import { createHash } from "node:crypto";
 import { AI_ALERT_TEXT, alertRecipients, classifyAiError, shouldAlert, type AiFailureKind } from "./aiAlert.ts";
@@ -26,7 +26,7 @@ import { recordAiUsage, type UsageContext } from "./aiUsage";
 /** 당분간 화면 비노출(show_character=false) — AI 출력에 나오면 그 파트를 다시 만든다. */
 const CHARACTER_NAMES = Object.values(CHARACTER_GRID).flat();
 
-export const REPORT_MODEL = process.env.REPORT_MODEL || "gpt-6.1-sol";
+export const REPORT_MODEL = process.env.REPORT_MODEL || "gpt-5.6-luna";
 /** 프롬프트 판(시스템 프롬프트 원문의 짧은 지문) — 어느 프롬프트로 쓴 리포트인지 나중에 구분하려고 */
 const PROMPT_VERSION = createHash("sha256").update(SYSTEM_PROMPT_TEMPLATE).digest("hex").slice(0, 10);
 const PROMPT_VERSION_EN = `en-${createHash("sha256").update(SYSTEM_PROMPT_TEMPLATE_EN).digest("hex").slice(0, 10)}`;
