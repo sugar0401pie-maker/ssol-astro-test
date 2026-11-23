@@ -21,6 +21,7 @@ import { SYSTEM_PROMPT_TEMPLATE_EN } from "./systemPromptEn";
 import { compileC1En, type C1EnRow } from "./validateEn";
 import c1En from "@/data/astro/db/c1_en.json";
 import { EN_Q3 } from "@/lib/en/questions";
+import { recordAiUsage, type UsageContext } from "./aiUsage";
 
 /** 당분간 화면 비노출(show_character=false) — AI 출력에 나오면 그 파트를 다시 만든다. */
 const CHARACTER_NAMES = Object.values(CHARACTER_GRID).flat();
@@ -71,18 +72,26 @@ function notifyAiFailure(e: unknown): void {
   }
 }
 
-async function callModel(system: string, user: string, log: PartLog): Promise<string> {
+async function callModel(system: string, user: string, log: PartLog, usage?: { ctx: UsageContext; part: PartId }): Promise<string> {
   const client = new OpenAI({ timeout: 90_000, maxRetries: 0 });
-  const res = await client.responses.create({
-    model: REPORT_MODEL,
-    input: [
-      { role: "system", content: system },
-      { role: "user", content: user },
-    ],
-    max_output_tokens: 4000,
-  });
+  let res;
+  try {
+    res = await client.responses.create({
+      model: REPORT_MODEL,
+      input: [
+        { role: "system", content: system },
+        { role: "user", content: user },
+      ],
+      max_output_tokens: 4000,
+    });
+  } catch (e) {
+    if (usage) await recordAiUsage(usage.ctx, usage.part, { model: REPORT_MODEL, ok: false });
+    throw e;
+  }
   log.inputTokens += res.usage?.input_tokens ?? 0;
   log.outputTokens += res.usage?.output_tokens ?? 0;
+  // 실제 토큰 수를 DB에 한 줄(owner 2026-11-23) — model은 OpenAI가 실제로 응답한 모델 이름
+  if (usage) await recordAiUsage(usage.ctx, usage.part, { model: res.model ?? REPORT_MODEL, ok: true, usage: res.usage });
   const text = res.output_text?.trim();
   if (!text) throw new Error("빈 응답");
   return text;
@@ -100,6 +109,8 @@ export async function generatePaidReport(args: {
   onPart?: (partial: PaidReport) => Promise<void>;
   /** 영문판: 영문 AI 지시문·검증기가 생기기 전까지 AI를 부르지 않고 DB 문장 뼈대 그대로(fail safe) */
   lang?: "ko" | "en";
+  /** AI 사용량 기록(astro_ai_usage)용 — 없으면 기록하지 않음 */
+  usage?: Omit<UsageContext, "lang">;
 }): Promise<PaidReport> {
   const { db, resolved, answers, nickname } = args;
   const now = args.now ?? new Date();
@@ -135,7 +146,7 @@ export async function generatePaidReport(args: {
     for (let attempt = 0; attempt < 2; attempt++) {
       log.attempts++;
       try {
-        const out = processPartOutput(await callModel(system, user, log), part, built, c1, banned, ctx);
+        const out = processPartOutput(await callModel(system, user, log, args.usage ? { ctx: { ...args.usage, lang: args.lang ?? "ko" }, part } : undefined), part, built, c1, banned, ctx);
         // 잇기만 규칙에 안 맞으면: 첫 번째는 다시 만들고, 두 번째는 B12 대체 문장을 끼운 채 쓴다(06 v3.1).
         if (out.ok && (out.bridgeFailed.length === 0 || attempt === 1)) {
           log.result = "ai";

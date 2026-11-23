@@ -67,7 +67,7 @@ export async function runReportGeneration(resultId: string, opts: { retry?: bool
     const en = row.birth_input.lang === "en";
     const c = computeFree(row.birth_input, row.answers, row.nickname, { lang: en ? "en" : "ko" });
     if (c.kind !== "result") throw new Error("결과를 다시 계산하지 못함");
-    const report = await generatePaidReport({ db: en ? ASTRO_DB_EN : ASTRO_DB, lang: en ? "en" : "ko", resolved: c.birth.resolved, wishContext: wishContextOf(c.birth.stored, c.birth.accuracy), answers: row.answers, nickname: row.nickname, birthKey: birthKeyOf(row.birth_input), onPart: (partial) => savePartialReport(resultId, partial, attempt) });
+    const report = await generatePaidReport({ db: en ? ASTRO_DB_EN : ASTRO_DB, lang: en ? "en" : "ko", resolved: c.birth.resolved, wishContext: wishContextOf(c.birth.stored, c.birth.accuracy), answers: row.answers, nickname: row.nickname, birthKey: birthKeyOf(row.birth_input), onPart: (partial) => savePartialReport(resultId, partial, attempt), usage: { feature: "paid_report", resultId } });
     // 그사이 다른 시도가 자리를 넘겨받았으면 저장하지 않는다(그쪽 결과가 남는다)
     if (!(await saveReport(resultId, report, attempt))) return;
     // 주인을 다시 읽는다: 생성 중(20~60초)에 비회원이 로그인해 계정으로 옮겼으면, 시작할 때 읽은 user_id는 비어 있고
@@ -136,7 +136,7 @@ export async function redoFallbackReport(resultId: string): Promise<RedoResult> 
   const en = row.birth_input.lang === "en";
   const c = computeFree(row.birth_input, row.answers, row.nickname, { lang: en ? "en" : "ko" });
   if (c.kind !== "result") return "skipped";
-  const report = await generatePaidReport({ db: en ? ASTRO_DB_EN : ASTRO_DB, lang: en ? "en" : "ko", resolved: c.birth.resolved, wishContext: wishContextOf(c.birth.stored, c.birth.accuracy), answers: row.answers, nickname: row.nickname, birthKey: birthKeyOf(row.birth_input) });
+  const report = await generatePaidReport({ db: en ? ASTRO_DB_EN : ASTRO_DB, lang: en ? "en" : "ko", resolved: c.birth.resolved, wishContext: wishContextOf(c.birth.stored, c.birth.accuracy), answers: row.answers, nickname: row.nickname, birthKey: birthKeyOf(row.birth_input), usage: { feature: "paid_report_redo", resultId } });
   if (!allPartsAi(report)) return "ai_still_failing";
   if (!(await saveReport(resultId, report))) return "skipped";
   if (en) return "redone_no_email"; // 영문 완성 메일은 아직 없음
